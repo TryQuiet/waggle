@@ -108,7 +108,7 @@ export class ConnectionsManager {
   public startSendingMessages = async (channelAddress: string, peerId: string): Promise<string> => {
     try {
       const chat = this.chatRooms.get(`${channelAddress}`)
-      for(let i = 0; i <= 5; i++) {
+      for(let i = 0; i <= 100; i++) {
         const rawMessage = {
           count: i,
           id: peerId,
