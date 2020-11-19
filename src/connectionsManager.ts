@@ -5,8 +5,10 @@ import { NOISE } from 'libp2p-noise'
 import KademliaDHT from 'libp2p-kad-dht'
 import Gossipsub from 'libp2p-gossipsub'
 import PeerId from 'peer-id'
+import * as fs from 'fs'
 import WebsocketsOverTor from './websocketOverTor'
 import { Chat } from './chat'
+import { sleep } from './sleep'
 
 interface IConstructor {
   host: string
@@ -16,7 +18,7 @@ interface IConstructor {
 }
 
 interface IChat {
-  send(message: Buffer): Promise<void>
+  send(message: Buffer | string): Promise<void>
 }
 
 interface IChatRoom {
@@ -69,21 +71,38 @@ export class ConnectionsManager {
       console.log('Disconnected from', connection.remotePeer.toB58String());
     })
     return {
-      address: `${addrs}/p2p/${peerId.toB58String()}`
+      address: `${addrs}/p2p/${peerId.toB58String()}`,
+      peerId: peerId.toB58String()
     }
   }
   public subscribeForTopic = async ({ topic, channelAddress }: IChannelSubscription) => {
+    const logInfo = new Map()
     const chat = new Chat(
       this.libp2p,
       topic,
       ({ from, message }) => {
         let fromMe = from === this.libp2p.peerId.toB58String();
         const user = from.substring(0, 6);
-        console.info(
-          `${fromMe ? '\\033[1A' : ''}${user}(${new Date(
-            message.created
-          ).toLocaleTimeString()}): ${message.data}`
-        )
+        const messageObj = JSON.parse(message.data)
+        const isPeerExists = logInfo.get(messageObj.id)
+        if (!isPeerExists) {
+          logInfo.set(messageObj.id, [{
+            messagePayload: {
+              ...messageObj,
+              timestampReceived: Date.now(),
+            }
+          }])
+        } else {
+          if (logInfo.get(messageObj.id).length % 50 === 0) {
+            fs.writeFileSync('logInfo.json', JSON.stringify(Array.from(logInfo.entries())));
+          }
+          logInfo.get(messageObj.id).push({
+            messagePayload: {
+              ...messageObj,
+              timestampReceived: Date.now(),
+            }
+          })
+        }
       }
     )
     this.chatRooms.set(channelAddress, { chatInstance: chat })
@@ -105,6 +124,25 @@ export class ConnectionsManager {
         console.error('Could not publish chat', err)
       }
     })
+  }
+  public startSendingMessages = async (channelAddress: string, peerId: string): Promise<string> => {
+    try {
+      const chat = this.chatRooms.get(`${channelAddress}`)
+      for(let i = 0; i <= 5; i++) {
+        const rawMessage = {
+          count: i,
+          id: peerId,
+          timestamp: Date.now()
+        }
+        const message = JSON.stringify(rawMessage)
+        await chat.chatInstance.send(message)
+        await sleep()
+      }
+      return 'done'
+    } catch (e) {
+      console.error('ERROR', e)
+      throw(e)
+    }
   }
   private createBootstrapNode = ({ peerId, addrs, agent }): Promise<Libp2p> => {
     return Libp2p.create({

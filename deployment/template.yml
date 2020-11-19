@@ -64,7 +64,7 @@ Resources:
     Type: AWS::ECS::Service
     Properties:
       Cluster: !Ref ECSCluster
-      DesiredCount: 1
+      DesiredCount: 2
       LaunchType: FARGATE
       TaskDefinition: !Ref Libp2pTaskDefinition
       NetworkConfiguration:
@@ -88,8 +88,8 @@ Resources:
       ContainerDefinitions:
         - Image: !Ref Libp2pTorImage
           Essential: true
-          Memory: 384
-          MemoryReservation: 128
+          Memory: 512
+          MemoryReservation: 256
           Name: libp2p-tor-service
           Environment:
             - Name: HIDDEN_SERVICE_SECRET
