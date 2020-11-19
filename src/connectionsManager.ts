@@ -5,7 +5,6 @@ import { NOISE } from 'libp2p-noise'
 import KademliaDHT from 'libp2p-kad-dht'
 import Gossipsub from 'libp2p-gossipsub'
 import PeerId from 'peer-id'
-import * as fs from 'fs'
 import WebsocketsOverTor from './websocketOverTor'
 import { Chat } from './chat'
 import { sleep } from './sleep'
@@ -76,33 +75,14 @@ export class ConnectionsManager {
     }
   }
   public subscribeForTopic = async ({ topic, channelAddress }: IChannelSubscription) => {
-    const logInfo = new Map()
     const chat = new Chat(
       this.libp2p,
       topic,
       ({ from, message }) => {
         let fromMe = from === this.libp2p.peerId.toB58String();
         const user = from.substring(0, 6);
-        const messageObj = JSON.parse(message.data)
-        const isPeerExists = logInfo.get(messageObj.id)
-        if (!isPeerExists) {
-          logInfo.set(messageObj.id, [{
-            messagePayload: {
-              ...messageObj,
-              timestampReceived: Date.now(),
-            }
-          }])
-        } else {
-          if (logInfo.get(messageObj.id).length % 50 === 0) {
-            fs.writeFileSync('logInfo.json', JSON.stringify(Array.from(logInfo.entries())));
-          }
-          logInfo.get(messageObj.id).push({
-            messagePayload: {
-              ...messageObj,
-              timestampReceived: Date.now(),
-            }
-          })
-        }
+        console.log('test')
+        return false
       }
     )
     this.chatRooms.set(channelAddress, { chatInstance: chat })
