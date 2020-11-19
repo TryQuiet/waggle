@@ -28,7 +28,9 @@ const main = async () => {
     await connectionsManager.subscribeForTopic({topic: '/libp2p/example/chat/1.0.0', channelAddress: 'test-address' })
     console.log('nodetest', node.address)
     await connectionsManager.connectToNetwork('/dns4/v5nvvfcfpceu6z6hao576ecbfvxin5ahmpbf6rovxbks2kevdxusfayd.onion/tcp/7799/ws/p2p/QmYi5ZF7RidnErUnYPfWht5LisVtBt7NryDqVXttRtcDF2')
-    await sleep(10000)
+    console.info('sleep')
+    await sleep(600 * 1000)
+    console.info('starting sending')
     await connectionsManager.startSendingMessages('test-address', node.peerId)
   }
   if (address) {
