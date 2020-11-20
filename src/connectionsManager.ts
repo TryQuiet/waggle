@@ -81,7 +81,6 @@ export class ConnectionsManager {
       ({ from, message }) => {
         let fromMe = from === this.libp2p.peerId.toB58String();
         const user = from.substring(0, 6);
-        console.log('test')
         return false
       }
     )
@@ -108,7 +107,7 @@ export class ConnectionsManager {
   public startSendingMessages = async (channelAddress: string, peerId: string): Promise<string> => {
     try {
       const chat = this.chatRooms.get(`${channelAddress}`)
-      for(let i = 0; i <= 100; i++) {
+      for(let i = 0; i <= 1000; i++) {
         const rawMessage = {
           count: i,
           id: peerId,
@@ -116,7 +115,7 @@ export class ConnectionsManager {
         }
         const message = JSON.stringify(rawMessage)
         await chat.chatInstance.send(message)
-        await sleep()
+        await sleep(3000)
       }
       return 'done'
     } catch (e) {

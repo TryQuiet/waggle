@@ -17,6 +17,9 @@ Parameters:
   Libp2pTorImage:
     Type: String
 
+  DesiredCount:
+    Type: String
+
 Resources:
 
   ECSCluster:
@@ -51,13 +54,13 @@ Resources:
             - ecs:DescribeTasks
             Resource: '*'
 
-  Libp2pService:
+  Libp2pServiceMessages:
     Type: AWS::ECS::Service
     Properties:
       Cluster: !Ref ECSCluster
-      DesiredCount: 3
+      DesiredCount: !Ref DesiredCount
       LaunchType: FARGATE
-      TaskDefinition: !Ref Libp2pTaskDefinition
+      TaskDefinition: !Ref Libp2pTaskDefinitionMessages
       NetworkConfiguration:
         AwsvpcConfiguration:
           AssignPublicIp: ENABLED
@@ -65,10 +68,10 @@ Resources:
             - ','
             - !Ref Subnets
 
-  Libp2pTaskDefinition:
+  Libp2pTaskDefinitionMessages:
     Type: AWS::ECS::TaskDefinition
     Properties:
-      Family: !Sub ${AWS::StackName}-Lipp2pTorService
+      Family: !Sub ${AWS::StackName}-Lipp2pTorServiceSending
       TaskRoleArn: !GetAtt TaskRole.Arn
       ExecutionRoleArn: !GetAtt TaskRole.Arn
       RequiresCompatibilities:
@@ -86,10 +89,10 @@ Resources:
               Options:
                 awslogs-group: !Ref LogGroup
                 awslogs-region: !Ref AWS::Region
-                awslogs-stream-prefix: libp2p-tor-service
+                awslogs-stream-prefix: libp2p-tor-service-sending
 
   LogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub ${AWS::StackName}/libp2p-tor-test-messages-sending
-      RetentionInDays: 5
+      RetentionInDays: 7

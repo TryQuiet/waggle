@@ -29,7 +29,7 @@ const main = async () => {
     console.log('nodetest', node.address)
     await connectionsManager.connectToNetwork('/dns4/v5nvvfcfpceu6z6hao576ecbfvxin5ahmpbf6rovxbks2kevdxusfayd.onion/tcp/7799/ws/p2p/QmYi5ZF7RidnErUnYPfWht5LisVtBt7NryDqVXttRtcDF2')
     console.info('sleep')
-    await sleep(600 * 1000)
+    await sleep(300 * 1000)
     console.info('starting sending')
     await connectionsManager.startSendingMessages('test-address', node.peerId)
   }
