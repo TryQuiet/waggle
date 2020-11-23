@@ -27,11 +27,12 @@ const main = async () => {
     const node = await connectionsManager.initializeNode()
     await connectionsManager.subscribeForTopic({topic: '/libp2p/example/chat/1.0.0', channelAddress: 'test-address' })
     console.log('nodetest', node.address)
-    await connectionsManager.connectToNetwork('/dns4/v5nvvfcfpceu6z6hao576ecbfvxin5ahmpbf6rovxbks2kevdxusfayd.onion/tcp/7799/ws/p2p/QmYi5ZF7RidnErUnYPfWht5LisVtBt7NryDqVXttRtcDF2')
+    await connectionsManager.connectToNetwork('/dns4/5cxiavuokd427svlrqsuqvi6mohqsjnmxos46zip25dvtrp7efwvkpad.onion/tcp/7755/ws/p2p/QmPAegS1BvPkSEAkGgUkf2cCUsAF6ykcSYR3h3F1MtizzF')
     console.info('sleep')
     await sleep(300 * 1000)
     console.info('starting sending')
     await connectionsManager.startSendingMessages('test-address', node.peerId)
+    console.log('sending done')
   }
   if (address) {
     await startLibp2p(address)

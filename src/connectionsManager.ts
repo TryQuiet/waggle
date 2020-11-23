@@ -115,7 +115,7 @@ export class ConnectionsManager {
         }
         const message = JSON.stringify(rawMessage)
         await chat.chatInstance.send(message)
-        await sleep(3000)
+        await sleep(1000)
       }
       return 'done'
     } catch (e) {
