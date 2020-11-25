@@ -7,6 +7,9 @@ import Gossipsub from 'libp2p-gossipsub'
 import PeerId from 'peer-id'
 import WebsocketsOverTor from './websocketOverTor'
 import { Chat } from './chat'
+import Multiaddr from 'multiaddr'
+import PubsubPeerDiscovery from 'libp2p-pubsub-peer-discovery'
+import Bootstrap from 'libp2p-bootstrap'
 
 interface IConstructor {
   host: string
@@ -36,12 +39,14 @@ export class ConnectionsManager {
   socksProxyAgent: any
   libp2p: null | Libp2p
   chatRooms: Map<string, IChatRoom>
+  localAddress: string | null
   constructor({ host, port, agentHost, agentPort }: IConstructor) {
     this.host = host,
     this.port = port,
     this.agentPort = agentPort,
     this.agentHost = agentHost
     this.chatRooms = new Map()
+    this.localAddress = null
     process.on('unhandledRejection', (error) => {
       console.error(error)
       throw error
@@ -54,17 +59,45 @@ export class ConnectionsManager {
   private createAgent = async () => {
     this.socksProxyAgent = new SocksProxyAgent({ port: this.agentPort, host: this.agentHost })
   }
-  public initializeNode = async () => {
-    const peerId = await PeerId.create()
+  public initializeNode = async (staticPeerId?) => {
+    let peerId
+    if (!staticPeerId) {
+      peerId = await PeerId.create()
+    } else {
+      peerId = staticPeerId
+    }
     const addrs = [
       `/dns4/${this.host}/tcp/${this.port}/ws`,
     ]
+
+    const bootstrapMultiaddrs = [
+      '/dns4/dqucfc5ulzxo3wbt5mom6jm5v3qocp4qk5ekdkdkoh3hh4bkd5scpvqd.onion/tcp/7755/ws/p2p/QmUXEz4fN7oTLFvK6Ee4bRDL3s6dp1VCuHogmrrKxUngWW'
+    ]
+
+    this.localAddress = `${addrs}/p2p/${peerId.toB58String()}`
     await this.createAgent()
-    this.libp2p = await this.createBootstrapNode({ peerId, addrs, agent: this.socksProxyAgent })
+    this.libp2p = await this.createBootstrapNode({ peerId, addrs, agent: this.socksProxyAgent, localAddr: this.localAddress, bootstrapMultiaddrsList: bootstrapMultiaddrs })
     await this.libp2p.start()
     this.libp2p.connectionManager.on('peer:connect', (connection) => {
+      if (this.port === 7755) {
+        console.log('port', this.port)
+        console.log('dial', connection.remoteAddr)
+        console.log('connection 7755', connection)
+      } else if (this.port === 7756) {
+        console.log('port', this.port)
+        console.log('dial', connection.remoteAddr)
+        console.log('connection 7756', connection)
+      } else if (this.port === 7757) {
+        console.log('port', this.port)
+        console.log('dial', connection.remoteAddr)
+        console.log('connection 7757', connection)
+      }
+      // this.libp2p.dial(connection.remoteAddr)
       console.log('Connected to', connection.remotePeer.toB58String());
     });
+    this.libp2p.connectionManager.on('peer:discovery', (peer) => {
+      console.log(peer, 'peer discovery');
+    })
     this.libp2p.connectionManager.on('peer:disconnect', (connection) => {
       console.log('Disconnected from', connection.remotePeer.toB58String());
     })
@@ -90,7 +123,7 @@ export class ConnectionsManager {
   }
   public connectToNetwork = async (target: string) => {
     console.log(`Attempting to dial ${target}`)
-    await this.libp2p.dial(target)
+    await this.libp2p.dial(target, { localAddr: this.localAddress, remoteAddr: new Multiaddr(target) })
   }
   public listenForInput = async (channelAddress: string): Promise<void> => {
     process.stdin.on('data', async (message) => {
@@ -106,20 +139,28 @@ export class ConnectionsManager {
       }
     })
   }
-  private createBootstrapNode = ({ peerId, addrs, agent }): Promise<Libp2p> => {
+  private createBootstrapNode = ({ peerId, addrs, agent, localAddr, bootstrapMultiaddrsList }): Promise<Libp2p> => {
+    console.log('test', bootstrapMultiaddrsList)
     return Libp2p.create({
       peerId,
       addresses: {
-        listen: addrs,
+        listen: addrs
       },
       modules: {
         transport: [WebsocketsOverTor],
+        peerDiscovery: [Bootstrap, PubsubPeerDiscovery],
         streamMuxer: [Mplex],
         connEncryption: [NOISE],
         dht: KademliaDHT,
-        pubsub: Gossipsub,
+        pubsub: Gossipsub
       },
       config: {
+        peerDiscovery: {
+          [Bootstrap.tag]: {
+            enabled: true,
+            list: bootstrapMultiaddrsList // provide array of multiaddrs
+          }
+        },
         relay: {
           enabled: true,
           hop: {
@@ -136,8 +177,9 @@ export class ConnectionsManager {
         transport: {
           WebsocketsOverTor: {
             websocket: {
-              agent,
+              agent
             },
+            localAddr
           },
         },
       },
