@@ -79,20 +79,6 @@ export class ConnectionsManager {
     this.libp2p = await this.createBootstrapNode({ peerId, addrs, agent: this.socksProxyAgent, localAddr: this.localAddress, bootstrapMultiaddrsList: bootstrapMultiaddrs })
     await this.libp2p.start()
     this.libp2p.connectionManager.on('peer:connect', (connection) => {
-      if (this.port === 7755) {
-        console.log('port', this.port)
-        console.log('dial', connection.remoteAddr)
-        console.log('connection 7755', connection)
-      } else if (this.port === 7756) {
-        console.log('port', this.port)
-        console.log('dial', connection.remoteAddr)
-        console.log('connection 7756', connection)
-      } else if (this.port === 7757) {
-        console.log('port', this.port)
-        console.log('dial', connection.remoteAddr)
-        console.log('connection 7757', connection)
-      }
-      // this.libp2p.dial(connection.remoteAddr)
       console.log('Connected to', connection.remotePeer.toB58String());
     });
     this.libp2p.connectionManager.on('peer:discovery', (peer) => {
@@ -140,7 +126,6 @@ export class ConnectionsManager {
     })
   }
   private createBootstrapNode = ({ peerId, addrs, agent, localAddr, bootstrapMultiaddrsList }): Promise<Libp2p> => {
-    console.log('test', bootstrapMultiaddrsList)
     return Libp2p.create({
       peerId,
       addresses: {
@@ -148,7 +133,7 @@ export class ConnectionsManager {
       },
       modules: {
         transport: [WebsocketsOverTor],
-        peerDiscovery: [Bootstrap, PubsubPeerDiscovery],
+        peerDiscovery: [Bootstrap],
         streamMuxer: [Mplex],
         connEncryption: [NOISE],
         dht: KademliaDHT,

@@ -10,19 +10,26 @@ import url from 'url'
 import os from 'os'
 import multiaddr from 'multiaddr'
 import debug from 'debug'
+import PeerId from 'peer-id'
 const log: any = debug('libp2p:websockets:listener')
 log.error = debug('libp2p:websockets:listener:error')
+
+class Discovery extends EventEmitter {
+  start() {}
+}
 
 class WebsocketsOverTor extends WebSockets {
   _websocketOpts: any
   _upgrader: any
   localAddress: string
+  discovery: Discovery
   constructor({ upgrader, websocket, localAddr }) {
     super({ upgrader })
     this._websocketOpts = websocket
     this.localAddress = localAddr
     this._upgrader = upgrader
     console.log('test', localAddr)
+    this.discovery = new Discovery()
   }
   async dial(ma, options = {}) {
     super.dial(ma, { websocket: this._websocketOpts, ...options, localAddr: this.localAddress  });
@@ -81,6 +88,11 @@ class WebsocketsOverTor extends WebSockets {
       console.log('query', query.remoteAddress)
       try {
         maConn = toConnection(stream, { remoteAddr: multiaddr(query.remoteAddress.toString()) })
+        const peer = { 
+          id: PeerId.createFromB58String(query.remoteAddress.toString().split('/p2p/')[1]),
+          multiaddrs: [maConn.remoteAddr],
+        }
+        this.discovery.emit('peer', peer)
         console.log('maConn', maConn)
         log('new inbound connection %s', maConn.remoteAddr)
         conn = await upgrader.upgradeInbound(maConn)

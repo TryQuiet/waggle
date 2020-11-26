@@ -49,16 +49,16 @@ const main = async () => {
     // await connectionsManager1.subscribeForTopic({topic: '/libp2p/example/chat/1.0.0', channelAddress: 'test-address' })
     // console.log('nodetest', node1.address)
 
-    // const connectionsManager2 = new ConnectionsManager({ port: 7756, host: add2, agentHost: 'localhost', agentPort: 9050 })
-    // const node2 = await connectionsManager2.initializeNode(peerId2Restored)
-    // await connectionsManager2.subscribeForTopic({topic: '/libp2p/example/chat/1.0.0', channelAddress: 'test-address' })
-    // console.log('nodetest', node2.address)
+    const connectionsManager2 = new ConnectionsManager({ port: 7756, host: add2, agentHost: 'localhost', agentPort: 9050 })
+    const node2 = await connectionsManager2.initializeNode(peerId2Restored)
+    await connectionsManager2.subscribeForTopic({topic: '/libp2p/example/chat/1.0.0', channelAddress: 'test-address' })
+    console.log('nodetest', node2.address)
 
-    const connectionsManager3 = new ConnectionsManager({ port: 7757, host: add3, agentHost: 'localhost', agentPort: 9050 })
-    const node3 = await connectionsManager3.initializeNode()
-    await connectionsManager3.subscribeForTopic({topic: '/libp2p/example/chat/1.0.0', channelAddress: 'test-address' })
-    // await connectionsManager3.connectToNetwork(node1.address)
-    console.log('nodetest', node3.address)
+    // const connectionsManager3 = new ConnectionsManager({ port: 7757, host: add3, agentHost: 'localhost', agentPort: 9050 })
+    // const node3 = await connectionsManager3.initializeNode()
+    // await connectionsManager3.subscribeForTopic({topic: '/libp2p/example/chat/1.0.0', channelAddress: 'test-address' })
+    // // await connectionsManager3.connectToNetwork(node1.address)
+    // console.log('nodetest', node3.address)
 
     // await sleep(10000)
 
