@@ -5,7 +5,7 @@ import PeerId from 'peer-id'
 import * as fs from 'fs'
 import { Tor } from './index'
 import { ConnectionsManager } from './connectionsManager'
-import { sleep } from './sleep'
+// import { sleep } from './sleep'
 
 const main = async () => {
   const torPath = `${process.cwd()}/tor/tor`
@@ -19,12 +19,14 @@ const main = async () => {
     }
   } })
   await tor.init()
-  const service = await tor.addService({ port: 7775, createDefault: true })
+  await tor.addService({ port: 7755 })
   // await tor.addService({ port: 7756 })
   // await tor.addService({ port: 7757 })
-  // const address1 = tor.getServiceAddress(7755)
+  const address1 = tor.getServiceAddress(7755)
   // const address2 = tor.getServiceAddress(7756)
   // const address3 = tor.getServiceAddress(7757)
+  // await tor.addService({ port: 7756 })
+  // await tor.addService({ port: 7757 })
   // const address4 = tor.getServiceAddress(7758)
   // try 
   //   // await tor.addService({ port: 7755 })
@@ -35,7 +37,7 @@ const main = async () => {
   // } catch (e) {
   //   console.log('no default service')
   // }
-  const startLibp2p = async (add1, add2, add3) => {
+  const startLibp2p = async (add1) => {
     const peerId1 = fs.readFileSync('peerId1.json')
     const peerId2 = fs.readFileSync('peerId2.json')
     const parsedId1 = JSON.parse(peerId1.toString()) as PeerId.JSONPeerId
@@ -52,6 +54,8 @@ const main = async () => {
     // const connectionsManager2 = new ConnectionsManager({ port: 7756, host: add2, agentHost: 'localhost', agentPort: 9050 })
     // const node2 = await connectionsManager2.initializeNode(peerId2Restored)
     // await connectionsManager2.subscribeForTopic({topic: '/libp2p/example/chat/1.0.0', channelAddress: 'test-address' })
+    // await sleep(20000)
+    // connectionsManager2.startSendingMessages('test-address', node2.peerId)
     // console.log('nodetest', node2.address)
 
     // const connectionsManager3 = new ConnectionsManager({ port: 7757, host: add3, agentHost: 'localhost', agentPort: 9050 })
@@ -78,7 +82,7 @@ const main = async () => {
   //   const { address: newOnionAddress } = await tor.addService({ port: 7755 })
   //   await startLibp2p(newOnionAddress)
   // }
-  await startLibp2p(address1, address2, address3)
+  await startLibp2p(address1)
   // const connectionsManager = new ConnectionsManager({ port, host: address, agentHost: 'localhost', agentPort: 9050 })
   // const { port, address } = await tor.addService({ port: 7755 })
   // const connectionsManager = new ConnectionsManager({ port, host: address, agentHost: 'localhost', agentPort: 9050 })

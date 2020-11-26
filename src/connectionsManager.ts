@@ -10,6 +10,7 @@ import { Chat } from './chat'
 import Multiaddr from 'multiaddr'
 import PubsubPeerDiscovery from 'libp2p-pubsub-peer-discovery'
 import Bootstrap from 'libp2p-bootstrap'
+import { sleep } from './sleep'
 
 interface IConstructor {
   host: string
@@ -19,7 +20,7 @@ interface IConstructor {
 }
 
 interface IChat {
-  send(message: Buffer): Promise<void>
+  send(message: Buffer | string): Promise<void>
 }
 
 interface IChatRoom {
@@ -71,7 +72,7 @@ export class ConnectionsManager {
     ]
 
     const bootstrapMultiaddrs = [
-      '/dns4/dqucfc5ulzxo3wbt5mom6jm5v3qocp4qk5ekdkdkoh3hh4bkd5scpvqd.onion/tcp/7755/ws/p2p/QmUXEz4fN7oTLFvK6Ee4bRDL3s6dp1VCuHogmrrKxUngWW'
+      '/dns4/ckay4syniimrsnogivmsbv77wf7flm4yr4o5oocorqlxqzen2gbdd4ad.onion/tcp/7755/ws/p2p/QmUXEz4fN7oTLFvK6Ee4bRDL3s6dp1VCuHogmrrKxUngWW'
     ]
 
     this.localAddress = `${addrs}/p2p/${peerId.toB58String()}`
@@ -88,7 +89,8 @@ export class ConnectionsManager {
       console.log('Disconnected from', connection.remotePeer.toB58String());
     })
     return {
-      address: `${addrs}/p2p/${peerId.toB58String()}`
+      address: `${addrs}/p2p/${peerId.toB58String()}`,
+      peerId: peerId.toB58String()
     }
   }
   public subscribeForTopic = async ({ topic, channelAddress }: IChannelSubscription) => {
@@ -97,12 +99,13 @@ export class ConnectionsManager {
       topic,
       ({ from, message }) => {
         let fromMe = from === this.libp2p.peerId.toB58String();
-        const user = from.substring(0, 6);
-        console.info(
-          `${fromMe ? '\\033[1A' : ''}${user}(${new Date(
-            message.created
-          ).toLocaleTimeString()}): ${message.data}`
-        )
+        const user = from.substring(0, 6)
+        // console.info(
+        //   `${fromMe ? '\\033[1A' : ''}${user}(${new Date(
+        //     message.created
+        //   ).toLocaleTimeString()}): ${message.data}`
+        // )
+        return false
       }
     )
     this.chatRooms.set(channelAddress, { chatInstance: chat })
@@ -111,6 +114,27 @@ export class ConnectionsManager {
     console.log(`Attempting to dial ${target}`)
     await this.libp2p.dial(target, { localAddr: this.localAddress, remoteAddr: new Multiaddr(target) })
   }
+
+  public startSendingMessages = async (channelAddress: string, peerId: string): Promise<string> => {
+    try {
+      const chat = this.chatRooms.get(`${channelAddress}`)
+      for(let i = 0; i <= 1000; i++) {
+        const rawMessage = {
+          count: i,
+          id: peerId,
+          timestamp: Date.now()
+        }
+        const message = JSON.stringify(rawMessage)
+        await chat.chatInstance.send(message)
+        await sleep(1000)
+      }
+      return 'done'
+    } catch (e) {
+      console.error('ERROR', e)
+      throw(e)
+    }
+  }
+
   public listenForInput = async (channelAddress: string): Promise<void> => {
     process.stdin.on('data', async (message) => {
       // Remove trailing newline
@@ -133,7 +157,7 @@ export class ConnectionsManager {
       },
       modules: {
         transport: [WebsocketsOverTor],
-        peerDiscovery: [Bootstrap],
+        // peerDiscovery: [Bootstrap],
         streamMuxer: [Mplex],
         connEncryption: [NOISE],
         dht: KademliaDHT,
