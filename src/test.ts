@@ -18,17 +18,17 @@ const main = async () => {
       HOME: os.homedir()
     }
   } })
-  // await tor.init()
-  // await tor.addService({ port: 7755 })
+  await tor.init()
+  const service = await tor.addService({ port: 7775, createDefault: true })
   // await tor.addService({ port: 7756 })
   // await tor.addService({ port: 7757 })
-  const address1 = tor.getServiceAddress(7755)
-  const address2 = tor.getServiceAddress(7756)
-  const address3 = tor.getServiceAddress(7757)
+  // const address1 = tor.getServiceAddress(7755)
+  // const address2 = tor.getServiceAddress(7756)
+  // const address3 = tor.getServiceAddress(7757)
   // const address4 = tor.getServiceAddress(7758)
-  // try {
+  // try 
   //   // await tor.addService({ port: 7755 })
-  //   // await tor.addService({ port: 7756 })
+  //   // await tor.addService({ port: 7756 },
   // await tor.addService({ port: 7758 })
   // address = tor.getServiceAddress(7757)
   //   console.log('address', address)
@@ -44,15 +44,15 @@ const main = async () => {
     const peerId2Restored = await PeerId.createFromJSON(parsedId2)
     // console.log('nodetest', node2.address)
 
-    // const connectionsManager1 = new ConnectionsManager({ port: 7755, host: add1, agentHost: 'localhost', agentPort: 9050 })
-    // const node1 = await connectionsManager1.initializeNode(peerId1Restored)
-    // await connectionsManager1.subscribeForTopic({topic: '/libp2p/example/chat/1.0.0', channelAddress: 'test-address' })
-    // console.log('nodetest', node1.address)
+    const connectionsManager1 = new ConnectionsManager({ port: 7755, host: add1, agentHost: 'localhost', agentPort: 9050 })
+    const node1 = await connectionsManager1.initializeNode(peerId1Restored)
+    await connectionsManager1.subscribeForTopic({topic: '/libp2p/example/chat/1.0.0', channelAddress: 'test-address' })
+    console.log('nodetest', node1.address)
 
-    const connectionsManager2 = new ConnectionsManager({ port: 7756, host: add2, agentHost: 'localhost', agentPort: 9050 })
-    const node2 = await connectionsManager2.initializeNode(peerId2Restored)
-    await connectionsManager2.subscribeForTopic({topic: '/libp2p/example/chat/1.0.0', channelAddress: 'test-address' })
-    console.log('nodetest', node2.address)
+    // const connectionsManager2 = new ConnectionsManager({ port: 7756, host: add2, agentHost: 'localhost', agentPort: 9050 })
+    // const node2 = await connectionsManager2.initializeNode(peerId2Restored)
+    // await connectionsManager2.subscribeForTopic({topic: '/libp2p/example/chat/1.0.0', channelAddress: 'test-address' })
+    // console.log('nodetest', node2.address)
 
     // const connectionsManager3 = new ConnectionsManager({ port: 7757, host: add3, agentHost: 'localhost', agentPort: 9050 })
     // const node3 = await connectionsManager3.initializeNode()

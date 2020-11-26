@@ -42,8 +42,6 @@ class WebsocketsOverTor extends WebSockets {
     const cOpts = ma.toOptions()
     log('dialing %s:%s', cOpts.host, cOpts.port)
     const myUri = `${toUri(ma)}/?remoteAddress=${encodeURIComponent(this.localAddress)}`
-    console.log('myUri', myUri)
-    console.log('localAddress', this.localAddress)
     const rawSocket = connect(myUri, Object.assign({ binary: true }, options))
     if (!options.signal) {
       await rawSocket.connected()
@@ -93,7 +91,6 @@ class WebsocketsOverTor extends WebSockets {
           multiaddrs: [maConn.remoteAddr],
         }
         this.discovery.emit('peer', peer)
-        console.log('maConn', maConn)
         log('new inbound connection %s', maConn.remoteAddr)
         conn = await upgrader.upgradeInbound(maConn)
       } catch (err) {
