@@ -15,6 +15,11 @@ const log: any = debug('libp2p:websockets:listener')
 log.error = debug('libp2p:websockets:listener:error')
 
 class Discovery extends EventEmitter {
+  tag: string
+  constructor() {
+    super()
+    this.tag = 'channel_18'
+  }
   start() {}
 }
 
@@ -31,8 +36,21 @@ class WebsocketsOverTor extends WebSockets {
     console.log('test', localAddr)
     this.discovery = new Discovery()
   }
-  async dial(ma, options = {}) {
-    super.dial(ma, { websocket: this._websocketOpts, ...options, localAddr: this.localAddress  });
+  async dial(ma, options: any = {}) {
+    log('dialing %s', ma)
+    console.log('dialing')
+    let conn
+    try {
+      const socket = await this._connect(ma, { websocket: this._websocketOpts, ...options, localAddr: this.localAddress  })
+      const maConn = toConnection(socket, { remoteAddr: ma, signal: options.signal })
+      log('new outbound connection %s', maConn.remoteAddr)
+  
+      conn = await this._upgrader.upgradeOutbound(maConn)
+      log('outbound connection %s upgraded', maConn.remoteAddr)
+      return conn
+    } catch (e) {
+      console.log('error with peer redialing')
+    }
   }
 
   async _connect (ma, options: any = {}) {
