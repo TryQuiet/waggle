@@ -72,7 +72,7 @@ export class ConnectionsManager {
     ]
 
     const bootstrapMultiaddrs = [
-      '/dns4/zarehof5q3qyunwxlqe2agufvcd5eecgcl4s2swwq2vy4ohknaeeudqd.onion/tcp/7756/ws/p2p/QmUXEz4fN7oTLFvK6Ee4bRDL3s6dp1VCuHogmrrKxUngWW'
+      '/dns4/v5nvvfcfpceu6z6hao576ecbfvxin5ahmpbf6rovxbks2kevdxusfayd.onion/tcp/7755/ws/p2p/QmUXEz4fN7oTLFvK6Ee4bRDL3s6dp1VCuHogmrrKxUngWW'
     ]
 
     this.localAddress = `${addrs}/p2p/${peerId.toB58String()}`
@@ -118,7 +118,7 @@ export class ConnectionsManager {
   public startSendingMessages = async (channelAddress: string, peerId: string): Promise<string> => {
     try {
       const chat = this.chatRooms.get(`${channelAddress}`)
-      for(let i = 0; i <= 1000; i++) {
+      for(let i = 0; i <= 500; i++) {
         const rawMessage = {
           count: i,
           id: peerId,
@@ -157,7 +157,7 @@ export class ConnectionsManager {
       },
       modules: {
         transport: [WebsocketsOverTor],
-        // peerDiscovery: [Bootstrap],
+        peerDiscovery: [Bootstrap],
         streamMuxer: [Mplex],
         connEncryption: [NOISE],
         dht: KademliaDHT,
