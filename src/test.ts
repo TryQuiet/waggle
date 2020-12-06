@@ -20,7 +20,7 @@ const main = async () => {
   } })
   await tor.init()
   // await tor.addService({ port: 7756 })
-  // await tor.addService({ port: 8521 })
+  await tor.addService({ port: 8521 })
   // await tor.addService({ port: 7757 })
   const address1 = tor.getServiceAddress(8521)
 
