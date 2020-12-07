@@ -10,4 +10,7 @@
 #SERVICE_8521
 HiddenServiceDir /home/jk/tor_service_8521
 HiddenServicePort 8521 127.0.0.1:8521
+#SERVICE_7756
+HiddenServiceDir /home/jk/tor_service_7756
+HiddenServicePort 7756 127.0.0.1:7756
 #Placeholder

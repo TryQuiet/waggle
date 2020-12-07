@@ -67,7 +67,8 @@ export class Chat {
             message: {
               data: uint8arrayToString(request.sendMessage.data),
               created: request.sendMessage.created,
-              id: uint8arrayToString(request.sendMessage.id)
+              id: uint8arrayToString(request.sendMessage.id),
+              parentId: uint8arrayFromString(message.parentId)
             }
           })
           break
@@ -89,9 +90,10 @@ export class Chat {
     const msg = Request.encode({
       type: Request.Type.SEND_MESSAGE,
       sendMessage: {
+        data: uint8arrayFromString(message.data),
+        created: message.mtime,
         id: uint8arrayFromString((~~(Math.random() * 1e9)).toString(36) + Date.now()),
-        data: uint8arrayFromString(message),
-        created: Date.now()
+        parentId: uint8arrayFromString(message.parentId)
       }
     })
 
