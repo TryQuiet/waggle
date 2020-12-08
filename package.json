@@ -48,6 +48,7 @@
     "prettier": "^2.1.0",
     "prettier-config-standard": "^1.0.1",
     "protons": "^2.0.0",
+    "random-timestamps": "^1.0.1",
     "simple-git": "^2.24.0",
     "socks-proxy-agent": "^5.0.0",
     "streaming-iterables": "^5.0.2",

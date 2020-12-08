@@ -15,5 +15,6 @@ message SendMessage {
   required int64 created = 2;
   required bytes id = 3;
   required bytes parentId = 4;
+  required bytes channelId = 5;
 }
 `)

@@ -3,7 +3,9 @@ import * as os from 'os'
 import * as path from 'path'
 import simpleGit, { SimpleGit, SimpleGitOptions } from 'simple-git'
 import * as child_process from 'child_process'
-import MockDate from 'mockdate'
+import uint8arrayFromString from 'uint8arrays/from-string'
+import uint8arrayToString from 'uint8arrays/to-string'
+import { Request } from '../src/config/protonsRequestMessages'
 
 enum Type {
   BARE,
@@ -32,20 +34,24 @@ export class Git {
     const targetPath = `${os.homedir()}/ZbayChannels/`
     this.createPaths([targetPath])
     const dirs = fs.readdirSync(targetPath).filter(f => fs.statSync(path.join(targetPath, f)).isDirectory())
-    if (dirs.length > 0) {
-      for (const dir of dirs) {
-        const options = {
-          baseDir: `${targetPath}${dir}/`,
-          binary: 'git',
-          maxConcurrent: 6
+    try {
+      if (dirs.length > 0) {
+        for (const dir of dirs) {
+          const options = {
+            baseDir: `${targetPath}${dir}/`,
+            binary: 'git',
+            maxConcurrent: 6
+          }
+          const git = simpleGit(options)
+          this.gitRepos.set(`${dir}`, {
+            git,
+            type: dir.includes('bare') ? Type.BARE : Type.STANDARD,
+            parentId: null
+          })
         }
-        const git = simpleGit(options)
-        this.gitRepos.set(`${dir}`, {
-          git,
-          type: dir.includes('bare') ? Type.BARE : Type.STANDARD,
-          parentId: null
-        })
       }
+    } catch (e) {
+      console.log('e', e)
     }
     return this.gitRepos
   }
@@ -142,12 +148,12 @@ export class Git {
       await targetRepo.git.commit(`messageId: ${messageId} parentId: ${parentId}`, null, { '--date': new Date(date).toUTCString() })
       targetRepo.parentId = messageId
       await targetRepo.git.push('origin', 'master')
-    } catch (e) { 
+    } catch (e) {
       console.log(e)
     }
   }
 
-  public startHttpServer = (): Promise<void> => 
+  public startHttpServer = (): Promise<void> =>
   new Promise((resolve, reject) => {
     if (this.process) {
       throw new Error('Already initialized')
@@ -176,54 +182,59 @@ export const sleep = (time = 1000) =>
 
 
 const main = async () => {
+    const git = new Git(7766)
+    console.log('git', git)
+    await git.startHttpServer()
+    const test = await git.init()
+  // const test = Buffer.from('adamek4')
+  // const date = new Date()
+  // const parrentId = '21312312'
+  // const msg = Request.encode({
+  //   type: Request.Type.SEND_MESSAGE,
+  //   sendMessage: {
+  //     data: test,
+  //     created: date,
+  //     id: uint8arrayFromString((~~(Math.random() * 1e9)).toString(36) + Date.now()),
+  //     parentId: uint8arrayFromString(parrentId)
+  //   }
+  // })
 
-const timestamp = '20190927 10:00:00'
+  // fs.writeFileSync(`${os.homedir()}/ZbayChannels/testing-02.12.2020-standard/myfile6.txt`, msg)
+  // const testing123 = fs.readFileSync(`${os.homedir()}/ZbayChannels/testing-02.12.2020-standard/myfile6.txt`)
 
-const changeTime = async () => {
-  return new Promise((resolve, reject) => {
-    child_process.exec(`/usr/bin/date -s '2014-12-25 12:34:56'`, (err, stdout, stderr) => {
-      if (err || stderr) {
-        console.error(err)
-        console.log(stderr)
-        reject(err)
-      } else {
-        console.log(stdout)
-        console.log(`Successfully set the system's datetime to ${stdout}`)
-        resolve('ok')
-      }
-    })
-  })
-}
-
-  const content = 'halalala5'
-  const git = new Git(8521)
-  const test = Buffer.from('adamek4')
-  MockDate.set(1607079584362)
-  // Date = Timeshift.Date
+  // // console.log('hey', msg)
+  // const request = Request.decode(testing123)
+  // console.log('req', uint8arrayToString(request.sendMessage.data))
+  // const test1 = uint8arrayToString(request.sendMessage.data)
+  // const created1 = request.sendMessage.created
+  // id: uint8arrayToString(request.sendMessage.id),
+  // parentId: uint8arrayFromString(message.parentId)
+  // const content = 'halalala5'
+  // const git = new Git(8521)
+  // const test = Buffer.from('adamek4')
   //Timeshift.setTime(1607079584362)
   // const date = Date.now().toString()
   // console.log(date, 'date')
   // const commitDate = new Date('1607079584362')
-  const testing = new Date().toString()
   // console.log(testing, 'testing')
-  // const testdupa = await changeTime()
-  // console.log(testdupa, 'testdupa')
-  await git.startHttpServer()
+  // await git.startHttpServer()
   // await git.pullChanges('testing-02.12.2020-standard', 'pbl6nhssnih5s6cvpbuv3kibdhj2izmdthdmvwzpydxxw7l4yzsh3kqd.onion', 'testing-02.12.2020', '8521')
   // await sleep(5000)
-  await git.init()
-  await git.createRepository('testing-02.12.2020')
-  await git.createRepository('testing-02.12.2021')
+  // await git.init()
+  // await git.createRepository('testing-02.12.2020')
+  // await git.createRepository('testing-02.12.2021')
 
-  await sleep(20000)
+  // await sleep(20000)
   // const parentId = await git.getParentMessage('testing-02.12.2020-standard')
   // const { standardRepo, bareRepo } = await git.createRepository('testing-02.12.2020')
-  await git.addCommit('testing-02.12.2020-standard', 'adamek4', test, 1607079584362, null)
-  await sleep(5000)
-  await git.addCommit('testing-02.12.2021-standard', 'adamek4', test, 1607079584362, null)
-  console.log('finish')
+  // await git.addCommit('testing-02.12.2020-standard', 'adamek4', test, 1607079584362, null)
+  // await sleep(5000)
+  // await git.addCommit('testing-02.12.2021-standard', 'adamek4', test, 1607079584362, null)
+  // console.log('finish')
   // const content = 'halalala5'
-  // const git = new Git(8521)
+  // const git = new Git(7766)
+  // await git.init()
+  // await git.startHttpServer()
   // const test = Buffer.from('alala')
   // const date = new Date()
   // await git.startHttpServer()

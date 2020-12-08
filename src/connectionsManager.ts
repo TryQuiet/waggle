@@ -6,11 +6,15 @@ import KademliaDHT from 'libp2p-kad-dht'
 import Gossipsub from 'libp2p-gossipsub'
 import PeerId from 'peer-id'
 import WebsocketsOverTor from './websocketOverTor'
-import { Chat } from './chat'
+import { Chat, IMessage } from './chat'
 import Multiaddr from 'multiaddr'
 import PubsubPeerDiscovery from 'libp2p-pubsub-peer-discovery'
 import Bootstrap from 'libp2p-bootstrap'
 import { sleep } from './sleep'
+import Crypto from 'crypto'
+import randomTimestamp from 'random-timestamps'
+import { Git } from '../git/index'
+import { gitP } from 'simple-git'
 
 interface IConstructor {
   host: string
@@ -20,7 +24,7 @@ interface IConstructor {
 }
 
 interface IChat {
-  send(message: Buffer | string): Promise<void>
+  send(message: IMessage): Promise<void>
 }
 
 interface IChatRoom {
@@ -29,7 +33,8 @@ interface IChatRoom {
 
 interface IChannelSubscription {
   topic: string,
-  channelAddress: string
+  channelAddress: string,
+  git: Git
 }
 
 export class ConnectionsManager {
@@ -72,7 +77,7 @@ export class ConnectionsManager {
     ]
 
     const bootstrapMultiaddrs = [
-      '/dns4/v5nvvfcfpceu6z6hao576ecbfvxin5ahmpbf6rovxbks2kevdxusfayd.onion/tcp/7755/ws/p2p/QmUXEz4fN7oTLFvK6Ee4bRDL3s6dp1VCuHogmrrKxUngWW'
+      '/dns4/j32o2rnoq3rlkgybvfexbhsnjkc6ufm6meae7cr5sroikbo3t37jniqd.onion/tcp/7767/ws/p2p/QmWpAug2W5ft25Ww9KNj2vTXm8uRg5ts2LdHDvjxDbx1mG'
     ]
 
     this.localAddress = `${addrs}/p2p/${peerId.toB58String()}`
@@ -93,18 +98,14 @@ export class ConnectionsManager {
       peerId: peerId.toB58String()
     }
   }
-  public subscribeForTopic = async ({ topic, channelAddress }: IChannelSubscription) => {
+  public subscribeForTopic = async ({ topic, channelAddress, git }: IChannelSubscription) => {
     const chat = new Chat(
       this.libp2p,
       topic,
-      ({ from, message }) => {
-        let fromMe = from === this.libp2p.peerId.toB58String();
+      async ({ from, message }) => {
+        let fromMe = from === this.libp2p.peerId.toB58String()
         const user = from.substring(0, 6)
-        // console.info(
-        //   `${fromMe ? '\\033[1A' : ''}${user}(${new Date(
-        //     message.created
-        //   ).toLocaleTimeString()}): ${message.data}`
-        // )
+        await git.addCommit(message.channelId, message.id, message.raw, message.created, message.parentId)
         return false
       }
     )
@@ -118,14 +119,16 @@ export class ConnectionsManager {
   public startSendingMessages = async (channelAddress: string, peerId: string): Promise<string> => {
     try {
       const chat = this.chatRooms.get(`${channelAddress}`)
-      for(let i = 0; i <= 500; i++) {
-        const rawMessage = {
-          count: i,
-          id: peerId,
-          timestamp: Date.now()
+      for(let i = 0; i <= 10; i++) {
+        const randomBytes = Crypto.randomBytes(256)
+        const timestamp = randomTimestamp()
+        const messagePayload = {
+          data: randomBytes,
+          created: new Date(timestamp),
+          parentId: (~~(Math.random() * 1e9)).toString(36) + Date.now(),
+          channelId: 'testing-02.12.2020-standard'
         }
-        const message = JSON.stringify(rawMessage)
-        await chat.chatInstance.send(message)
+        await chat.chatInstance.send(messagePayload)
         await sleep(1000)
       }
       return 'done'
@@ -143,7 +146,8 @@ export class ConnectionsManager {
       // If there was a command, exit early
       try {
         // Publish the message
-        await chat.chatInstance.send(message)
+        console.log('ok')
+        // await chat.chatInstance.send(message)
       } catch (err) {
         console.error('Could not publish chat', err)
       }
@@ -157,7 +161,7 @@ export class ConnectionsManager {
       },
       modules: {
         transport: [WebsocketsOverTor],
-        peerDiscovery: [Bootstrap],
+        // peerDiscovery: [Bootstrap],
         streamMuxer: [Mplex],
         connEncryption: [NOISE],
         dht: KademliaDHT,

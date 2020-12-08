@@ -7,10 +7,10 @@
 #HiddenServicePort 80 127.0.0.1:8080 
 #HiddenServicePort 22 127.0.0.1:22
 
-#SERVICE_8521
-HiddenServiceDir /home/jogger/tor_service_8521
-HiddenServicePort 8521 127.0.0.1:8521
-#SERVICE_7756
-HiddenServiceDir /home/jk/tor_service_7756
-HiddenServicePort 7756 127.0.0.1:7756
+#SERVICE_7766
+HiddenServiceDir /home/jk/tor_service_7766
+HiddenServicePort 9418 127.0.0.1:9418
+#SERVICE_7767
+HiddenServiceDir /home/jk/tor_service_7767
+HiddenServicePort 7767 127.0.0.1:7767
 #Placeholder

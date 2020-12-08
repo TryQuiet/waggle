@@ -6,6 +6,7 @@ import * as fs from 'fs'
 import { Tor } from './index'
 import { ConnectionsManager } from './connectionsManager'
 import { sleep } from './sleep'
+import { Git } from '../git/index'
 
 const main = async () => {
   const torPath = `${process.cwd()}/tor/tor`
@@ -20,11 +21,14 @@ const main = async () => {
   } })
   await tor.init()
   // await tor.addService({ port: 7756 })
-  await tor.addService({ port: 8521 })
+  // await tor.addService({ port: 7766 })
+  // await tor.addService({ port: 7767 })
+  const address1 = tor.getServiceAddress(7766)
+  // const address2 = tor.getServiceAddress(7767)
   // await tor.addService({ port: 7757 })
-  const address1 = tor.getServiceAddress(8521)
 
-  console.log(address1, 'address')
+  // console.log(address1, 'address')
+  // console.log(address2, 'address')
 
   // const address2 = tor.getServiceAddress(7757)
   // const address3 = tor.getServiceAddress(7757)
@@ -40,23 +44,27 @@ const main = async () => {
   // } catch (e) {
   //   console.log('no default service')
   // }
-  // const startLibp2p = async (add1) => {
-  //   const peerId1 = fs.readFileSync('peerId1.json')
-  //   const peerId2 = fs.readFileSync('peerId2.json')
-  //   const parsedId1 = JSON.parse(peerId1.toString()) as PeerId.JSONPeerId
-  //   const parsedId2 = JSON.parse(peerId2.toString()) as PeerId.JSONPeerId
-  //   const peerId1Restored = await PeerId.createFromJSON(parsedId1)
-  //   const peerId2Restored = await PeerId.createFromJSON(parsedId2)
-  //   // console.log('nodetest', node2.address)
-
-  //   const connectionsManager1 = new ConnectionsManager({ port: 7757, host: add1, agentHost: 'localhost', agentPort: 9050 })
-  //   const node1 = await connectionsManager1.initializeNode()
-  //   await connectionsManager1.subscribeForTopic({topic: '/libp2p/example/chat/1.0.0', channelAddress: 'test-address' })
-  //   console.log('nodetest', node1.address)
-  //   await sleep(15 * 60000)
-  //   console.log('start sending')
-  //   connectionsManager1.startSendingMessages('test-address', node1.peerId)
-  //   console.log('sending done')
+  // jwfvburxit5aym7syf4wskxthjeakwhjdg6f5tktr446ixg556kohmid.onion 7766
+  const startLibp2p = async (add1) => {
+    console.log(add1, 'hejo')
+    // console.log(add1)
+    // const peerId1 = fs.readFileSync('peerId1.json')
+    // const peerId2 = fs.readFileSync('peerId2.json')
+    // const parsedId1 = JSON.parse(peerId1.toString()) as PeerId.JSONPeerId
+    // const parsedId2 = JSON.parse(peerId2.toString()) as PeerId.JSONPeerId
+    // const peerId1Restored = await PeerId.createFromJSON(parsedId1)
+    // const peerId2Restored = await PeerId.createFromJSON(parsedId2)
+    // // console.log('nodetest', node2.address)
+    // const git = new Git(8521)
+    // await git.init()
+    // const connectionsManager1 = new ConnectionsManager({ port: 7767, host: add1, agentHost: 'localhost', agentPort: 9050 })
+    // const node1 = await connectionsManager1.initializeNode()
+    // await connectionsManager1.subscribeForTopic({topic: '/libp2p/example/chat/1.0.0', channelAddress: 'test-address', git })
+    // console.log('nodetest', node1.address)
+    // await sleep(1 * 30000)
+    // console.log('start sending')
+    // connectionsManager1.startSendingMessages('test-address', node1.peerId)
+    // console.log('sending done')
 
     // await sleep(20000)
 
@@ -80,9 +88,9 @@ const main = async () => {
     // console.log('nodetest', node4.address)
     // await connectionsManager.connectToNetwork('/dns4/z33bvb7dtxivj7ymovqunfjrubxgrdtcqtmdeuaewmjo2wtwl7o5i5qd.onion/tcp/7755/ws/p2p/QmPqQsac5onf8mfGr3QbGsHYEUyGApanMmCHpLovFh8kq1')
     // await connectionsManager.listenForInput('test-address')
-  // }
+  }
 
-  // await startLibp2p(address)
+  await startLibp2p(address1)
   // if (address) {
   //   await startLibp2p(address)
   // } else {

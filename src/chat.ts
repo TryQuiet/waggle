@@ -3,7 +3,12 @@ import Libp2p from 'libp2p'
 import uint8arrayFromString from 'uint8arrays/from-string'
 import uint8arrayToString from 'uint8arrays/to-string'
 import { Request } from './config/protonsRequestMessages'
-
+export interface IMessage {
+  data: Buffer,
+  created: Date,
+  parentId: string,
+  channelId: string
+}
 export class Chat {
   /**
    * @param {Libp2p} libp2p A Libp2p node to communicate through
@@ -65,10 +70,12 @@ export class Chat {
           this.messageHandler({
             from: message.from,
             message: {
-              data: uint8arrayToString(request.sendMessage.data),
+              data: request.sendMessage.data,
               created: request.sendMessage.created,
               id: uint8arrayToString(request.sendMessage.id),
-              parentId: uint8arrayFromString(message.parentId)
+              parentId: uint8arrayToString(request.sendMessage.parentId),
+              channelId: uint8arrayToString(request.sendMessage.channelId),
+              raw: message.data
             }
           })
           break
@@ -83,17 +90,16 @@ export class Chat {
 
   /**
    * Publishes the given `message` to pubsub peers
-   * @throws
-   * @param {Buffer|string} message The chat message to send
    */
-  public async send (message) {
+  public async send (message: IMessage) {
     const msg = Request.encode({
       type: Request.Type.SEND_MESSAGE,
       sendMessage: {
-        data: uint8arrayFromString(message.data),
-        created: message.mtime,
+        data: message.data,
+        created: message.created,
         id: uint8arrayFromString((~~(Math.random() * 1e9)).toString(36) + Date.now()),
-        parentId: uint8arrayFromString(message.parentId)
+        parentId: uint8arrayFromString(message.parentId),
+        channelId: uint8arrayFromString(message.channelId)
       }
     })
 

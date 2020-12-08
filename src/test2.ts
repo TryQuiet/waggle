@@ -1,7 +1,6 @@
 import * as fs from 'fs'
 
 let test
-const dupa = []
 const data = fs.readFile('newloggingfile28.11.json', (e, data)  => {
   console.log(data)
   test = JSON.parse(data.toString())
@@ -28,9 +27,7 @@ const data = fs.readFile('newloggingfile28.11.json', (e, data)  => {
     // if (el.messagePayload.count === testing) {
     //   console.log(el.messagePayload)
     //   testing = testing + 1
-    //   // dupa.push('ok')
     // } else {
     //   // console.log('skiping')
     // }
   })
-  // console.log('dupa', dupa.length)
