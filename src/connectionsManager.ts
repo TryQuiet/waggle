@@ -123,6 +123,9 @@ export class ConnectionsManager {
         } else {
           git.gitRepos.get(channelAddress).state = State.LOCKED
           await git.pullChanges(this.onionAddressesBook.get(from), channelAddress)
+          const newHead = await git.getCurrentHEAD(channelAddress)
+          console.log(newHead, 'new head')
+          console.log(message.currentHEAD, 'target head')
           git.gitRepos.get(channelAddress).state = State.UNLOCKED
         }
         // let fromMe = from === this.libp2p.peerId.toB58String()

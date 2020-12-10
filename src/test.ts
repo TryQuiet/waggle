@@ -66,7 +66,7 @@ const main = async () => {
     console.log('node1', node1.address, node1.peerId)
     const key = new TextEncoder().encode(add3)
     await connectionsManager1.publishOnionAddress(elo, key)
-    await sleep(4 * 60000)
+    await sleep(10 * 60000)
     console.log('start sending')
     await connectionsManager1.startSendingMessages('test-address', git)
     console.log('sending done')
