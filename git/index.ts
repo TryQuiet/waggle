@@ -97,12 +97,19 @@ export class Git {
     const mergeTime = Date.now()
     const pull = async (onionAddress, repoName, git: SimpleGit) => {
       await git.env('SOCKS5_PASSWORD', ` `)
-      await git.env('GIT_PROXY_COMMAND', `${process.cwd()}/script/socks5proxywrapper`)
+      await git.env('GIT_PROXY_COMMAND', `${process.cwd()}/git/script/socks5proxywrapper`)
       await targetRepo.git.env('GIT_COMMITTER_DATE', `"${new Date(mergeTime).toUTCString()}"`)
       await targetRepo.git.env('GIT_AUTHOR_DATE', `"${new Date(mergeTime).toUTCString()}"`)
       await targetRepo.git.addConfig('user.name', 'zbay')
       await targetRepo.git.addConfig('user.email', 'zbay@unknown.world')
-      await git.pull(`git://${onionAddress}/${repoName}/`, 'master', ['--ff-only'])
+      await targetRepo.git.addRemote('origin', `git://${onionAddress}/${repoName}/`)
+      try {
+        await git.fetch(`git://${onionAddress}/${repoName}/`, 'master')
+        const response = await git.merge({ '-x': 'theirs'})
+        console.log('response', response)
+      } catch (err) {
+        console.log(err, 'error')
+      }
     }
     if (!targetRepo) {
       try {

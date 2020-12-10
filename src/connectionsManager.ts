@@ -106,6 +106,8 @@ export class ConnectionsManager {
       this.libp2p,
       topic,
       async ({ from, message }) => {
+        const { git: targetGit, state: repoState } = git.gitRepos.get(channelAddress)
+        if (repoState === State.LOCKED) return false
         let peerRepositoryOnionAddress = this.onionAddressesBook.get(from)
         if (!peerRepositoryOnionAddress) {
           const onionAddressKey = await this.createOnionPeerId(from)
@@ -114,8 +116,7 @@ export class ConnectionsManager {
         }
         console.log(from, 'from')
         console.log(peerRepositoryOnionAddress.toString(), 'from')
-        const { git: targetGit, state: repoState } = git.gitRepos.get(channelAddress)
-        const currentHEAD = git.getCurrentHEAD(channelAddress)
+        const currentHEAD = await git.getCurrentHEAD(channelAddress)
         console.log('current HEAD', currentHEAD)
         if (repoState === State.UNLOCKED && message.currentHEAD === currentHEAD) {
           await git.addCommit(message.channelId, message.id, message.raw, message.created, message.parentId)
