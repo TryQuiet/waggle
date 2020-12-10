@@ -7,7 +7,8 @@ export interface IMessage {
   data: Buffer,
   created: Date,
   parentId: string,
-  channelId: string
+  channelId: string,
+  currentHEAD: string
 }
 export class Chat {
   /**
@@ -75,6 +76,7 @@ export class Chat {
               id: uint8arrayToString(request.sendMessage.id),
               parentId: uint8arrayToString(request.sendMessage.parentId),
               channelId: uint8arrayToString(request.sendMessage.channelId),
+              currentHEAD: uint8arrayToString(request.sendMessage.currentHEAD),
               raw: message.data
             }
           })
@@ -99,7 +101,8 @@ export class Chat {
         created: message.created,
         id: uint8arrayFromString((~~(Math.random() * 1e9)).toString(36) + Date.now()),
         parentId: uint8arrayFromString(message.parentId),
-        channelId: uint8arrayFromString(message.channelId)
+        channelId: uint8arrayFromString(message.channelId),
+        currentHEAD: uint8arrayFromString(message.currentHEAD)
       }
     })
 

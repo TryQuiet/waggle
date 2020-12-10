@@ -13,9 +13,10 @@ import Bootstrap from 'libp2p-bootstrap'
 import { sleep } from './sleep'
 import Crypto from 'crypto'
 import randomTimestamp from 'random-timestamps'
-import { Git } from '../git/index'
+import { Git, State } from '../git/index'
 import { gitP } from 'simple-git'
-
+import multihashing from 'multihashing-async'
+import crypto from 'crypto'
 interface IConstructor {
   host: string
   port: number
@@ -46,12 +47,14 @@ export class ConnectionsManager {
   libp2p: null | Libp2p
   chatRooms: Map<string, IChatRoom>
   localAddress: string | null
+  onionAddressesBook: Map<string, string>
   constructor({ host, port, agentHost, agentPort }: IConstructor) {
     this.host = host,
     this.port = port,
     this.agentPort = agentPort,
     this.agentHost = agentHost
     this.chatRooms = new Map()
+    this.onionAddressesBook = new Map()
     this.localAddress = null
     process.on('unhandledRejection', (error) => {
       console.error(error)
@@ -77,7 +80,7 @@ export class ConnectionsManager {
     ]
 
     const bootstrapMultiaddrs = [
-      '/dns4/j32o2rnoq3rlkgybvfexbhsnjkc6ufm6meae7cr5sroikbo3t37jniqd.onion/tcp/7767/ws/p2p/QmWpAug2W5ft25Ww9KNj2vTXm8uRg5ts2LdHDvjxDbx1mG'
+      '/dns4/dn3qb4pjizmrmkrdjy7gbmxajjuosmxyojx6pilalr7c7vfz3ipekayd.onion/tcp/7766/ws/p2p/QmSFn9NnuvxFV9nfANCiCQvpNhZC3bnCcb4sCyAJSoBMF3'
     ]
 
     this.localAddress = `${addrs}/p2p/${peerId.toB58String()}`
@@ -103,9 +106,24 @@ export class ConnectionsManager {
       this.libp2p,
       topic,
       async ({ from, message }) => {
-        let fromMe = from === this.libp2p.peerId.toB58String()
-        const user = from.substring(0, 6)
-        await git.addCommit(message.channelId, message.id, message.raw, message.created, message.parentId)
+        const peerRepositoryOnionAddress = this.onionAddressesBook.get(from)
+        if (!peerRepositoryOnionAddress) {
+          const onionAddressKey = await this.createOnionPeerId(from)
+          const peerRepoOnionAddress = await this.libp2p._dht.get(onionAddressKey)
+          this.onionAddressesBook.set(from, peerRepoOnionAddress)
+        }
+        const { git: targetGit, state: repoState } = git.gitRepos.get(channelAddress)
+        const currentHEAD = git.getCurrentHEAD(channelAddress)
+        if (repoState === State.UNLOCKED && message.currentHEAD === currentHEAD) {
+          await git.addCommit(message.channelId, message.id, message.raw, message.created, message.parentId)
+        } else {
+          git.gitRepos.get(channelAddress).state = State.LOCKED
+          await git.pullChanges(this.onionAddressesBook.get(from), channelAddress)
+          git.gitRepos.get(channelAddress).state = State.UNLOCKED
+        }
+        // let fromMe = from === this.libp2p.peerId.toB58String()
+        // const user = from.substring(0, 6)
+        // console.log(message.currentHEAD, 'test')
         return false
       }
     )
@@ -116,20 +134,37 @@ export class ConnectionsManager {
     await this.libp2p.dial(target, { localAddr: this.localAddress, remoteAddr: new Multiaddr(target) })
   }
 
-  public startSendingMessages = async (channelAddress: string, peerId: string): Promise<string> => {
+  public createOnionPeerId = async (peerId: string) => {
+    const key = new TextEncoder().encode(`onion${peerId.substring(0, 10)}`)
+    const digest = await multihashing(key, 'sha2-256')
+    return digest
+  }
+
+  public publishOnionAddress = async (key, onionAddress): Promise<void> => {
+    await this.libp2p._dht.put(key, onionAddress)
+  }
+
+  public getOnionAddress = async (key: string): Promise<string> => {
+    const onionAddress = await this.libp2p._dht.get(key)
+    return onionAddress.toString()
+  }
+
+  public startSendingMessages = async (channelAddress: string, git: Git): Promise<string> => {
     try {
       const chat = this.chatRooms.get(`${channelAddress}`)
-      for(let i = 0; i <= 10; i++) {
+      for(let i = 0; i <= 25; i++) {
+        const currentHEAD = await git.getCurrentHEAD(channelAddress)
         const randomBytes = Crypto.randomBytes(256)
         const timestamp = randomTimestamp()
         const messagePayload = {
           data: randomBytes,
           created: new Date(timestamp),
           parentId: (~~(Math.random() * 1e9)).toString(36) + Date.now(),
-          channelId: 'testing-02.12.2020-standard'
+          channelId: channelAddress,
+          currentHEAD
         }
         await chat.chatInstance.send(messagePayload)
-        await sleep(1000)
+        await sleep(2500)
       }
       return 'done'
     } catch (e) {

@@ -7,34 +7,37 @@ import uint8arrayFromString from 'uint8arrays/from-string'
 import uint8arrayToString from 'uint8arrays/to-string'
 import { Request } from '../src/config/protonsRequestMessages'
 
-enum Type {
+export enum Type {
   BARE,
   STANDARD
 }
 
-interface IRepos {
+export enum State {
+  LOCKED,
+  UNLOCKED
+}
+
+export interface IRepos {
   git: SimpleGit,
   type: Type,
-  parentId: string | null
+  parentId: string | null,
+  state: State
 }
 
 export class Git {
-  httpServerPort: number
   process: child_process.ChildProcessWithoutNullStreams | null = null
   git: SimpleGit
-  repoPathBare: string
-  repoPathStandard: string
   gitRepos: Map<string, IRepos>
-  constructor(port: number) {
-    this.httpServerPort = port
+  staticDateOfRepoCreation: number
+  constructor() {
     this.gitRepos = new Map()
+    this.staticDateOfRepoCreation = 1607528064631
   }
 
   public init = async () => {
     const targetPath = `${os.homedir()}/ZbayChannels/`
     this.createPaths([targetPath])
     const dirs = fs.readdirSync(targetPath).filter(f => fs.statSync(path.join(targetPath, f)).isDirectory())
-    try {
       if (dirs.length > 0) {
         for (const dir of dirs) {
           const options = {
@@ -45,14 +48,12 @@ export class Git {
           const git = simpleGit(options)
           this.gitRepos.set(`${dir}`, {
             git,
-            type: dir.includes('bare') ? Type.BARE : Type.STANDARD,
-            parentId: null
+            type: Type.STANDARD,
+            parentId: null,
+            state: State.UNLOCKED
           })
         }
       }
-    } catch (e) {
-      console.log('e', e)
-    }
     return this.gitRepos
   }
 
@@ -63,57 +64,58 @@ export class Git {
     }
   }
 
-  private addRepo = async (repoPath: string, bare: boolean, repoName: string) => {
+  private addRepo = async (repoPath: string, repoName: string) => {
     const options = {
       baseDir: repoPath,
       binary: 'git',
       maxConcurrent: 6
     }
     const git = simpleGit(options)
-    if (bare) {
-      await git.init(bare)
-      await git.updateServerInfo()
-      fs.renameSync(`${repoPath}/hooks/post-update.sample`, `${repoPath}/hooks/post-update`)
-    } else {
-      await git.clone(`file://${os.homedir()}/ZbayChannels/${repoName}-bare`, `${os.homedir()}/ZbayChannels/${repoName}-standard`)
-    }
-    this.gitRepos.set(bare ? `${repoName}-bare` : `${repoName}-standard`, {
+      await git.init()
+    this.gitRepos.set(repoName, {
       git: git,
-      type: bare ? Type.BARE : Type.STANDARD,
-      parentId: null
+      type: Type.STANDARD,
+      parentId: null,
+      state: State.UNLOCKED
     })
-    return this.gitRepos.get(bare ? `${repoName}-bare` : `${repoName}-standard`).git
+    return this.gitRepos.get(repoName)
   }
 
   public createRepository = async (repoName: string) => {
-    const repoPathBare = `${os.homedir()}/ZbayChannels/${repoName}-bare/`
-    const repoPathStandard = `${os.homedir()}/ZbayChannels/${repoName}-standard/`
-    this.createPaths([repoPathBare, repoPathStandard])
-    const bareRepo = await this.addRepo(repoPathBare, true, repoName)
-    const standardRepo = await this.addRepo(repoPathStandard, false, repoName)
-    return {
-      bareRepo,
-      standardRepo
+    let standardRepo = this.gitRepos.get(repoName)
+    if (!standardRepo) {
+      const repoPath = `${os.homedir()}/ZbayChannels/${repoName}/`
+      this.createPaths([repoPath])
+      standardRepo = await this.addRepo(repoPath, repoName)
+      this.addCommit(repoName, '0', Buffer.from('initial commit'), 1607528064631, null)  
     }
+    return standardRepo
   }
 
-  public pullChanges = async (id: string, onionAddress: string, repoName: string, port: string) => {
-    const targetRepo = this.gitRepos.get(id)
-    const pull = async (onionAddress, repoName, port, git: SimpleGit) => {
-      await git.addConfig('http.proxy', 'socks5h://127.0.0.1:9050')
-      await git.pull(`http://${onionAddress}:${port}/${repoName}-bare/`, 'master')
-      await git.push('origin', 'master')
+  public pullChanges = async (onionAddress: string, repoName: string): Promise<number> => {
+    const targetRepo = this.gitRepos.get(repoName)
+    const mergeTime = Date.now()
+    const pull = async (onionAddress, repoName, git: SimpleGit) => {
+      await git.env('SOCKS5_PASSWORD', ` `)
+      await git.env('GIT_PROXY_COMMAND', `${process.cwd()}/script/socks5proxywrapper`)
+      await targetRepo.git.env('GIT_COMMITTER_DATE', `"${new Date(mergeTime).toUTCString()}"`)
+      await targetRepo.git.env('GIT_AUTHOR_DATE', `"${new Date(mergeTime).toUTCString()}"`)
+      await targetRepo.git.addConfig('user.name', 'zbay')
+      await targetRepo.git.addConfig('user.email', 'zbay@unknown.world')
+      await git.pull(`git://${onionAddress}/${repoName}/`, 'master', ['--ff-only'])
     }
     if (!targetRepo) {
       try {
-        const { standardRepo } = await this.createRepository(`${repoName}`)
-        await pull(onionAddress, repoName, port, standardRepo)
+        const standardRepo = await this.createRepository(`${repoName}`)
+        await pull(onionAddress, repoName, standardRepo.git)
+        return mergeTime
       } catch (e) {
         throw new Error(e)
       }
     } else {
       try {
-        await pull(onionAddress, repoName, port, targetRepo.git)
+        await pull(onionAddress, repoName, targetRepo.git)
+        return mergeTime
       } catch (e) {
         throw new Error(e)
       }
@@ -134,38 +136,52 @@ export class Git {
     return parentId
   }
 
-  public addCommit = async (id: string, messageId: string, messagePayload: Buffer, date: number, parentId: string | null): Promise<void> => {
+  public addCommit = async (repoName: string, messageId: string, messagePayload: Buffer, date: number, parentId: string | null): Promise<void> => {
     try {
-      const targetRepo = this.gitRepos.get(id)
+      const targetRepo = this.gitRepos.get(repoName)
       await targetRepo.git.addConfig('user.name', 'zbay')
       await targetRepo.git.addConfig('user.email', 'zbay@unknown.world')
       await targetRepo.git.env('GIT_COMMITTER_DATE', `"${new Date(date).toUTCString()}"`)
-      const targetFilePath = `${os.homedir()}/ZbayChannels/${id}/${messageId}`
+      const targetFilePath = `${os.homedir()}/ZbayChannels/${repoName}/${messageId}`
       fs.writeFileSync(targetFilePath, messagePayload)
       const dateObj = new Date(date)
       fs.utimesSync(targetFilePath, dateObj, dateObj)
-      await targetRepo.git.add(`${os.homedir()}/ZbayChannels/${id}/*`)
+      await targetRepo.git.add(`${os.homedir()}/ZbayChannels/${repoName}/*`)
       await targetRepo.git.commit(`messageId: ${messageId} parentId: ${parentId}`, null, { '--date': new Date(date).toUTCString() })
       targetRepo.parentId = messageId
-      await targetRepo.git.push('origin', 'master')
     } catch (e) {
       console.log(e)
     }
   }
 
-  public startHttpServer = (): Promise<void> =>
+  public getCurrentHEAD = async (repoName) => {
+    try {
+      const standardRepo = this.gitRepos.get(repoName)
+      if (!standardRepo) {
+        await this.createRepository(repoName)
+        return null
+      }
+      const currentHEAD = standardRepo.git.revparse(['HEAD'])
+      return currentHEAD
+    } catch (err) {
+      return null
+    }
+  }
+
+
+  public spawnGitDaemon = (): Promise<void> =>
   new Promise((resolve, reject) => {
     if (this.process) {
       throw new Error('Already initialized')
     }
-    this.process = child_process.spawn('npx', ['http-server', `${os.homedir()}/ZbayChannels/`, `-p ${this.httpServerPort}`])
+      this.process = child_process.spawn('git', ['daemon', `--base-path=${os.homedir()}/ZbayChannels/`, `--export-all`, `--verbose`])
     const id = setTimeout(() => {
       this.process?.kill()
-      reject('Process timeout')
+      reject('Process timeout ??')
     }, 20000)
-    this.process.stdout.on('data', (data: Buffer) => {
-      console.log(data.toString())
-      if (data.toString().includes(`${this.httpServerPort}`)) {
+    this.process.stderr.on('data', (data) => {
+      console.log('data', data.toString())
+      if (data.toString().includes(`Ready`)) {
         clearTimeout(id)
         resolve()
       }
@@ -182,10 +198,13 @@ export const sleep = (time = 1000) =>
 
 
 const main = async () => {
-    const git = new Git(7766)
-    console.log('git', git)
-    await git.startHttpServer()
-    const test = await git.init()
+    const git = new Git()
+    await git.init()
+    await git.createRepository('test-address')
+    await git.spawnGitDaemon()
+    // await git.addCommit('test-address', '123', Buffer.from('ddddd'), 1607079584362, '23133')
+    await sleep(10000)
+    await git.pullChanges('jwfvburxit5aym7syf4wskxthjeakwhjdg6f5tktr446ixg556kohmid.onion', 'test-address')
   // const test = Buffer.from('adamek4')
   // const date = new Date()
   // const parrentId = '21312312'
@@ -267,4 +286,4 @@ const main = async () => {
   // console.log(bareRepo.log())
 }
 
-main()
+// main()

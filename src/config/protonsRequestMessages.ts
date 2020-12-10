@@ -4,6 +4,7 @@ export const { Request } = protons(`
 message Request {
   enum Type {
     SEND_MESSAGE = 0;
+
   }
 
   required Type type = 1;
@@ -16,5 +17,6 @@ message SendMessage {
   required bytes id = 3;
   required bytes parentId = 4;
   required bytes channelId = 5;
+  required bytes currentHEAD = 6;
 }
 `)
