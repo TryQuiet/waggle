@@ -20,12 +20,12 @@ const main = async () => {
     }
   } })
   await tor.init()
-  // await tor.addService({ port: 7766 })
-  // await tor.addService({ port: 7766 })
-  // await tor.addService({ port: 7799 })
+  await tor.addService({ port: 9418 })
+  await tor.addService({ port: 7766 })
+  await tor.addService({ port: 7767 })
   const address1 = tor.getServiceAddress(7766)
-  const address2 = tor.getServiceAddress(7788)
-  const address3 = tor.getServiceAddress(7799)
+  const address2 = tor.getServiceAddress(7767)
+  const address3 = tor.getServiceAddress(9418)
   // await tor.addService({ port: 7757 })
 
   // console.log(address1, 'address')
@@ -46,28 +46,28 @@ const main = async () => {
   //   console.log('no default service')
   // }
   // jwfvburxit5aym7syf4wskxthjeakwhjdg6f5tktr446ixg556kohmid.onion 7766
-  const startLibp2p = async (add1, add2) => {
+  const startLibp2p = async (add1, add2, add3) => {
     console.log(add1, 'hejo')
     // console.log(add1)
     const git = new Git()
     await git.init()
-    // await git.createRepository('test-address')
+    await git.createRepository('test-address')
+    await git.spawnGitDaemon()
     const peerId1 = fs.readFileSync('peerId1.json')
     const peerId2 = fs.readFileSync('peerId2.json')
     const parsedId1 = JSON.parse(peerId1.toString()) as PeerId.JSONPeerId
     const parsedId2 = JSON.parse(peerId2.toString()) as PeerId.JSONPeerId
     const peerId1Restored = await PeerId.createFromJSON(parsedId1)
     const peerId2Restored = await PeerId.createFromJSON(parsedId2)
-    const testPeerId = await peerId2Restored.toB58String()
-    console.log('testPeer', testPeerId)
-    const connectionsManager1 = new ConnectionsManager({ port: 7788, host: add2, agentHost: 'localhost', agentPort: 9050 })
-    const node1 = await connectionsManager1.initializeNode()
+    const connectionsManager1 = new ConnectionsManager({ port: 7766, host: add1, agentHost: 'localhost', agentPort: 9050 })
+    const node1 = await connectionsManager1.initializeNode(peerId1Restored)
     await connectionsManager1.subscribeForTopic({topic: '/libp2p/example/chat/1.0.0', channelAddress: 'test-address', git })
-    await sleep(10000)
+    const elo = await connectionsManager1.createOnionPeerId(node1.peerId)
+    const key = new TextEncoder().encode(add3)
+    await connectionsManager1.publishOnionAddress(elo, key)
+    await sleep(10 * 60000)
     console.log('start sending')
     await connectionsManager1.startSendingMessages('test-address', git)
-    // const elo = await connectionsManager1.createOnionPeerId(testPeerId)
-    // await sleep(5000)
     // const testOnionFromNetwork = await connectionsManager1.getOnionAddress(elo)
     // try {
     //   const key = new TextEncoder().encode(`jwfvburxit5aym7syf4wskxthjeakwhjdg6f5tktr446ixg556kohmid.onion`)
@@ -122,7 +122,7 @@ const main = async () => {
     // await connectionsManager.listenForInput('test-address')
   }
 
-  await startLibp2p(address1, address2)
+  await startLibp2p(address1, address2, address3)
   // if (address) {
   //   await startLibp2p(address)
   // } else {

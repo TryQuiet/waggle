@@ -106,14 +106,17 @@ export class ConnectionsManager {
       this.libp2p,
       topic,
       async ({ from, message }) => {
-        const peerRepositoryOnionAddress = this.onionAddressesBook.get(from)
+        let peerRepositoryOnionAddress = this.onionAddressesBook.get(from)
         if (!peerRepositoryOnionAddress) {
           const onionAddressKey = await this.createOnionPeerId(from)
-          const peerRepoOnionAddress = await this.libp2p._dht.get(onionAddressKey)
-          this.onionAddressesBook.set(from, peerRepoOnionAddress)
+          peerRepositoryOnionAddress = await this.libp2p._dht.get(onionAddressKey)
+          this.onionAddressesBook.set(from, peerRepositoryOnionAddress)
         }
+        console.log(from, 'from')
+        console.log(peerRepositoryOnionAddress.toString(), 'from')
         const { git: targetGit, state: repoState } = git.gitRepos.get(channelAddress)
         const currentHEAD = git.getCurrentHEAD(channelAddress)
+        console.log('current HEAD', currentHEAD)
         if (repoState === State.UNLOCKED && message.currentHEAD === currentHEAD) {
           await git.addCommit(message.channelId, message.id, message.raw, message.created, message.parentId)
         } else {
@@ -152,7 +155,7 @@ export class ConnectionsManager {
   public startSendingMessages = async (channelAddress: string, git: Git): Promise<string> => {
     try {
       const chat = this.chatRooms.get(`${channelAddress}`)
-      for(let i = 0; i <= 25; i++) {
+      for(let i = 0; i <= 100; i++) {
         const currentHEAD = await git.getCurrentHEAD(channelAddress)
         const randomBytes = Crypto.randomBytes(256)
         const timestamp = randomTimestamp()
