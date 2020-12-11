@@ -10,6 +10,11 @@ export interface IMessage {
   channelId: string,
   currentHEAD: string
 }
+export interface IMessageCommit {
+  created: Date,
+  currentHEAD: string,
+  channelId: string
+}
 export class Chat {
   /**
    * @param {Libp2p} libp2p A Libp2p node to communicate through
@@ -77,10 +82,23 @@ export class Chat {
               parentId: uint8arrayToString(request.sendMessage.parentId),
               channelId: uint8arrayToString(request.sendMessage.channelId),
               currentHEAD: uint8arrayToString(request.sendMessage.currentHEAD),
-              raw: message.data
+              raw: message.data,
+              type: Request.Type.SEND_MESSAGE
             }
           })
           break
+        case Request.Type.MERGE_COMMIT_INFO:
+          this.messageHandler({
+            from: message.from,
+            message: {
+              created: request.mergeCommitInfo.created,
+              id: uint8arrayToString(request.mergeCommitInfo.id),
+              currentHEAD: uint8arrayToString(request.mergeCommitInfo.currentHEAD),
+              channelId: uint8arrayToString(request.mergeCommitInfo.channelId),
+              raw: message.data,
+              type: Request.Type.MERGE_COMMIT_INFO
+            }
+          })
         default:
           // Do nothing
       }
@@ -103,6 +121,20 @@ export class Chat {
         parentId: uint8arrayFromString(message.parentId),
         channelId: uint8arrayFromString(message.channelId),
         currentHEAD: uint8arrayFromString(message.currentHEAD)
+      }
+    })
+
+    await this.libp2p.pubsub.publish(this.topic, msg)
+  }
+
+  public async sendNewMergeCommit (message: IMessageCommit) {
+    const msg = Request.encode({
+      type: Request.Type.MERGE_COMMIT_INFO,
+      mergeCommitInfo: {
+        created: message.created,
+        id: uint8arrayFromString((~~(Math.random() * 1e9)).toString(36) + Date.now()),
+        currentHEAD: uint8arrayFromString(message.currentHEAD),
+        channelId: uint8arrayFromString(message.channelId),
       }
     })
 

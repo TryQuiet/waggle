@@ -25,5 +25,6 @@ message MergeCommitInfo {
   required int64 created = 1;
   required bytes id = 2;
   required bytes currentHEAD = 3;
+  required bytes channelId = 4;
 }
 `)

@@ -6,7 +6,7 @@ import KademliaDHT from 'libp2p-kad-dht'
 import Gossipsub from 'libp2p-gossipsub'
 import PeerId from 'peer-id'
 import WebsocketsOverTor from './websocketOverTor'
-import { Chat, IMessage } from './chat'
+import { Chat, IMessage, IMessageCommit } from './chat'
 import Multiaddr from 'multiaddr'
 import PubsubPeerDiscovery from 'libp2p-pubsub-peer-discovery'
 import Bootstrap from 'libp2p-bootstrap'
@@ -17,6 +17,7 @@ import { Git, State } from '../git/index'
 import { gitP } from 'simple-git'
 import multihashing from 'multihashing-async'
 import crypto from 'crypto'
+import { Request } from './config/protonsRequestMessages'
 interface IConstructor {
   host: string
   port: number
@@ -26,6 +27,7 @@ interface IConstructor {
 
 interface IChat {
   send(message: IMessage): Promise<void>
+  sendNewMergeCommit(message: IMessageCommit): Promise<void>
 }
 
 interface IChatRoom {
@@ -106,31 +108,48 @@ export class ConnectionsManager {
       this.libp2p,
       topic,
       async ({ from, message }) => {
-        const { git: targetGit, state: repoState } = git.gitRepos.get(channelAddress)
-        if (repoState === State.LOCKED) return false
         let peerRepositoryOnionAddress = this.onionAddressesBook.get(from)
         if (!peerRepositoryOnionAddress) {
           const onionAddressKey = await this.createOnionPeerId(from)
           peerRepositoryOnionAddress = await this.libp2p._dht.get(onionAddressKey)
           this.onionAddressesBook.set(from, peerRepositoryOnionAddress)
         }
-        console.log(from, 'from')
-        console.log(peerRepositoryOnionAddress.toString(), 'from')
-        const currentHEAD = await git.getCurrentHEAD(channelAddress)
-        console.log('current HEAD', currentHEAD)
-        if (repoState === State.UNLOCKED && message.currentHEAD === currentHEAD) {
-          await git.addCommit(message.channelId, message.id, message.raw, message.created, message.parentId)
+        const { git: targetGit, state: repoState } = git.gitRepos.get(channelAddress)
+        if (repoState === State.LOCKED) return false
+        if (message.type === Request.Type.SEND_MESSAGE) {
+          const currentHEAD = await git.getCurrentHEAD(channelAddress)
+          if (repoState === State.UNLOCKED && message.currentHEAD === currentHEAD) {
+            await git.addCommit(message.channelId, message.id, message.raw, message.created, message.parentId)
+          } else {
+            git.gitRepos.get(channelAddress).state = State.LOCKED
+            const mergeTime = await git.pullChanges(this.onionAddressesBook.get(from), channelAddress)
+            const newHead = await git.getCurrentHEAD(channelAddress)
+            const mergeResult = message.currentHEAD === newHead
+            if (mergeResult) {
+              git.gitRepos.get(channelAddress).state = State.UNLOCKED
+            } else {
+              const messagePayload = {
+                created: new Date(mergeTime),
+                parentId: (~~(Math.random() * 1e9)).toString(36) + Date.now(),
+                channelId: channelAddress,
+                currentHEAD: newHead
+              }
+              const chat = this.chatRooms.get(`${channelAddress}`)
+              await chat.chatInstance.sendNewMergeCommit(messagePayload)
+            }
+          }
         } else {
-          git.gitRepos.get(channelAddress).state = State.LOCKED
-          await git.pullChanges(this.onionAddressesBook.get(from), channelAddress)
-          const newHead = await git.getCurrentHEAD(channelAddress)
-          console.log(newHead, 'new head')
-          console.log(message.currentHEAD, 'target head')
-          git.gitRepos.get(channelAddress).state = State.UNLOCKED
+          let head = await git.getCurrentHEAD(message.channelId)
+          if (head !== message.currentHEAD) {
+            git.gitRepos.get(message.channelId).state = State.LOCKED
+            await git.pullChanges(this.onionAddressesBook.get(from), message.channelId, message.created)
+            head = await git.getCurrentHEAD(message.channelId)
+            if (head === message.currentHEAD) {
+              console.log('success merged!!!')
+              git.gitRepos.get(message.channelId).state = State.UNLOCKED
+            }
+          }
         }
-        // let fromMe = from === this.libp2p.peerId.toB58String()
-        // const user = from.substring(0, 6)
-        // console.log(message.currentHEAD, 'test')
         return false
       }
     )
@@ -159,7 +178,9 @@ export class ConnectionsManager {
   public startSendingMessages = async (channelAddress: string, git: Git): Promise<string> => {
     try {
       const chat = this.chatRooms.get(`${channelAddress}`)
-      for(let i = 0; i <= 100; i++) {
+      for(let i = 0; i <= 10; i++) {
+        const { state } = git.gitRepos.get(channelAddress)
+        if (state === State.LOCKED) continue
         const currentHEAD = await git.getCurrentHEAD(channelAddress)
         const randomBytes = Crypto.randomBytes(256)
         const timestamp = randomTimestamp()
@@ -174,7 +195,7 @@ export class ConnectionsManager {
         await sleep(2500)
       }
       return 'done'
-    } catch (e) {
+      } catch (e) {
       console.error('ERROR', e)
       throw(e)
     }
