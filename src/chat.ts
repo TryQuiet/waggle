@@ -99,6 +99,7 @@ export class Chat {
               type: Request.Type.MERGE_COMMIT_INFO
             }
           })
+          break
         default:
           // Do nothing
       }

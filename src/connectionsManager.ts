@@ -114,45 +114,47 @@ export class ConnectionsManager {
           peerRepositoryOnionAddress = await this.libp2p._dht.get(onionAddressKey)
           this.onionAddressesBook.set(from, peerRepositoryOnionAddress)
         }
-        const { git: targetGit, state: repoState } = git.gitRepos.get(channelAddress)
+        const { state: repoState } = git.gitRepos.get(channelAddress)
         if (repoState === State.LOCKED) return false
-        if (message.type === Request.Type.SEND_MESSAGE) {
-          const currentHEAD = await git.getCurrentHEAD(channelAddress)
-          if (repoState === State.UNLOCKED && message.currentHEAD === currentHEAD) {
-            await git.addCommit(message.channelId, message.id, message.raw, message.created, message.parentId)
-          } else {
-            git.gitRepos.get(channelAddress).state = State.LOCKED
-            const mergeTime = await git.pullChanges(this.onionAddressesBook.get(from), channelAddress)
-            const newHead = await git.getCurrentHEAD(channelAddress)
-            const mergeResult = message.currentHEAD === newHead
-            if (mergeResult) {
-              git.gitRepos.get(channelAddress).state = State.UNLOCKED
+        switch (message.type) {
+          case Request.Type.SEND_MESSAGE:
+            const currentHEAD = await git.getCurrentHEAD(channelAddress)
+            if (repoState === State.UNLOCKED && message.currentHEAD === currentHEAD) {
+              await git.addCommit(message.channelId, message.id, message.raw, message.created, message.parentId)
             } else {
-              const messagePayload = {
-                created: new Date(mergeTime),
-                parentId: (~~(Math.random() * 1e9)).toString(36) + Date.now(),
-                channelId: channelAddress,
-                currentHEAD: newHead
+              git.gitRepos.get(channelAddress).state = State.LOCKED
+              const mergeTime = await git.pullChanges(this.onionAddressesBook.get(from), channelAddress)
+              if (!mergeTime) {
+                git.gitRepos.get(channelAddress).state = State.UNLOCKED
+                return
               }
-              const chat = this.chatRooms.get(`${channelAddress}`)
-              await chat.chatInstance.sendNewMergeCommit(messagePayload)
+              const newHead = await git.getCurrentHEAD(channelAddress)
+              const mergeResult = message.currentHEAD === newHead
+              if (mergeResult) {
+                git.gitRepos.get(channelAddress).state = State.UNLOCKED
+              } else {
+                const messagePayload = {
+                  created: new Date(mergeTime),
+                  parentId: (~~(Math.random() * 1e9)).toString(36) + Date.now(),
+                  channelId: channelAddress,
+                  currentHEAD: newHead
+                }
+                const chat = this.chatRooms.get(`${channelAddress}`)
+                await chat.chatInstance.sendNewMergeCommit(messagePayload)
+                git.gitRepos.get(channelAddress).state = State.UNLOCKED
+              }
             }
-          }
-        } else {
-          let head = await git.getCurrentHEAD(message.channelId)
-          if (head !== message.currentHEAD) {
+            break
+          case Request.Type.MERGE_COMMIT_INFO:
             git.gitRepos.get(message.channelId).state = State.LOCKED
-            await git.pullChanges(this.onionAddressesBook.get(from), message.channelId, message.created)
-            head = await git.getCurrentHEAD(message.channelId)
-            if (head === message.currentHEAD) {
-              console.log('success merged!!!')
-              git.gitRepos.get(message.channelId).state = State.UNLOCKED
+            const head = await git.getCurrentHEAD(message.channelId)
+            if (head !== message.currentHEAD && from !== this.libp2p.peerId.toB58String()) {
+              await git.pullChanges(this.onionAddressesBook.get(from), message.channelId, message.created)
             }
-          }
-        }
-        return false
+            git.gitRepos.get(message.channelId).state = State.UNLOCKED
+            break
       }
-    )
+    })
     this.chatRooms.set(channelAddress, { chatInstance: chat })
   }
   public connectToNetwork = async (target: string) => {
@@ -178,9 +180,13 @@ export class ConnectionsManager {
   public startSendingMessages = async (channelAddress: string, git: Git): Promise<string> => {
     try {
       const chat = this.chatRooms.get(`${channelAddress}`)
-      for(let i = 0; i <= 10; i++) {
+      for(let i = 0; i <= 1000; i++) {
         const { state } = git.gitRepos.get(channelAddress)
-        if (state === State.LOCKED) continue
+        if (state === State.LOCKED) {
+          await sleep(2500)
+          console.log('locked')
+          continue
+        }
         const currentHEAD = await git.getCurrentHEAD(channelAddress)
         const randomBytes = Crypto.randomBytes(256)
         const timestamp = randomTimestamp()
