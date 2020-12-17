@@ -86,12 +86,12 @@ export class DataServer {
   public initializeLibp2p = async () => {
     const peerId1 = fs.readFileSync('peerId1.json')
     // const peerId2 = fs.readFileSync('../../peerId2.json')
-    // const parsedId1 = JSON.parse(peerId1.toString()) as PeerId.JSONPeerId
+    const parsedId1 = JSON.parse(peerId1.toString()) as PeerId.JSONPeerId
     // const parsedId2 = JSON.parse(peerId2.toString()) as PeerId.JSONPeerId
-    // const peerId1Restored = await PeerId.createFromJSON(parsedId1)
+    const peerId1Restored = await PeerId.createFromJSON(parsedId1)
     // const peerId2Restored = await PeerId.createFromJSON(parsedId2)
     this.connectonsManager = new ConnectionsManager({ port: 7788, host: this.libp2pAddress, agentHost: 'localhost', agentPort: 9050 })
-    const node = await this.connectonsManager.initializeNode()
+    const node = await this.connectonsManager.initializeNode(peerId1Restored)
     console.log(node, 'node')
     await this.connectonsManager.subscribeForTopic({topic: '/libp2p/example/chat/1.0.0', channelAddress: 'test-address', git: this.git, io: this.io })
     const peerIdOnionAddress = await this.connectonsManager.createOnionPeerId(node.peerId)

@@ -256,7 +256,7 @@ export class ConnectionsManager {
       },
       modules: {
         transport: [WebsocketsOverTor],
-        peerDiscovery: [Bootstrap],
+        // peerDiscovery: [Bootstrap],
         streamMuxer: [Mplex],
         connEncryption: [NOISE],
         dht: KademliaDHT,

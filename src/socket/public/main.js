@@ -1,5 +1,5 @@
 var socket = io('http://localhost:3000')
-window.scrollTo(0,document.body.scrollHeight);
+
 const inboxPeople = document.querySelector(".inbox__people");
 const container = document.querySelector(".container");
 const inputField = document.querySelector(".message_form__input");
