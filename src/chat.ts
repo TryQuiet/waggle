@@ -25,9 +25,9 @@ export class Chat {
   libp2p: Libp2p
   topic: string
   messageHandler: (obj: any) => void
-  constructor(libp2p, topic, messageHandler) {
+  constructor(libp2p, channelAddress, messageHandler) {
     this.libp2p = libp2p
-    this.topic = topic
+    this.topic = channelAddress
     this.messageHandler = messageHandler
 
     this._onMessage = this._onMessage.bind(this)

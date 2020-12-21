@@ -14,7 +14,7 @@ const cors = require('cors')
 import { loadAllMessages } from '../socket/events/allMessages'
 
 export class DataServer {
-  public PORT: number = 3000
+  public PORT: number = 4677
   private _app: express.Application
   private server: Server
   private io: SocketIO.Server
@@ -45,8 +45,6 @@ export class DataServer {
 
   public initGit = async (): Promise<void> => {
     await this.git.init()
-    await this.git.createRepository('test-address')
-    this.messages = await this.git.loadAllMessages('test-address')
     await this.git.spawnGitDaemon()
   }
 
@@ -61,19 +59,20 @@ export class DataServer {
       }
     } })
     await this.tor.init()
-    let address1
-    let address3
+    let service1
+    let service2
     try {
-      address1 = await this.tor.getServiceAddress(7788)
-      address3 = await this.tor.getServiceAddress(9418)
+      service1 = await this.tor.addService({ port: 7788 })
+      service2 = await this.tor.addService({ port: 9418 })
     } catch (e) {
-      await this.tor.addService({ port: 7788 })
-      await this.tor.addService({ port: 9418 })
+      await this.tor.killService({ port: 7788 })
+      await this.tor.killService({ port: 9418 })
+      service1 = await this.tor.addService({ port: 7788 })
+      service2 = await this.tor.addService({ port: 9418 })
     }
-    address1 = await this.tor.getServiceAddress(7788)
-    address3 = await this.tor.getServiceAddress(9418)
-    this.libp2pAddress = address1
-    this.repositoryAddress = address3
+    this.libp2pAddress = service1.address
+    this.repositoryAddress = service2.address
+    console.log('test', this.repositoryAddress)
   }
 
   public listen = (): void => {
@@ -83,23 +82,18 @@ export class DataServer {
     initListeners(this.io, this.connectonsManager, this.git)
   }
 
-  public initializeLibp2p = async () => {
+  public initializeLibp2p = async (): Promise<void> => {
     const peerId1 = fs.readFileSync('peerId1.json')
-    // const peerId2 = fs.readFileSync('../../peerId2.json')
+    const peerId2 = fs.readFileSync('peerId2.json')
     const parsedId1 = JSON.parse(peerId1.toString()) as PeerId.JSONPeerId
-    // const parsedId2 = JSON.parse(peerId2.toString()) as PeerId.JSONPeerId
+    const parsedId2 = JSON.parse(peerId2.toString()) as PeerId.JSONPeerId
     const peerId1Restored = await PeerId.createFromJSON(parsedId1)
-    // const peerId2Restored = await PeerId.createFromJSON(parsedId2)
+    const peerId2Restored = await PeerId.createFromJSON(parsedId2)
     this.connectonsManager = new ConnectionsManager({ port: 7788, host: this.libp2pAddress, agentHost: 'localhost', agentPort: 9050 })
     const node = await this.connectonsManager.initializeNode(peerId1Restored)
-    console.log(node, 'node')
-    await this.connectonsManager.subscribeForTopic({topic: '/libp2p/example/chat/1.0.0', channelAddress: 'test-address', git: this.git, io: this.io })
+    await this.connectonsManager.subscribeForTopic({ channelAddress: 'test-address', git: this.git, io: this.io })
     const peerIdOnionAddress = await this.connectonsManager.createOnionPeerId(node.peerId)
     const key = new TextEncoder().encode(this.repositoryAddress)
     await this.connectonsManager.publishOnionAddress(peerIdOnionAddress, key)
-    // await sleep(0.5 * 60000)
-    // console.log('start sending')
-    // await this.connectonsManager.startSendingMessages('test-address', this.git)
-    // console.log('sending done')
   }
 }

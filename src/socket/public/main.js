@@ -1,4 +1,4 @@
-var socket = io('http://localhost:3000')
+var socket = io('http://localhost:4677')
 
 const inboxPeople = document.querySelector(".inbox__people");
 const container = document.querySelector(".container");
@@ -86,13 +86,11 @@ messageForm.addEventListener("submit", (e) => {
   if (!inputField.value) {
     return;
   }
-  socket.emit('sendMessage', {
-    message: inputField.value
-  });
+  socket.emit('sendMessage', { channelAddress: 'test-address', message: inputField.value });
   inputField.value = "";
 });
 
-socket.on("message", function (data) {
+socket.on('message', function (data) {
   addNewMessage({ user: data.from, message: data.message });
   container.scrollIntoView(false)
 });

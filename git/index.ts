@@ -86,7 +86,7 @@ export class Git {
       const repoPath = `${os.homedir()}/ZbayChannels/${repoName}/`
       this.createPaths([repoPath])
       standardRepo = await this.addRepo(repoPath, repoName)
-      this.addCommit(repoName, '0', Buffer.from('initial commit'), 1607528064631, null)  
+      await this.addCommit(repoName, '0', Buffer.from('initial commit'), 1607528064631, null)  
     }
     return standardRepo
   }
@@ -154,7 +154,6 @@ export class Git {
     }
     const orderedMessages = messages.sort((a, b) => a.timestamp - b.timestamp)
     return orderedMessages
-    // return parentId
   }
 
   public addCommit = async (repoName: string, messageId: string, messagePayload: Buffer, date: number, parentId: string | null): Promise<void> => {

@@ -20,6 +20,7 @@ import crypto from 'crypto'
 import { Request } from './config/protonsRequestMessages'
 import { message as socketMessage } from './socket/events/message'
 import { loadAllMessages } from './socket/events/allMessages'
+import { Mutex } from 'async-mutex'
 
 interface IConstructor {
   host: string
@@ -34,11 +35,16 @@ interface IChat {
 }
 
 interface IChatRoom {
-  chatInstance: IChat
+  chatInstance: IChat,
+  mutex: Mutex
+}
+
+interface ILibp2pStatus {
+  address: string,
+  peerId: string
 }
 
 interface IChannelSubscription {
-  topic: string,
   channelAddress: string,
   git: Git,
   io: any
@@ -71,10 +77,10 @@ export class ConnectionsManager {
       process.exit(0)
     })
   }
-  private createAgent = async () => {
+  private createAgent = async (): Promise<void> => {
     this.socksProxyAgent = new SocksProxyAgent({ port: this.agentPort, host: this.agentHost })
   }
-  public initializeNode = async (staticPeerId?) => {
+  public initializeNode = async (staticPeerId?): Promise<ILibp2pStatus> => {
     let peerId
     if (!staticPeerId) {
       peerId = await PeerId.create()
@@ -86,7 +92,7 @@ export class ConnectionsManager {
     ]
 
     const bootstrapMultiaddrs = [
-      '/dns4/7exso4xsedj5uitfdjl6ct352venquybzr3xdlovesrxhhuyy2ya5bid.onion/tcp/7788/ws/p2p/QmUXEz4fN7oTLFvK6Ee4bRDL3s6dp1VCuHogmrrKxUngWW'
+      '/dns4/igbsyx2bhppwc3c3gvntkbrxu3evskllyaf6n74drrhma57qaydnp7ad.onion/tcp/7788/ws/p2p/QmUXEz4fN7oTLFvK6Ee4bRDL3s6dp1VCuHogmrrKxUngWW'
     ]
 
     this.localAddress = `${addrs}/p2p/${peerId.toB58String()}`
@@ -107,40 +113,33 @@ export class ConnectionsManager {
       peerId: peerId.toB58String()
     }
   }
-  public subscribeForTopic = async ({ topic, channelAddress, git, io }: IChannelSubscription) => {
+  public subscribeForTopic = async ({ channelAddress, git, io }: IChannelSubscription) => {
+    const mutex = new Mutex()
     const chat = new Chat(
       this.libp2p,
-      topic,
+      channelAddress,
       async ({ from, message }) => {
+        const release = await mutex.acquire()
+        try {
         let peerRepositoryOnionAddress = this.onionAddressesBook.get(from)
         if (!peerRepositoryOnionAddress) {
           const onionAddressKey = await this.createOnionPeerId(from)
-          peerRepositoryOnionAddress = await this.libp2p._dht.get(onionAddressKey)
+          peerRepositoryOnionAddress = await this.getOnionAddress(onionAddressKey)
           this.onionAddressesBook.set(from, peerRepositoryOnionAddress)
         }
-        const { state: repoState } = git.gitRepos.get(channelAddress)
-        if (repoState === State.LOCKED) return false
         switch (message.type) {
           case Request.Type.SEND_MESSAGE:
             const currentHEAD = await git.getCurrentHEAD(channelAddress)
-            if (repoState === State.UNLOCKED && message.currentHEAD === currentHEAD) {
-              console.log('new message', message.data)
-              socketMessage(io, { message: message.data, from: from })
+            socketMessage(io, { message: message.data, from: from })
+            if (message.currentHEAD === currentHEAD) {
               await git.addCommit(message.channelId, message.id, message.raw, message.created, message.parentId)
             } else {
-              git.gitRepos.get(channelAddress).state = State.LOCKED
               const mergeTime = await git.pullChanges(this.onionAddressesBook.get(from), channelAddress)
               const orderedMessages = await git.loadAllMessages(channelAddress)
               loadAllMessages(io, orderedMessages)
-              if (!mergeTime) {
-                git.gitRepos.get(channelAddress).state = State.UNLOCKED
-                return
-              }
               const newHead = await git.getCurrentHEAD(channelAddress)
               const mergeResult = message.currentHEAD === newHead
-              if (mergeResult) {
-                git.gitRepos.get(channelAddress).state = State.UNLOCKED
-              } else {
+              if (!mergeResult) {
                 const messagePayload = {
                   created: new Date(mergeTime),
                   parentId: (~~(Math.random() * 1e9)).toString(36) + Date.now(),
@@ -149,23 +148,25 @@ export class ConnectionsManager {
                 }
                 const chat = this.chatRooms.get(`${channelAddress}`)
                 await chat.chatInstance.sendNewMergeCommit(messagePayload)
-                git.gitRepos.get(channelAddress).state = State.UNLOCKED
               }
             }
             break
           case Request.Type.MERGE_COMMIT_INFO:
-            git.gitRepos.get(message.channelId).state = State.LOCKED
             const head = await git.getCurrentHEAD(message.channelId)
             if (head !== message.currentHEAD && from !== this.libp2p.peerId.toB58String()) {
               await git.pullChanges(this.onionAddressesBook.get(from), message.channelId, message.created)
               const orderedMessages = await git.loadAllMessages(channelAddress)
               loadAllMessages(io, orderedMessages)
             }
-            git.gitRepos.get(message.channelId).state = State.UNLOCKED
             break
       }
+      release()
+      } catch (err) {
+        console.log(err)
+        release()
+      }
     })
-    this.chatRooms.set(channelAddress, { chatInstance: chat })
+    this.chatRooms.set(channelAddress, { chatInstance: chat, mutex })
   }
   public connectToNetwork = async (target: string) => {
     console.log(`Attempting to dial ${target}`)
@@ -184,22 +185,31 @@ export class ConnectionsManager {
 
   public getOnionAddress = async (key: string): Promise<string> => {
     const onionAddress = await this.libp2p._dht.get(key)
-    return onionAddress.toString()
+    const onionAddressString = new TextDecoder('utf-8').decode(onionAddress)
+    return onionAddressString
   }
 
   public sendMessage = async (channelAddress: string, git: Git, message: string): Promise<void> => {
     const chat = this.chatRooms.get(`${channelAddress}`)
-    const currentHEAD = await git.getCurrentHEAD(channelAddress)
-    const timestamp = new Date()
-    const messagePayload = {
-      data: Buffer.from(message),
-      created: new Date(timestamp),
-      parentId: (~~(Math.random() * 1e9)).toString(36) + Date.now(),
-      channelId: channelAddress,
-      currentHEAD,
-      from: this.libp2p.peerId.toB58String()
+    const release = await chat.mutex.acquire() 
+    try {
+      const currentHEAD = await git.getCurrentHEAD(channelAddress)
+      const timestamp = new Date()
+      console.log('sending message', message, currentHEAD)
+      const messagePayload = {
+        data: Buffer.from(message),
+        created: new Date(timestamp),
+        parentId: (~~(Math.random() * 1e9)).toString(36) + Date.now(),
+        channelId: channelAddress,
+        currentHEAD,
+        from: this.libp2p.peerId.toB58String()
+      }
+      await chat.chatInstance.send(messagePayload)
+      release()
+    } catch (err) {
+      console.log(err)
+      release()
     }
-    await chat.chatInstance.send(messagePayload)
   }
 
   public startSendingMessages = async (channelAddress: string, git: Git): Promise<string> => {

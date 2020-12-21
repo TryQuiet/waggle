@@ -44,7 +44,7 @@ const main = async () => {
     const peerId2Restored = await PeerId.createFromJSON(parsedId2)
     const connectionsManager1 = new ConnectionsManager({ port: 7766, host: add1, agentHost: 'localhost', agentPort: 9050 })
     const node1 = await connectionsManager1.initializeNode(peerId1Restored)
-    await connectionsManager1.subscribeForTopic({topic: '/libp2p/example/chat/1.0.0', channelAddress: 'test-address', git })
+    await connectionsManager1.subscribeForTopic({ channelAddress: 'test-address', git })
     const elo = await connectionsManager1.createOnionPeerId(node1.peerId)
     console.log('node1', node1.address, node1.peerId)
     const key = new TextEncoder().encode(add3)
