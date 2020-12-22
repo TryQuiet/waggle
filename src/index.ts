@@ -1,13 +1,9 @@
+import { Tor } from 'tor-manager'
 import { DataServer } from './socket/DataServer'
+import { Git } from './git/index'
 
-const main = async () => {
-  const dataServer = new DataServer()
-  await dataServer.initTor()
-  await dataServer.initGit()
-  await dataServer.initializeLibp2p()
-  await dataServer.listen()
-  // dataServer.listen()
+export default {
+  Tor,
+  DataServer,
+  Git
 }
-main()
-
-export default DataServer

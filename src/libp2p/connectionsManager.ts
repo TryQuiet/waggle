@@ -212,52 +212,52 @@ export class ConnectionsManager {
     }
   }
 
-  public startSendingMessages = async (channelAddress: string, git: Git): Promise<string> => {
-    try {
-      const chat = this.chatRooms.get(`${channelAddress}`)
-      for(let i = 0; i <= 1000; i++) {
-        const { state } = git.gitRepos.get(channelAddress)
-        if (state === State.LOCKED) {
-          await sleep(2500)
-          console.log('locked')
-          continue
-        }
-        const currentHEAD = await git.getCurrentHEAD(channelAddress)
-        const randomBytes = Crypto.randomBytes(256)
-        const timestamp = randomTimestamp()
-        const messagePayload = {
-          data: randomBytes,
-          created: new Date(timestamp),
-          parentId: (~~(Math.random() * 1e9)).toString(36) + Date.now(),
-          channelId: channelAddress,
-          currentHEAD,
-          signature: this.libp2p.peerId.toB58String()
-        }
-        await chat.chatInstance.send(messagePayload)
-        await sleep(2500)
-      }
-      return 'done'
-      } catch (e) {
-      console.error('ERROR', e)
-      throw(e)
-    }
-  }
+  // public startSendingMessages = async (channelAddress: string, git: Git): Promise<string> => {
+  //   try {
+  //     const chat = this.chatRooms.get(`${channelAddress}`)
+  //     for(let i = 0; i <= 1000; i++) {
+  //       const { state } = git.gitRepos.get(channelAddress)
+  //       if (state === State.LOCKED) {
+  //         await sleep(2500)
+  //         console.log('locked')
+  //         continue
+  //       }
+  //       const currentHEAD = await git.getCurrentHEAD(channelAddress)
+  //       const randomBytes = Crypto.randomBytes(256)
+  //       const timestamp = randomTimestamp()
+  //       const messagePayload = {
+  //         data: randomBytes,
+  //         created: new Date(timestamp),
+  //         parentId: (~~(Math.random() * 1e9)).toString(36) + Date.now(),
+  //         channelId: channelAddress,
+  //         currentHEAD,
+  //         signature: this.libp2p.peerId.toB58String()
+  //       }
+  //       await chat.chatInstance.send(messagePayload)
+  //       await sleep(2500)
+  //     }
+  //     return 'done'
+  //     } catch (e) {
+  //     console.error('ERROR', e)
+  //     throw(e)
+  //   }
+  // }
 
-  public listenForInput = async (channelAddress: string): Promise<void> => {
-    process.stdin.on('data', async (message) => {
-      // Remove trailing newline
-      message = message.slice(0, -1)
-      const chat = this.chatRooms.get(`${channelAddress}`)
-      // If there was a command, exit early
-      try {
-        // Publish the message
-        console.log('ok')
-        // await chat.chatInstance.send(message)
-      } catch (err) {
-        console.error('Could not publish chat', err)
-      }
-    })
-  }
+  // public listenForInput = async (channelAddress: string): Promise<void> => {
+  //   process.stdin.on('data', async (message) => {
+  //     // Remove trailing newline
+  //     message = message.slice(0, -1)
+  //     const chat = this.chatRooms.get(`${channelAddress}`)
+  //     // If there was a command, exit early
+  //     try {
+  //       // Publish the message
+  //       console.log('ok')
+  //       // await chat.chatInstance.send(message)
+  //     } catch (err) {
+  //       console.error('Could not publish chat', err)
+  //     }
+  //   })
+  // }
   private createBootstrapNode = ({ peerId, addrs, agent, localAddr, bootstrapMultiaddrsList }): Promise<Libp2p> => {
     return Libp2p.create({
       peerId,

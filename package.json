@@ -1,9 +1,9 @@
 {
-  "name": "libp2p-connection-manager",
+  "name": "tlg-manager",
   "version": "0.0.1",
   "author": "jk",
-  "description": "Hidden service manager for Tor",
-  "main": "lib/index.js",
+  "description": "tlg-manager",
+  "main": "lib/src/index.js",
   "license": "MIT",
   "scripts": {
     "build": "tsc",
