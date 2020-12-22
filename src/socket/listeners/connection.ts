@@ -1,7 +1,7 @@
 import { EventTypesServer } from '../constants'
 import { EventTypesResponse } from '../constantsReponse'
-import { Git } from '../../../git/index'
-import { ConnectionsManager } from '../../connectionsManager'
+import { Git } from '../../git/'
+import { ConnectionsManager } from '../../libp2p/connectionsManager'
 import { Tor } from 'tor-manager'
 
 module.exports = (io, connectionsManager: ConnectionsManager, git: Git, tor: Tor) => {

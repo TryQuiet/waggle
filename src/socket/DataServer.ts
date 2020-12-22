@@ -5,8 +5,8 @@ import * as path from 'path'
 import * as os from 'os'
 import fs from 'fs'
 import PeerId from 'peer-id'
-import { ConnectionsManager } from '../connectionsManager'
-import { Git } from '../../git/index'
+import { ConnectionsManager } from '../libp2p/connectionsManager'
+import { Git } from '../git/index'
 import initListeners from './listeners'
 import { sleep } from '../sleep'
 const socketio = require('socket.io')
@@ -72,7 +72,6 @@ export class DataServer {
     }
     this.libp2pAddress = service1.address
     this.repositoryAddress = service2.address
-    console.log('test', this.repositoryAddress)
   }
 
   public listen = (): void => {
@@ -83,15 +82,14 @@ export class DataServer {
   }
 
   public initializeLibp2p = async (): Promise<void> => {
-    const peerId1 = fs.readFileSync('peerId1.json')
-    const peerId2 = fs.readFileSync('peerId2.json')
-    const parsedId1 = JSON.parse(peerId1.toString()) as PeerId.JSONPeerId
-    const parsedId2 = JSON.parse(peerId2.toString()) as PeerId.JSONPeerId
-    const peerId1Restored = await PeerId.createFromJSON(parsedId1)
-    const peerId2Restored = await PeerId.createFromJSON(parsedId2)
+    // const peerId1 = fs.readFileSync('peerId1.json')
+    // const peerId2 = fs.readFileSync('peerId2.json')
+    // const parsedId1 = JSON.parse(peerId1.toString()) as PeerId.JSONPeerId
+    // const parsedId2 = JSON.parse(peerId2.toString()) as PeerId.JSONPeerId
+    // const peerId1Restored = await PeerId.createFromJSON(parsedId1)
+    // const peerId2Restored = await PeerId.createFromJSON(parsedId2)
     this.connectonsManager = new ConnectionsManager({ port: 7788, host: this.libp2pAddress, agentHost: 'localhost', agentPort: 9050 })
-    const node = await this.connectonsManager.initializeNode(peerId1Restored)
-    await this.connectonsManager.subscribeForTopic({ channelAddress: 'test-address', git: this.git, io: this.io })
+    const node = await this.connectonsManager.initializeNode()
     const peerIdOnionAddress = await this.connectonsManager.createOnionPeerId(node.peerId)
     const key = new TextEncoder().encode(this.repositoryAddress)
     await this.connectonsManager.publishOnionAddress(peerIdOnionAddress, key)
