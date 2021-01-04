@@ -26,7 +26,7 @@ const main = async () => {
     service1 = await tor.getServiceAddress(7788)
     service2 = await tor.getServiceAddress(7799)
   } catch (e) {
-    service1 = await (await tor.addService({ port: 7788, createDefault: true })).address
+    service1 = await (await tor.addService({ port: 7788 })).address
     service2 = await (await tor.addService({ port: 7799 })).address
   }
   console.log('service1', service1)
