@@ -13,12 +13,7 @@ export class DataServer {
   }
 
   private initSocket = (): void => {
-    this.io = socketio(this.server, {
-      cors: {
-        orgins: ["null"],
-        methods: ["GET", "POST"],
-        credentials: true
-      }})
+    this.io = socketio(this.server)
     }
 
     public listen = (): void => {

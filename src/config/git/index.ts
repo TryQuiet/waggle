@@ -141,8 +141,8 @@ export class Git {
       if(file !== '0') {
         const data = fs.readFileSync(path.join(targetFilePath, file))
         const { sendMessage } = Request.decode(data)
-        const timestamp = sendMessage.created
-        const message = sendMessage.data.toString()
+        const timestamp = sendMessage.createdAt
+        const message = sendMessage.message.toString()
         const signature = sendMessage.signature.toString()
         const msg = {
           timestamp,
