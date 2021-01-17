@@ -9,10 +9,11 @@ export interface IMessage {
   typeIndicator: number
   message: string
   createdAt: Date
+  r: number
   parentId: string
   channelId: string
   currentHEAD: string
-  signature: Buffer
+  signature: string
 }
 export interface IMessageCommit {
   created: Date
@@ -81,12 +82,14 @@ export class Chat {
             from: message.from,
             message: {
               id: request.sendMessage.id,
-              typeIndicator: request.sendMessage.typeIndicator ? 1 : 0,
+              type: request.sendMessage.type,
+              typeIndicator: request.sendMessage.typeIndicator ? true : false,
               message: request.sendMessage.message,
               createdAt: request.sendMessage.createdAt,
               parentId: request.sendMessage.parentId,
               channelId: request.sendMessage.channelId,
               currentHEAD: request.sendMessage.currentHEAD,
+              r: request.sendMessage.r,
               signature: request.sendMessage.signature,
               raw: message.data,
               typeLibp2p: Request.MessageType.SEND_MESSAGE
@@ -129,6 +132,7 @@ export class Chat {
         message: message.message,
         createdAt: message.createdAt,
         parentId: message.parentId,
+        r: message.r,
         channelId: message.channelId,
         currentHEAD: message.currentHEAD,
         signature: message.signature

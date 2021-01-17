@@ -141,18 +141,20 @@ export class Git {
       if(file !== '0') {
         const data = fs.readFileSync(path.join(targetFilePath, file))
         const { sendMessage } = Request.decode(data)
-        const timestamp = sendMessage.created
-        const message = sendMessage.data.toString()
-        const signature = sendMessage.signature.toString()
-        const msg = {
-          timestamp,
-          message, 
-          signature
-        }
-        messages.push(msg)
+        const { channelId, type, signature, r, createdAt, message, id, typeIndicator } = sendMessage
+        messages.push({
+          id,
+          type,
+          signature,
+          channelId,
+          r,
+          createdAt,
+          message,
+          typeIndicator
+        })
       }
     }
-    const orderedMessages = messages.sort((a, b) => a.timestamp - b.timestamp)
+    const orderedMessages = messages.sort((a, b) => a.createdAt - b.createdAt)
     return orderedMessages
   }
 

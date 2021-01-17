@@ -19,7 +19,10 @@ export const connections = (io, connectionsManager: ConnectionsManager, git: Git
       try {
         await git.createRepository(channelAddress)
         const orderedMessages = await git.loadAllMessages(channelAddress)
-        socket.emit(EventTypesResponse.RESPONSE_FETCH_ALL_MESSAGES, orderedMessages)
+        socket.emit(EventTypesResponse.RESPONSE_FETCH_ALL_MESSAGES, {
+          channelAddress,
+          messages: orderedMessages
+        })
       } catch (err) {
         console.error(err)
         socket.emit(EventTypesServer.ERROR, {

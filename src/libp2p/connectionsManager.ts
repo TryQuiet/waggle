@@ -31,7 +31,7 @@ interface IConstructor {
 interface IBasicMessage {
   id: string
   type: number
-  signature: Buffer
+  signature: string
   createdAt: Date
   r: number
   message: string
@@ -143,14 +143,13 @@ export class ConnectionsManager {
         switch (message.typeLibp2p) {
           case Request.MessageType.SEND_MESSAGE:
             const currentHEAD = await git.getCurrentHEAD(channelAddress)
-            console.log('test', message)
             socketMessage(io, { message, channelAddress })
             if (message.currentHEAD === currentHEAD) {
               await git.addCommit(message.channelId, message.id, message.raw, message.createdAt, message.parentId)
             } else {
               const mergeTime = await git.pullChanges(this.onionAddressesBook.get(from), channelAddress)
               const orderedMessages = await git.loadAllMessages(channelAddress)
-              loadAllMessages(io, orderedMessages)
+              loadAllMessages(io, orderedMessages, channelAddress)
               const newHead = await git.getCurrentHEAD(channelAddress)
               const mergeResult = message.currentHEAD === newHead
               if (!mergeResult) {
@@ -170,7 +169,7 @@ export class ConnectionsManager {
             if (head !== message.currentHEAD && from !== this.libp2p.peerId.toB58String()) {
               await git.pullChanges(this.onionAddressesBook.get(from), message.channelId, message.created)
               const orderedMessages = await git.loadAllMessages(channelAddress)
-              loadAllMessages(io, orderedMessages)
+              loadAllMessages(io, orderedMessages, channelAddress)
             }
             break
       }
@@ -206,7 +205,7 @@ export class ConnectionsManager {
   public sendMessage = async (channelAddress: string, git: Git, messagePayload: IBasicMessage): Promise<void> => {
     const { id, type, signature, r, createdAt, message, typeIndicator } = messagePayload
     const chat = this.chatRooms.get(`${channelAddress}`)
-    const release = await chat.mutex.acquire() 
+    const release = await chat.mutex.acquire()
     try {
       const currentHEAD = await git.getCurrentHEAD(channelAddress)
       const messageToSend = {

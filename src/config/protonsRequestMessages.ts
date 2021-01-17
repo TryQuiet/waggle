@@ -19,9 +19,10 @@ message SendMessage {
   required int64 createdAt = 4;
   required string parentId = 5;
   required string channelId = 6;
-  required string currentHEAD = 7;
-  required bytes signature = 8;
-  required int32 typeIndicator = 9;
+  required int32 r = 7;
+  required string currentHEAD = 8;
+  required string signature = 9;
+  required int32 typeIndicator = 10;
 }
 
 message MergeCommitInfo {
