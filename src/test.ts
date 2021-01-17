@@ -32,7 +32,7 @@ const main = async () => {
   console.log('service1', service1)
   console.log('service2', service2)
 
-  const git = new Git()
+  const git = new Git('test', 'test', 'test')
   await git.init()
   await git.spawnGitDaemon()
 

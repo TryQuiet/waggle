@@ -72,9 +72,9 @@ export class ConnectionsManager {
   localAddress: string | null
   onionAddressesBook: Map<string, string>
   constructor({ host, port, agentHost, agentPort }: IConstructor) {
-    this.host = host,
-    this.port = port,
-    this.agentPort = agentPort,
+    this.host = host
+    this.port = port
+    this.agentPort = agentPort
     this.agentHost = agentHost
     this.chatRooms = new Map()
     this.onionAddressesBook = new Map()

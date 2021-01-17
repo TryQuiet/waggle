@@ -27,10 +27,16 @@ export class Git {
   process: child_process.ChildProcessWithoutNullStreams | null = null
   git: SimpleGit
   gitRepos: Map<string, IRepos>
+  connectBinaryPath: string
+  socketScript: string
+  gitPath: string
   staticDateOfRepoCreation: number
-  constructor() {
+  constructor(socketScript: string, connectBinaryPath: string, gitPath: string) {
     this.gitRepos = new Map()
     this.staticDateOfRepoCreation = 1607528064631
+    this.socketScript = socketScript
+    this.connectBinaryPath = connectBinaryPath
+    this.gitPath = gitPath
   }
 
   public init = async () => {
@@ -41,7 +47,7 @@ export class Git {
         for (const dir of dirs) {
           const options = {
             baseDir: `${targetPath}${dir}/`,
-            binary: 'git',
+            binary: this.gitPath,
             maxConcurrent: 6
           }
           const git = simpleGit(options)
@@ -66,7 +72,7 @@ export class Git {
   private addRepo = async (repoPath: string, repoName: string) => {
     const options = {
       baseDir: repoPath,
-      binary: 'git',
+      binary: this.gitPath,
       maxConcurrent: 6
     }
     const git = simpleGit(options)
@@ -96,8 +102,8 @@ export class Git {
     const mergeTime = Date.now()
     const pull = async (onionAddress, repoName, git: SimpleGit) => {
         await git.env('SOCKS5_PASSWORD', ` `)
-        await git.env('GIT_PROXY_COMMAND', `${process.cwd()}/git/script/socks5proxywrapper`)
-        await git.env('BINARY_PATH', `${process.cwd()}/git/script/connect`)
+        await git.env('GIT_PROXY_COMMAND', `${this.socketScript}`)
+        await git.env('BINARY_PATH', `${this.connectBinaryPath}`)
         await targetRepo.git.env('GIT_COMMITTER_DATE', `"${new Date(mergeTimeFromSource || mergeTime).toUTCString()}"`)
         await targetRepo.git.env('GIT_AUTHOR_DATE', `"${new Date(mergeTimeFromSource || mergeTime).toUTCString()}"`)
         await targetRepo.git.addConfig('user.name', 'zbay')
@@ -197,7 +203,7 @@ export class Git {
     if (this.process) {
       throw new Error('Already initialized')
     }
-      this.process = child_process.spawn('git', ['daemon', `--base-path=${os.homedir()}/ZbayChannels/`, `--export-all`, `--verbose`])
+      this.process = child_process.spawn(this.gitPath, ['daemon', `--base-path=${os.homedir()}/ZbayChannels/`, `--export-all`, `--verbose`])
     const id = setTimeout(() => {
       this.process?.kill()
       reject('Process timeout ??')

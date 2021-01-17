@@ -29,7 +29,7 @@ export class DataServer {
   constructor() {
     this._app = express()
     this.server = createServer(this._app)
-    this.git = new Git()
+    this.git = new Git('test', 'test', 'test')
     this.initSocket()
   }
 
