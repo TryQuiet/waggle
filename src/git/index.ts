@@ -38,7 +38,6 @@ export class Git {
     this.connectBinaryPath = connectBinaryPath
     this.gitPath = gitPath
   }
-
   public init = async () => {
     const targetPath = `${os.homedir()}/ZbayChannels/`
     this.createPaths([targetPath])
@@ -103,7 +102,7 @@ export class Git {
     const pull = async (onionAddress, repoName, git: SimpleGit) => {
         await git.env('SOCKS5_PASSWORD', ` `)
         await git.env('GIT_PROXY_COMMAND', `${this.socketScript}`)
-        await git.env('BINARY_PATH', `${this.gitPath}`)
+        await git.env('BINARY_PATH', `${this.connectBinaryPath}`)
         await targetRepo.git.env('GIT_COMMITTER_DATE', `"${new Date(mergeTimeFromSource || mergeTime).toUTCString()}"`)
         await targetRepo.git.env('GIT_AUTHOR_DATE', `"${new Date(mergeTimeFromSource || mergeTime).toUTCString()}"`)
         await targetRepo.git.addConfig('user.name', 'zbay')
