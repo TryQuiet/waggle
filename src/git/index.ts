@@ -204,7 +204,7 @@ export class Git {
     if (this.process) {
       throw new Error('Already initialized')
     }
-      this.process = child_process.spawn(this.gitPath, ['daemon', `--base-path=${os.homedir()}/ZbayChannels/`, `--export-all`, `--verbose`])
+      this.process = child_process.spawn('git', ['daemon', `--base-path=${os.homedir()}/ZbayChannels/`, `--export-all`, `--verbose`])
     const id = setTimeout(() => {
       this.process?.kill()
       reject('Process timeout ??')
