@@ -205,26 +205,28 @@ export class ConnectionsManager {
   public sendMessage = async (channelAddress: string, git: Git, messagePayload: IBasicMessage): Promise<void> => {
     const { id, type, signature, r, createdAt, message, typeIndicator } = messagePayload
     const chat = this.chatRooms.get(`${channelAddress}`)
-    const release = await chat.mutex.acquire()
-    try {
-      const currentHEAD = await git.getCurrentHEAD(channelAddress)
-      const messageToSend = {
-        id,
-        type,
-        signature,
-        createdAt,
-        r,
-        message,
-        typeIndicator,
-        currentHEAD,
-        channelId: channelAddress,
-        parentId: (~~(Math.random() * 1e9)).toString(36) + Date.now()
+    if (chat) {
+      const release = await chat.mutex.acquire()
+      try {
+        const currentHEAD = await git.getCurrentHEAD(channelAddress)
+        const messageToSend = {
+          id,
+          type,
+          signature,
+          createdAt,
+          r,
+          message,
+          typeIndicator,
+          currentHEAD,
+          channelId: channelAddress,
+          parentId: (~~(Math.random() * 1e9)).toString(36) + Date.now()
+        }
+        await chat.chatInstance.send(messageToSend)
+        release()
+      } catch (err) {
+        console.log(err)
+        release()
       }
-      await chat.chatInstance.send(messageToSend)
-      release()
-    } catch (err) {
-      console.log(err)
-      release()
     }
   }
 
