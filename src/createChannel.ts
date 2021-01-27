@@ -54,7 +54,7 @@ const main = async () => {
       id: 'a',
       type: 1,
       signature: 'sig',
-      createdAt: new Date(),
+      createdAt: new Date().getTime(),
       r: 2,
       message: 'This is message',
       typeIndicator: 0

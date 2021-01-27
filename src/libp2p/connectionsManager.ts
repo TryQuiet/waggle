@@ -21,7 +21,7 @@ interface IBasicMessage {
   id: string
   type: number
   signature: string
-  createdAt: Date
+  createdAt: number
   r: number
   message: string
   typeIndicator: number
@@ -127,7 +127,7 @@ export class ConnectionsManager {
       id,
       type,
       signature,
-      createdAt: createdAt.toISOString(),
+      createdAt: new Date(createdAt).toISOString(),
       r,
       message,
       typeIndicator,
