@@ -5,7 +5,7 @@ export const loadAllMessages = (socket, messages, channelAddress) => {
     channelAddress,
     messages: messages.map(message => ({
       ...message,
-      createdAt: new Date(Date.parse(message.createdAt))
+      createdAt: Date.parse(message.createdAt)
     }))
   })
 }
