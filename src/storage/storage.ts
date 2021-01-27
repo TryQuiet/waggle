@@ -50,10 +50,11 @@ export class Storage {
   }
 
   public async subscribeForChannel(channelAddress: string, io: any): Promise<void> {
-    if (!this.repos.has(channelAddress)) {
-      await this.createChannel(channelAddress)
-    }
-    const db = this.repos.get(channelAddress).db
+    if (this.repos.has(channelAddress)) return
+
+    console.log('Subscribing to channel', channelAddress)
+    const db = await this.createChannel(channelAddress)
+
     db.events.on('write', (_address, entry) => {
       socketMessage(io, { message: entry.payload.value, channelAddress })
     })
@@ -69,17 +70,16 @@ export class Storage {
       .collect()
       .map(e => e.payload.value)
     loadAllMessages(io, all, channelAddress)
+    console.log('Subscribtion to channel ready', channelAddress)
   }
 
-  public async sendMessage(channelAddress: string, message: IMessage) {
-    const db = this.repos.get(channelAddress)?.db
-    if (!db) {
-      throw new Error("Attempt to publish to channel we're not subscribed to")
-    }
+  public async sendMessage(channelAddress: string, io: any, message: IMessage) {
+    await this.subscribeForChannel(channelAddress, io)
+    const db = this.repos.get(channelAddress).db
     await db.add(message)
   }
 
-  private async createChannel(repoName: string): Promise<void> {
+  private async createChannel(repoName: string): Promise<EventStore<IMessage>> {
     const channel = this.channels.get(repoName)
     let db: EventStore<IMessage>
     if (channel) {
@@ -97,6 +97,7 @@ export class Storage {
       })
     }
     this.repos.set(repoName, { db })
+    return db
   }
 
   private createPaths(paths: string[]) {

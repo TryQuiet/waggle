@@ -120,6 +120,7 @@ export class ConnectionsManager {
 
   public sendMessage = async (
     channelAddress: string,
+    io: any,
     messagePayload: IBasicMessage
   ): Promise<void> => {
     const { id, type, signature, r, createdAt, message, typeIndicator } = messagePayload
@@ -133,7 +134,7 @@ export class ConnectionsManager {
       typeIndicator,
       channelId: channelAddress
     }
-    await this.storage.sendMessage(channelAddress, messageToSend)
+    await this.storage.sendMessage(channelAddress, io, messageToSend)
   }
 
   // public startSendingMessages = async (channelAddress: string, git: Git): Promise<string> => {

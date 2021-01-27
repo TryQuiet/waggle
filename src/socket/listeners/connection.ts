@@ -9,7 +9,7 @@ export const connections = (io, connectionsManager: ConnectionsManager) => {
       await connectionsManager.subscribeForTopic(channelAddress, io)
     })
     socket.on(EventTypesServer.SEND_MESSAGE, async ({ channelAddress, message }) => {
-      await connectionsManager.sendMessage(channelAddress, message)
+      await connectionsManager.sendMessage(channelAddress, io, message)
     })
     // socket.on(EventTypesServer.ADD_TOR_SERVICE, async (port: number) => {
     //   try {

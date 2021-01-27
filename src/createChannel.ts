@@ -60,7 +60,7 @@ const main = async () => {
       typeIndicator: 0
     }
     console.log('here')
-    await connectonsManager.sendMessage('abcd', message)
+    await connectonsManager.sendMessage('abcd', io, message)
   }, 3000)
 }
 
