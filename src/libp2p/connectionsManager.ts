@@ -127,7 +127,7 @@ export class ConnectionsManager {
       id,
       type,
       signature,
-      createdAt: new Date(createdAt).toISOString(),
+      createdAt,
       r,
       message,
       typeIndicator,

@@ -12,7 +12,7 @@ export interface IMessage {
   type: number
   typeIndicator: number
   message: string
-  createdAt: string
+  createdAt: number
   r: number
   channelId: string
   signature: string
