@@ -30,11 +30,48 @@ interface IZbayChannel {
 const channelAddress =
   '/orbitdb/zdpuAmqqhvij9w3wqbSEam9p3V6HaPKDKUHTsfREnYCFiWAm3/zbay-public-channels'
 
+
+
 export class Storage {
   private ipfs: IPFS.IPFS
   private orbitdb: OrbitDB
   private channels: KeyValueStore<IZbayChannel>
   public repos: Map<String, IRepo> = new Map()
+
+  private logEvents(db) {
+    db.events.on('write', (_address, entry) => {
+      console.log('Event WRITE: ', _address, entry)
+    })
+
+    db.events.on('replicate.progress', (address, hash, entry, progress, have) => {
+      console.log('Event REPLICATE.PROGRESS: ', address)
+    })
+
+    db.events.on('replicate', (address) => {
+      console.log('Event REPLICATE (before): ', address)
+    })
+
+    db.events.on('replicated', (address) => {
+      console.log('Event REPLICATED (after): ', address)
+    })
+
+    db.events.on('peer.exchanged', (peer, address, heads) => {
+      console.log('Event PEER.EXCHANGED')
+      console.log('=== All channels', this.channels.all)
+      console.log('=== Channels count --->', this.channels.all.length)
+    })
+
+    db.events.on('peer', (peer) => {
+      console.log('PEER connected: ', peer)
+    })
+
+    db.events.on('load.progress', (address, hash, entry, progress, total) => {
+      console.log('____')
+      console.log('loading db ', progress, '/', total)
+      console.log('loading db', entry)
+      console.log('____')
+    })
+  }
 
   public async init(libp2p: any): Promise<void> {
     const targetPath = `${os.homedir()}/.zbay/ZbayChannels/`
@@ -44,9 +81,21 @@ export class Storage {
       preload: { enabled: false },
       repo: targetPath
     })
+    console.log('before create db instance')
     this.orbitdb = await OrbitDB.createInstance(this.ipfs, {directory: `${os.homedir()}/.zbay/OrbitDB`})
-    this.channels = await this.orbitdb.keyvalue<IZbayChannel>(channelAddress)
+    console.log('before this.orbitdb.keyvalue ')
+    this.channels = await this.orbitdb.keyvalue<IZbayChannel>('zbay-public-channels', {
+      accessController: {
+        write: ['*']
+      }
+    })
+
+    this.logEvents(this.channels)
+
     await this.channels.load()
+    console.log('after channels.load()')
+    console.log('Init - all channels:', this.channels.all)
+    console.log('Init - all channels count:', this.channels.all.length)
   }
 
   public async subscribeForChannel(channelAddress: string, io: any): Promise<void> {
