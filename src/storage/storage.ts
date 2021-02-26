@@ -39,8 +39,12 @@ export class Storage {
   public repos: Map<String, IRepo> = new Map()
 
   private logEvents(db) {
+    console.log('Replication status', db.replicationStatus)
+
     db.events.on('write', (_address, entry) => {
+      console.log('Replication status', db.replicationStatus)
       console.log('Event WRITE: ', _address, entry)
+      console.log('=== All channels', this.channels.all)
     })
 
     db.events.on('replicate.progress', (address, hash, entry, progress, have) => {
@@ -52,24 +56,21 @@ export class Storage {
     })
 
     db.events.on('replicated', (address) => {
-      console.log('Event REPLICATED (after): ', address)
+      console.log('* Event REPLICATED (after): ', address)
+      console.log('* Replication status', db.replicationStatus)
+      console.log('* All channels', this.channels.all)
     })
 
     db.events.on('peer.exchanged', (peer, address, heads) => {
       console.log('Event PEER.EXCHANGED')
-      console.log('=== All channels', this.channels.all)
-      console.log('=== Channels count --->', this.channels.all.length)
     })
 
     db.events.on('peer', (peer) => {
-      console.log('PEER connected: ', peer)
+      console.log('Event PEER: ', peer)
     })
 
     db.events.on('load.progress', (address, hash, entry, progress, total) => {
-      console.log('____')
-      console.log('loading db ', progress, '/', total)
-      console.log('loading db', entry)
-      console.log('____')
+      console.log(`Event LOAD.PROGRESS ===> ${progress}/${total}`)
     })
   }
 
@@ -81,21 +82,22 @@ export class Storage {
       preload: { enabled: false },
       repo: targetPath
     })
-    console.log('before create db instance')
     this.orbitdb = await OrbitDB.createInstance(this.ipfs, {directory: `${os.homedir()}/.zbay/OrbitDB`})
-    console.log('before this.orbitdb.keyvalue ')
     this.channels = await this.orbitdb.keyvalue<IZbayChannel>('zbay-public-channels', {
       accessController: {
         write: ['*']
       }
     })
+    console.log(`-->> Channels db address: ${this.channels.address}`)
 
     this.logEvents(this.channels)
 
     await this.channels.load()
-    console.log('after channels.load()')
+    console.log('Loaded DB')
     console.log('Init - all channels:', this.channels.all)
-    console.log('Init - all channels count:', this.channels.all.length)
+
+    // get all channels this.channel.all
+    // iterate and subscribe to all
   }
 
   public async subscribeForChannel(channelAddress: string, io: any): Promise<void> {
@@ -131,7 +133,9 @@ export class Storage {
   private async createChannel(repoName: string): Promise<EventStore<IMessage>> {
     const channel = this.channels.get(repoName)
     let db: EventStore<IMessage>
+    console.log(`Get or create channel`)
     if (channel) {
+      console.log(`${channel} exists. Loading...`)
       db = await this.orbitdb.log<IMessage>(channel.orbitAddress)
       await db.load()
     } else {
@@ -144,6 +148,7 @@ export class Storage {
         orbitAddress: `/orbitdb/${db.address.root}/${db.address.path}`,
         name: repoName
       })
+      console.log(`Created channel ${repoName}`)
     }
     this.repos.set(repoName, { db })
     return db
