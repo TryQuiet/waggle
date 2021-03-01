@@ -71,7 +71,7 @@ export class ConnectionsManager {
     const addrs = [`/dns4/${this.host}/tcp/${this.port}/ws`]
 
     const bootstrapMultiaddrs = [
-      '/dns4/j4jfa7fmyqirluxfxcturjcpzlk7ecal24afno6fzib3u4yycmbxn6ad.onion/tcp/7788/ws/p2p/Qmak8HeMad8X1HGBmz2QmHfiidvGnhu6w6ugMKtx8TFc85'
+      '/dns4/yz5tdvvez45gnjvpcu5adjb5itpsm5c3bzvnskheaolvg2i7znxj6ryd.onion/tcp/7788/ws/p2p/QmUK5QUKwV5jCjNR6mTWsceM2fu7XvNd1J7vhwGSa6ggci'
     ]
 
     this.localAddress = `${addrs}/p2p/${peerId.toB58String()}`

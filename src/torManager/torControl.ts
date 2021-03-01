@@ -23,7 +23,7 @@ class TorControl {
   private isPersistent: any
   private setPersistent: any
   private eventEmitter: any = new EventEmitter()
-  private sendCommand: any = (command: any, cb: any, keepConnection: any) => {
+  private sendCommand: any = (command: string, cb: any, keepConnection: boolean) => {
     var self = this,
       tryDisconnect = function (callback: any) {
         if (keepConnection || self.isPersistent() || !self.connection) {
@@ -168,6 +168,7 @@ class TorControl {
 
   // Config
   public setConf(request: string, cb: any) {
+    console.log(`command is ${'SETCONF ' + request}`)
     return this.sendCommand('SETCONF ' + request, cb)
   }
   public resetConf(request: string, cb: any) {

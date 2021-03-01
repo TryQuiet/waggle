@@ -28,7 +28,7 @@ export class Tor {
     this.services = new Map()
     this.torControl = new TorControl()
   }
-  public init = (timeout = 20000): Promise<void> =>
+  public init = (timeout = 200000): Promise<void> =>
     new Promise((resolve, reject) => {
       if (this.process) {
         throw new Error('Already initialized')
@@ -76,12 +76,10 @@ export class Tor {
         recursive: true
       })
     }
+    const newServices = `HiddenServiceDir="C:/Users/Rumblefish/zbay_tor" HiddenServicePort="80 127.0.0.1:3435" HiddenServiceDir="C:/Users/Rumblefish/tor_service_${port}" HiddenServicePort="${port} 127.0.0.1:${port}"`
+    console.log(newServices)
 
-    const newServices = `HiddenServiceDir="${os.homedir()} zbay_tor"
-    HiddenServicePort 80 127.0.0.1:3435" HiddenServiceDir="${os.homedir()} tor_service_${port}"
-    HiddenServicePort="${port} 127.0.0.1:${port}"`
-
-    await this.torControl.setConf(newServices ,function (err: any, status: any) {
+    await this.torControl.setConf(newServices, function (err: any, status: any) {
       if (err) {
         return console.error(err)
       }
@@ -94,8 +92,6 @@ export class Tor {
 // HiddenServicePort ${port} 127.0.0.1:${port}
 // #Placeholder`
 //     fs.writeFileSync(this.settingsPath, data.join('\n'), 'utf8')
-
-
 
 
 
