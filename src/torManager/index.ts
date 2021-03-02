@@ -76,7 +76,7 @@ export class Tor {
         recursive: true
       })
     }
-    const newServices = `HiddenServiceDir="/home/bart/zbay_tor" HiddenServicePort="80 127.0.0.1:3435" HiddenServiceDir="/home/bart/tor_service_${port}" HiddenServicePort="${port} 127.0.0.1:${port}"`
+    const newServices = `HiddenServiceDir="/home/holmes/zbay_tor" HiddenServicePort="80 127.0.0.1:3435" HiddenServiceDir="/home/holmes/tor_service_${port}" HiddenServicePort="${port} 127.0.0.1:${port}"`
     console.log(newServices)
 
     await this.torControl.setConf(newServices, function (err: any, status: any) {
