@@ -61,7 +61,7 @@ export class ConnectionsManager {
   private createAgent = async (): Promise<void> => {
     this.socksProxyAgent = new SocksProxyAgent({ port: this.agentPort, host: this.agentHost })
   }
-  public initializeNode = async (staticPeerId?): Promise<ILibp2pStatus> => {
+  public initializeNode = async (staticPeerId?: PeerId): Promise<ILibp2pStatus> => {
     let peerId
     if (!staticPeerId) {
       peerId = await PeerId.create()
@@ -71,10 +71,15 @@ export class ConnectionsManager {
     const addrs = [`/dns4/${this.host}/tcp/${this.port}/ws`]
 
     const bootstrapMultiaddrs = [
-      '/dns4/j4jfa7fmyqirluxfxcturjcpzlk7ecal24afno6fzib3u4yycmbxn6ad.onion/tcp/7788/ws/p2p/Qmak8HeMad8X1HGBmz2QmHfiidvGnhu6w6ugMKtx8TFc85'
+      // '/dns4/j4jfa7fmyqirluxfxcturjcpzlk7ecal24afno6fzib3u4yycmbxn6ad.onion/tcp/7788/ws/p2p/Qmak8HeMad8X1HGBmz2QmHfiidvGnhu6w6ugMKtx8TFc85',
+      '/dns4/apbpcmhv3jq3hk6if2xce3en7fu766qhx6sxmu5c3i6c6hjvo3msphyd.onion/tcp/7788/ws/p2p/Qmak8HeMad8X1HGBmz2QmHfiidvGnhu6w6ugMKtx8TFc85',
     ]
 
     this.localAddress = `${addrs}/p2p/${peerId.toB58String()}`
+
+    console.log('bootstrapMultiaddrs:', bootstrapMultiaddrs)
+    console.log('local address:', this.localAddress)
+
     await this.createAgent()
     this.libp2p = await this.createBootstrapNode({
       peerId,
@@ -96,7 +101,7 @@ export class ConnectionsManager {
     await this.storage.init(this.libp2p)
 
     return {
-      address: `${addrs}/p2p/${peerId.toB58String()}`,
+      address: this.localAddress,
       peerId: peerId.toB58String()
     }
   }

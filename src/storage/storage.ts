@@ -79,7 +79,7 @@ export class Storage {
     this.createPaths([targetPath])
     this.ipfs = await IPFS.create({
       libp2p: () => libp2p,
-      preload: { enabled: false },
+      preload: { enabled: true },
       repo: targetPath
     })
     this.orbitdb = await OrbitDB.createInstance(this.ipfs, {directory: `${os.homedir()}/.zbay/OrbitDB`})
@@ -110,6 +110,7 @@ export class Storage {
       socketMessage(io, { message: entry.payload.value, channelAddress })
     })
     db.events.on('replicated', () => {
+      console.log('Messages replicated')
       const all = db
         .iterator({ limit: -1 })
         .collect()

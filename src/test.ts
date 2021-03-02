@@ -37,11 +37,11 @@ const main = async () => {
 
   const dataServer = new DataServer()
   dataServer.listen()
-  const peerId1 = fs.readFileSync('peerId1.json')
+  // const peerId1 = fs.readFileSync('peerId1.json')
   const peerId2 = fs.readFileSync('peerId2.json')
-  const parsedId1 = JSON.parse(peerId1.toString()) as PeerId.JSONPeerId
+  // const parsedId1 = JSON.parse(peerId1.toString()) as PeerId.JSONPeerId
   const parsedId2 = JSON.parse(peerId2.toString()) as PeerId.JSONPeerId
-  const peerId1Restored = await PeerId.createFromJSON(parsedId1)
+  // const peerId1Restored = await PeerId.createFromJSON(parsedId1)
   const peerId2Restored = await PeerId.createFromJSON(parsedId2)
   const connectonsManager = new ConnectionsManager({
     port: 7788,
@@ -49,10 +49,11 @@ const main = async () => {
     agentHost: 'localhost',
     agentPort: 9050
   })
-  const node = await connectonsManager.initializeNode()
+  const node = await connectonsManager.initializeNode(peerId2Restored)
   console.log(node, 'node')
   const peerIdOnionAddress = await connectonsManager.createOnionPeerId(node.peerId)
-  const key = new TextEncoder().encode(service2)
+  // console.log(`Onion node address: ${peerIdOnionAddress}`)
+  // const key = new TextEncoder().encode(service2)
   initListeners(dataServer.io, connectonsManager)
 }
 
