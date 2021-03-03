@@ -77,13 +77,14 @@ export class Storage {
 
   public async init(libp2p: any): Promise<void> {
     const targetPath = `${os.homedir()}/.zbay/ZbayChannels/`
-    this.createPaths([targetPath])
+    const orbitDbDir = `${os.homedir()}/.zbay/OrbitDB`
+    this.createPaths([targetPath, orbitDbDir])
     this.ipfs = await IPFS.create({
       libp2p: () => libp2p,
       preload: { enabled: true },
       repo: targetPath
     })
-    this.orbitdb = await OrbitDB.createInstance(this.ipfs, {directory: `${os.homedir()}/.zbay/OrbitDB`})
+    this.orbitdb = await OrbitDB.createInstance(this.ipfs, {directory: orbitDbDir})
   }
 
   async subscribeForAllChannels() {
