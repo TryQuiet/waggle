@@ -29,6 +29,7 @@ interface IZbayChannel {
 
 const channelAddress =
   '/orbitdb/zdpuAmqqhvij9w3wqbSEam9p3V6HaPKDKUHTsfREnYCFiWAm3/zbay-public-channels'
+  
 
 
 
@@ -44,7 +45,6 @@ export class Storage {
     db.events.on('write', (_address, entry) => {
       console.log('Replication status', db.replicationStatus)
       console.log('Event WRITE: ', _address, entry)
-      console.log('=== All channels', this.channels.all)
     })
 
     db.events.on('replicate.progress', (address, hash, entry, progress, have) => {
@@ -55,10 +55,11 @@ export class Storage {
       console.log('Event REPLICATE (before): ', address)
     })
 
-    db.events.on('replicated', (address) => {
+    db.events.on('replicated', async (address) => {
       console.log('* Event REPLICATED (after): ', address)
       console.log('* Replication status', db.replicationStatus)
       console.log('* All channels', this.channels.all)
+      await this.subscribeForAllChannels()
     })
 
     db.events.on('peer.exchanged', (peer, address, heads) => {
@@ -83,21 +84,31 @@ export class Storage {
       repo: targetPath
     })
     this.orbitdb = await OrbitDB.createInstance(this.ipfs, {directory: `${os.homedir()}/.zbay/OrbitDB`})
-    this.channels = await this.orbitdb.keyvalue<IZbayChannel>('zbay-public-channels', {
-      accessController: {
-        write: ['*']
+  }
+
+  async subscribeForAllChannels() {
+    if (!this.channels) {
+      this.channels = await this.orbitdb.keyvalue<IZbayChannel>('zbay-public-channels', {
+        accessController: {
+          write: ['*']
+        },
+        replicate: true
+      })
+      // this.channels = await this.orbitdb.keyvalue<IZbayChannel>(channelAddress)
+      console.log(`-->> Channels db address: ${this.channels.address}`)
+  
+      this.logEvents(this.channels)
+  
+      await this.channels.load()
+      console.log('Loaded DB')
+      console.log('Init - all channels:', this.channels.all)
+    }
+    console.log('::::::::::::: Subscribing to all channels')
+    for (const channelData of Object.values(this.channels.all)) {
+      if (!this.repos.has(channelData.name)) {
+        const db = await this.createChannel(channelData.name)
       }
-    })
-    console.log(`-->> Channels db address: ${this.channels.address}`)
-
-    this.logEvents(this.channels)
-
-    await this.channels.load()
-    console.log('Loaded DB')
-    console.log('Init - all channels:', this.channels.all)
-
-    // get all channels this.channel.all
-    // iterate and subscribe to all
+    }
   }
 
   public async subscribeForChannel(channelAddress: string, io: any): Promise<void> {
@@ -110,7 +121,7 @@ export class Storage {
       socketMessage(io, { message: entry.payload.value, channelAddress })
     })
     db.events.on('replicated', () => {
-      console.log('Messages replicated')
+      console.log('Messages replicated ......')
       const all = db
         .iterator({ limit: -1 })
         .collect()

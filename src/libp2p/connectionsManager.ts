@@ -88,9 +88,13 @@ export class ConnectionsManager {
       localAddr: this.localAddress,
       bootstrapMultiaddrsList: bootstrapMultiaddrs
     })
-
-    this.libp2p.connectionManager.on('peer:connect', connection => {
+    let alreadyStarted = false
+    this.libp2p.connectionManager.on('peer:connect', async connection => {
       console.log('Connected to', connection.remotePeer.toB58String())
+      if (!alreadyStarted) {
+        alreadyStarted = true
+        await this.storage.subscribeForAllChannels()      
+      }
     })
     this.libp2p.connectionManager.on('peer:discovery', peer => {
       console.log(peer, 'peer discovery')
