@@ -61,7 +61,7 @@ export class ConnectionsManager {
   private createAgent = async (): Promise<void> => {
     this.socksProxyAgent = new SocksProxyAgent({ port: this.agentPort, host: this.agentHost })
   }
-  public initializeNode = async (staticPeerId?: PeerId): Promise<ILibp2pStatus> => {
+  public initializeNode = async (staticPeerId?: PeerId, isRelay = false): Promise<ILibp2pStatus> => {
     let peerId
     if (!staticPeerId) {
       peerId = await PeerId.create()
@@ -71,8 +71,7 @@ export class ConnectionsManager {
     const addrs = [`/dns4/${this.host}/tcp/${this.port}/ws`]
 
     const bootstrapMultiaddrs = [
-      // '/dns4/j4jfa7fmyqirluxfxcturjcpzlk7ecal24afno6fzib3u4yycmbxn6ad.onion/tcp/7788/ws/p2p/Qmak8HeMad8X1HGBmz2QmHfiidvGnhu6w6ugMKtx8TFc85',
-      '/dns4/apbpcmhv3jq3hk6if2xce3en7fu766qhx6sxmu5c3i6c6hjvo3msphyd.onion/tcp/7788/ws/p2p/Qmak8HeMad8X1HGBmz2QmHfiidvGnhu6w6ugMKtx8TFc85',
+      '/dns4/v5nvvfcfpceu6z6hao576ecbfvxin5ahmpbf6rovxbks2kevdxusfayd.onion/tcp/7788/ws/p2p/Qmak8HeMad8X1HGBmz2QmHfiidvGnhu6w6ugMKtx8TFc85',
     ]
 
     this.localAddress = `${addrs}/p2p/${peerId.toB58String()}`
@@ -86,8 +85,10 @@ export class ConnectionsManager {
       addrs,
       agent: this.socksProxyAgent,
       localAddr: this.localAddress,
-      bootstrapMultiaddrsList: bootstrapMultiaddrs
+      bootstrapMultiaddrsList: bootstrapMultiaddrs,
+      isRelay: isRelay
     })
+    console.log('Is NODE an active relay? ', isRelay)
     let alreadyStarted = false
     this.libp2p.connectionManager.on('peer:connect', async connection => {
       console.log('Connected to', connection.remotePeer.toB58String())
@@ -197,7 +198,8 @@ export class ConnectionsManager {
     addrs,
     agent,
     localAddr,
-    bootstrapMultiaddrsList
+    bootstrapMultiaddrsList,
+    isRelay
   }): Promise<Libp2p> => {
     return Libp2p.create({
       peerId,
@@ -222,8 +224,8 @@ export class ConnectionsManager {
         relay: {
           enabled: true,
           hop: {
-            enabled: true,
-            active: false
+            enabled: isRelay,
+            active: isRelay
           }
         },
         dht: {
