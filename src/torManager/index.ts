@@ -80,6 +80,7 @@ export class Tor {
 
     const homePath = path.join.apply(null, [os.homedir()]).replace(/\\/g, '/')
     console.log(homePath)
+    console.log(homePath)
 
     const newServices = `HiddenServiceDir="${path.join.apply(null, [
       homePath,

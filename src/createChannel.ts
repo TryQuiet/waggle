@@ -1,4 +1,4 @@
-import { Tor } from 'tor-manager'
+import { Tor } from './torManager'
 import IPFS from 'ipfs'
 import OrbitDB from 'orbit-db'
 import { ConnectionsManager } from './libp2p/connectionsManager'
