@@ -55,6 +55,7 @@ export class Tor {
         }
       })
     })
+
   public addService = async ({
     port = 3333,
     timeout = 8000,
@@ -76,31 +77,25 @@ export class Tor {
         recursive: true
       })
     }
-    const newServices = `HiddenServiceDir="/home/holmes/zbay_tor" HiddenServicePort="80 127.0.0.1:3435" HiddenServiceDir="/home/holmes/tor_service_${port}" HiddenServicePort="${port} 127.0.0.1:${port}"`
+
+    const homePath = path.join.apply(null, [os.homedir()]).replace(/\\/g, '/')
+    console.log(homePath)
+
+    const newServices = `HiddenServiceDir="${path.join.apply(null, [
+      homePath,
+      `zbay_tor`
+    ])}" HiddenServicePort="80 127.0.0.1:3435" HiddenServiceDir="${path.join.apply(null, [
+      homePath,
+      `tor_service_${port}`
+    ])}" HiddenServicePort="${port} 127.0.0.1:${port}"`
     console.log(newServices)
 
-    await this.torControl.setConf(newServices, function (err: any, status: any) {
+    this.torControl.setConf(newServices, function (err: any, status: any) {
       if (err) {
         return console.error(err)
       }
       console.log(status.messages.join(' - '))
     })
-//     const data = fs.readFileSync(this.settingsPath, 'utf8').split('\n')
-//     const index = data.findIndex(text => text === '#Placeholder')
-//     data[index] = `#SERVICE_${port}
-// HiddenServiceDir ${path.join.apply(null, [os.homedir(), `tor_service_${port}`])}
-// HiddenServicePort ${port} 127.0.0.1:${port}
-// #Placeholder`
-//     fs.writeFileSync(this.settingsPath, data.join('\n'), 'utf8')
-
-
-
-
-
-
-
-
-
 
     if (secretKey) {
       //console.log('env', process.env.HIDDEN_SERVICE_SECRET)
@@ -116,7 +111,6 @@ export class Tor {
         'utf8'
       )
     }
-    // this.process?.kill('SIGHUP')
     const id = setTimeout(() => {
       throw new Error('Timeout')
     }, timeout)
@@ -138,19 +132,21 @@ export class Tor {
       return { port, address }
     }
   }
-  public killService = async ({ port = 3333, deleteKeys = true }): Promise<void> =>
-    new Promise((resolve, reject) => {
+  public killService = async ({ port = 3333, deleteKeys = true }): Promise<void> => {
+    return new Promise((resolve, reject) => {
       if (this.process === null) {
-        reject('Process is not initalized.')
+        throw new Error('Process is not initalized.')
       }
       if (!this.services.get(port)) {
-        reject('Service does not exist.')
+        throw new Error('Service does not exist.')
       }
-      const data = fs.readFileSync(this.settingsPath, 'utf8').split('\n')
-      const index = data.findIndex(text => text === `#SERVICE_${port}`)
-      data.splice(index, 3)
-      fs.writeFileSync(this.settingsPath, data.join('\n'), 'utf8')
-      this.process?.kill('SIGHUP')
+      const homePath = path.join.apply(null, [os.homedir()]).replace(/\\/g, '/')
+
+      const newServices = `HiddenServiceDir="${path.join.apply(null, [
+        homePath,
+        `zbay_tor`
+      ])}" HiddenServicePort="80 127.0.0.1:3435"`
+
       this.services.delete(port)
       if (
         fs.existsSync(`${path.join.apply(null, [os.homedir(), `tor_service_${port}`])}`) &&
@@ -159,9 +155,15 @@ export class Tor {
         fs.rmdirSync(`${path.join.apply(null, [os.homedir(), `tor_service_${port}`])}`, {
           recursive: true
         })
-        resolve()
       }
+      this.torControl.setConf(newServices, function (err: any, status: any) {
+        if (err) {
+          reject(console.error(err))
+        }
+        resolve(status.messages.join(' - '))
+      })
     })
+  }
   public getServiceAddress = (port: number): string => {
     try {
       const address = fs

@@ -13,7 +13,7 @@ interface IOpts {
   path?: string
 }
 
-type Cb = (err: any, status: any) => void
+type Callback = (err: Error, status: string) => void
 
 class TorControl {
   opts: IOpts = {}
@@ -24,7 +24,9 @@ class TorControl {
   private setPersistent: any
   private eventEmitter: any = new EventEmitter()
   private sendCommand: any = (command: string, cb: any, keepConnection: boolean) => {
-    var self = this,
+    return new Promise((resolve, reject) => {
+
+      var self = this,
       tryDisconnect = function (callback: any) {
         if (keepConnection || self.isPersistent() || !self.connection) {
           return callback()
@@ -37,17 +39,17 @@ class TorControl {
       }
       connection.once('data', function (data: any) {
         return tryDisconnect(function () {
-          var messages = [],
-            arr,
-            i
+          let messages = [],
+          arr,
+          i
           if (cb) {
             data = data.toString()
             console.log(`this is shit ${/250/.test(data)}`)
             if (/250/.test(data)) {
               console.log({ data })
-
+              
               arr = data.split(/\r?\n/)
-
+              
               for (i = 0; i < arr.length; i += 1) {
                 if (arr[i] !== '') {
                   var message = arr[i]
@@ -59,22 +61,22 @@ class TorControl {
                 messages: messages,
                 data: data
               })
-              
             }
-              return cb(new Error(data), {
-                code: parseInt(data.substr(0, 3), 10),
-                message: data.substr(4),
-                data: data
-              })
+            return cb(new Error(data), {
+              code: parseInt(data.substr(0, 3), 10),
+              message: data.substr(4),
+              data: data
+            })
           }
         })
       })
       connection.write(command + '\r\n')
     })
+  })
   }
   constructor(opts: IOpts = {}) {
     var self = this
-
+    
     opts = opts || {}
 
     if (!opts.hasOwnProperty('path')) {
@@ -138,7 +140,7 @@ class TorControl {
       return this
     }
 
-    this.disconnect = function disconnectTorControl(cb: any, force: any) {
+    this.disconnect = function disconnectTorControl(cb: any, force: boolean) {
       if (!this.connection) {
         if (cb) {
           return cb()
@@ -166,21 +168,22 @@ class TorControl {
     }
   }
 
-  // Config
-  public setConf(request: string, cb: any) {
-    console.log(`command is ${'SETCONF ' + request}`)
+  public signal(signal: string, cb: Callback, keepConnection: boolean) {
+    return this.sendCommand('SIGNAL ' + signal, cb, keepConnection)
+  }
+  public signalReload(cb: Callback) {
+    return this.signal('RELOAD', cb, true)
+  }
+  public setConf(request: string, cb: Callback) {
     return this.sendCommand('SETCONF ' + request, cb)
   }
-  public resetConf(request: string, cb: any) {
-    // Chapter 3.2
+  public resetConf(request: string, cb: Callback) {
     return this.sendCommand('RESETCONF ' + request, cb)
   }
-  public getConf(request: string, cb: any) {
-    // Chapter 3.3
+  public getConf(request: string, cb: Callback) {
     return this.sendCommand('GETCONF ' + request, cb)
   }
-  public saveConf(request: string, cb: any) {
-    // Chapter 3.6
+  public saveConf(request: string, cb: Callback) {
     return this.sendCommand('SAVECONF ' + request, cb)
   }
 }
