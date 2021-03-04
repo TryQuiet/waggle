@@ -78,17 +78,15 @@ export class Tor {
       })
     }
 
-    const homePath = path.join.apply(null, [os.homedir()]).replace(/\\/g, '/')
-    console.log(homePath)
-    console.log(homePath)
+    const homePath = path.join.apply(null, [os.homedir()])
 
     const newServices = `HiddenServiceDir="${path.join.apply(null, [
       homePath,
       `zbay_tor`
-    ])}" HiddenServicePort="80 127.0.0.1:3435" HiddenServiceDir="${path.join.apply(null, [
+    ]).replace(/\\/g, '/')}" HiddenServicePort="80 127.0.0.1:3435" HiddenServiceDir="${path.join.apply(null, [
       homePath,
       `tor_service_${port}`
-    ])}" HiddenServicePort="${port} 127.0.0.1:${port}"`
+    ]).replace(/\\/g, '/')}" HiddenServicePort="${port} 127.0.0.1:${port}"`
     console.log(newServices)
 
     this.torControl.setConf(newServices, function (err: any, status: any) {
