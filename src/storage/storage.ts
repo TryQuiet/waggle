@@ -81,12 +81,13 @@ export class Storage {
     this.createPaths([targetPath, orbitDbDir])
     this.ipfs = await IPFS.create({
       libp2p: () => libp2p,
-      preload: { enabled: true },
+      preload: { enabled: false },
       repo: targetPath,
       EXPERIMENTAL: {
         ipnsPubsub: true
       }
     })
+    console.log('Created IPFS with EXPERIMENTAL.ipnsPubsub: true')
     this.orbitdb = await OrbitDB.createInstance(this.ipfs, {directory: orbitDbDir})
   }
 
