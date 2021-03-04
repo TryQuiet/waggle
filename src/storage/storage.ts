@@ -82,7 +82,10 @@ export class Storage {
     this.ipfs = await IPFS.create({
       libp2p: () => libp2p,
       preload: { enabled: true },
-      repo: targetPath
+      repo: targetPath,
+      EXPERIMENTAL: {
+        ipnsPubsub: true
+      }
     })
     this.orbitdb = await OrbitDB.createInstance(this.ipfs, {directory: orbitDbDir})
   }
@@ -114,6 +117,8 @@ export class Storage {
 
   public async subscribeForChannel(channelAddress: string, io: any): Promise<void> {
     if (this.repos.has(channelAddress)) return
+
+    if (!this.channels) return
 
     console.log('Subscribing to channel', channelAddress)
     const db = await this.createChannel(channelAddress)
