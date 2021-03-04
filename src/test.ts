@@ -23,17 +23,13 @@ const main = async () => {
   })
   await tor.init()
   let service1
-  let service2
   try {
     // const staticOnionAddress = `PT0gZWQyNTUxOXYxLXNlY3JldDogdHlwZTAgPT0AAADQZeSBmBABj5X+4zo98d+zOfFEygXVYajYaTzthFtLa4muclClSkstifM4SQsaJlFkJN//FZsBfMSLTDPubgCP`
     service1 = await tor.getServiceAddress(7788)
-    service2 = await tor.getServiceAddress(7799)
   } catch (e) {
-    service1 = await (await tor.addService({ port: 7788 })).address
-    service2 = await (await tor.addService({ port: 7799 })).address
+    service1 = await (await tor.addService({ port: 7788, createDefault: true })).address
   }
   console.log('service1', service1)
-  console.log('service2', service2)
 
   const dataServer = new DataServer()
   dataServer.listen()
@@ -51,9 +47,7 @@ const main = async () => {
   })
   const node = await connectonsManager.initializeNode(peerId2Restored)
   console.log(node, 'node')
-  const peerIdOnionAddress = await connectonsManager.createOnionPeerId(node.peerId)
-  // console.log(`Onion node address: ${peerIdOnionAddress}`)
-  // const key = new TextEncoder().encode(service2)
+
   initListeners(dataServer.io, connectonsManager)
 }
 
