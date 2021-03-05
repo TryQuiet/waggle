@@ -142,12 +142,12 @@ console.log('dupaaaa')
       if (!this.services.get(port)) {
         throw new Error('Service does not exist.')
       }
-      const homePath = path.join.apply(null, [os.homedir()]).replace(/\\/g, '/')
+      const homePath = path.join.apply(null, [os.homedir()])
 
       const newServices = `HiddenServiceDir="${path.join.apply(null, [
         homePath,
         `zbay_tor`
-      ])}" HiddenServicePort="80 127.0.0.1:3435"`
+      ]).replace(/\\/g, '/')}" HiddenServicePort="80 127.0.0.1:3435"`
 
       this.services.delete(port)
       if (
