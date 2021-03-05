@@ -78,20 +78,19 @@ export class Tor {
       })
     }
 
-    const homePath = path.join.apply(null, [os.homedir()]).replace(/\\/g, '/')
-    console.log(homePath)
-    console.log(homePath)
+    const homePath = path.join.apply(null, [os.homedir()])
 
     const newServices = `HiddenServiceDir="${path.join.apply(null, [
       homePath,
       `zbay_tor`
-    ])}" HiddenServicePort="80 127.0.0.1:3435" HiddenServiceDir="${path.join.apply(null, [
+    ]).replace(/\\/g, '/')}" HiddenServicePort="80 127.0.0.1:3435" HiddenServiceDir="${path.join.apply(null, [
       homePath,
       `tor_service_${port}`
-    ])}" HiddenServicePort="${port} 127.0.0.1:${port}"`
+    ]).replace(/\\/g, '/')}" HiddenServicePort="${port} 127.0.0.1:${port}"`
     console.log(newServices)
+    console.log(newServices.replace(/\\/g, '/'))
 
-    this.torControl.setConf(newServices, function (err: any, status: any) {
+    this.torControl.setConf(newServices.replace(/\\/g, '/'), function (err: any, status: any) {
       if (err) {
         return console.error(err)
       }
@@ -141,12 +140,12 @@ export class Tor {
       if (!this.services.get(port)) {
         throw new Error('Service does not exist.')
       }
-      const homePath = path.join.apply(null, [os.homedir()]).replace(/\\/g, '/')
+      const homePath = path.join.apply(null, [os.homedir()])
 
       const newServices = `HiddenServiceDir="${path.join.apply(null, [
         homePath,
         `zbay_tor`
-      ])}" HiddenServicePort="80 127.0.0.1:3435"`
+      ]).replace(/\\/g, '/')}" HiddenServicePort="80 127.0.0.1:3435"`
 
       this.services.delete(port)
       if (
