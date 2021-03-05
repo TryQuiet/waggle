@@ -71,7 +71,9 @@ export class ConnectionsManager {
     const addrs = [`/dns4/${this.host}/tcp/${this.port}/ws`]
 
     const bootstrapMultiaddrs = [
-      '/dns4/v5nvvfcfpceu6z6hao576ecbfvxin5ahmpbf6rovxbks2kevdxusfayd.onion/tcp/7788/ws/p2p/Qmak8HeMad8X1HGBmz2QmHfiidvGnhu6w6ugMKtx8TFc85',
+      // '/dns4/yz5tdvvez45gnjvpcu5adjb5itpsm5c3bzvnskheaolvg2i7znxj6ryd.onion/tcp/7788/ws/p2p/Qmak8HeMad8X1HGBmz2QmHfiidvGnhu6w6ugMKtx8TFc85',
+      //'/dns4/v5nvvfcfpceu6z6hao576ecbfvxin5ahmpbf6rovxbks2kevdxusfayd.onion/tcp/7788/ws/p2p/Qmak8HeMad8X1HGBmz2QmHfiidvGnhu6w6ugMKtx8TFc85',
+      '/dns4/plar2mmuuppanys347sh7of6mad74r63ruuurawzkyirfpetmbtmapqd.onion/tcp/7788/ws/p2p/QmUXEz4fN7oTLFvK6Ee4bRDL3s6dp1VCuHogmrrKxUngWW'
     ]
 
     this.localAddress = `${addrs}/p2p/${peerId.toB58String()}`
@@ -224,8 +226,8 @@ export class ConnectionsManager {
         relay: {
           enabled: true,
           hop: {
-            enabled: isRelay,
-            active: isRelay
+            enabled: true,
+            active: false
           }
         },
         dht: {

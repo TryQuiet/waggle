@@ -27,8 +27,8 @@ interface IZbayChannel {
   name: string
 }
 
-const channelAddress =
-  '/orbitdb/zdpuAmqqhvij9w3wqbSEam9p3V6HaPKDKUHTsfREnYCFiWAm3/zbay-public-channels'
+// const channelAddress =
+//   '/orbitdb/zdpuAmqqhvij9w3wqbSEam9p3V6HaPKDKUHTsfREnYCFiWAm3/zbay-public-channels'
   
 
 
@@ -93,7 +93,7 @@ export class Storage {
 
   async subscribeForAllChannels() {
     if (!this.channels) {
-      this.channels = await this.orbitdb.keyvalue<IZbayChannel>('zbay-public-channels', {
+      this.channels = await this.orbitdb.keyvalue<IZbayChannel>('zbay-public-channels-test', {
         accessController: {
           write: ['*']
         },
@@ -106,12 +106,29 @@ export class Storage {
   
       await this.channels.load()
       console.log('Loaded DB')
-      console.log('Init - all channels:', this.channels.all)
+      // console.log('Init - all channels:', this.channels.all)
+
+      // Run sync or pubsub manually:
+      // console.log('LOCAL heads path: ', this.channels.localHeadsPath)
+      // console.log('REMOTE heads path: ', this.channels.remoteHeadsPath)
+      // let localHeads = await this.channels._cache.get(this.channels.localHeadsPath)
+      // let remoteHeads = await this.channels._cache.get(this.channels.remoteHeadsPath)
+      // this.orbitdb._pubsub.publish(this.channels.address, [].concat(localHeads, remoteHeads))
+      // this.channels.sync(heads)
+
+      // Add something to DB:
+      // await this.channels.del('dummy2')
+      // console.log('Put DUMMY')
+      // await this.channels.put('dummy2', {
+      //   orbitAddress: `/orbitdb/dummy`,
+      //   name: 'dummy2'
+      // })
+      
     }
     console.log('::::::::::::: Subscribing to all channels')
     for (const channelData of Object.values(this.channels.all)) {
       if (!this.repos.has(channelData.name)) {
-        const db = await this.createChannel(channelData.name)
+        await this.createChannel(channelData.name)
       }
     }
   }
@@ -163,6 +180,7 @@ export class Storage {
           write: ['*']
         }
       })
+      await db.load()
       await this.channels.put(repoName, {
         orbitAddress: `/orbitdb/${db.address.root}/${db.address.path}`,
         name: repoName
