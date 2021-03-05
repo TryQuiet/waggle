@@ -90,8 +90,6 @@ export class Tor {
     console.log(newServices)
     console.log(newServices.replace(/\\/g, '/'))
 
-console.log('dupaaaa')
-
     this.torControl.setConf(newServices.replace(/\\/g, '/'), function (err: any, status: any) {
       if (err) {
         return console.error(err)
