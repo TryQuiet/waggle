@@ -99,14 +99,14 @@ export class ConnectionsManager {
     this.libp2p.connectionManager.on('peer:disconnect', connection => {
       console.log('Disconnected from', connection.remotePeer.toB58String())
     })
-    await this.storage.init(this.libp2p, staticPeerId)
+    await this.storage.init(this.libp2p, peerId)
 
     return {
       address: this.localAddress,
       peerId: peerId.toB58String()
     }
   }
-  
+
   public subscribeForTopic = async (channelAddress: string, io: any) => {
     await this.storage.subscribeForChannel(channelAddress, io)
   }

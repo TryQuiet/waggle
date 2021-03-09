@@ -34,42 +34,6 @@ export class Storage {
   private channels: KeyValueStore<IZbayChannel>
   public repos: Map<String, IRepo> = new Map()
 
-  private logEvents(db) {
-    console.log('Replication status', db.replicationStatus)
-
-    db.events.on('write', (_address, entry) => {
-      console.log('Replication status', db.replicationStatus)
-      console.log('Event WRITE: ', _address, entry)
-    })
-
-    db.events.on('replicate.progress', (address, hash, entry, progress, have) => {
-      console.log('Event REPLICATE.PROGRESS: ', address)
-    })
-
-    db.events.on('replicate', (address) => {
-      console.log('Event REPLICATE (before): ', address)
-    })
-
-    db.events.on('replicated', async (address) => {
-      console.log('* Event REPLICATED (after): ', address)
-      console.log('* Replication status', db.replicationStatus)
-      console.log('* All channels', this.channels.all)
-      await this.subscribeForAllChannels()
-    })
-
-    db.events.on('peer.exchanged', (peer, address, heads) => {
-      console.log('Event PEER.EXCHANGED')
-    })
-
-    db.events.on('peer', (peer) => {
-      console.log('Event PEER: ', peer)
-    })
-
-    db.events.on('load.progress', (address, hash, entry, progress, total) => {
-      console.log(`Event LOAD.PROGRESS ===> ${progress}/${total}`)
-    })
-  }
-
   public async init(libp2p: any, peerID: PeerId): Promise<void> {
     const targetPath = `${os.homedir()}/.zbay/ZbayChannels/`
     const orbitDbDir = `${os.homedir()}/.zbay/OrbitDB`
@@ -97,8 +61,6 @@ export class Storage {
       },
       replicate: true
     })
-
-    this.logEvents(this.channels)
     await this.channels.load()
   }
 
@@ -145,7 +107,6 @@ export class Storage {
     const channel = this.channels.get(repoName)
     let db: EventStore<IMessage>
     if (channel) {
-      console.log(`Channel ${channel.name} exists. Loading...`)
       db = await this.orbitdb.log<IMessage>(channel.orbitAddress)
       await db.load()
     } else {
