@@ -58,10 +58,12 @@ export class ConnectionsManager {
       process.exit(0)
     })
   }
-  private createAgent = async (): Promise<void> => {
+  
+  private createAgent = () => {
     this.socksProxyAgent = new SocksProxyAgent({ port: this.agentPort, host: this.agentHost })
   }
-  public initializeNode = async (staticPeerId?: PeerId, isRelay = false): Promise<ILibp2pStatus> => {
+
+  public initializeNode = async (staticPeerId?: PeerId): Promise<ILibp2pStatus> => {
     let peerId
     if (!staticPeerId) {
       peerId = await PeerId.create()
@@ -71,9 +73,7 @@ export class ConnectionsManager {
     const addrs = [`/dns4/${this.host}/tcp/${this.port}/ws`]
 
     const bootstrapMultiaddrs = [
-      // '/dns4/yz5tdvvez45gnjvpcu5adjb5itpsm5c3bzvnskheaolvg2i7znxj6ryd.onion/tcp/7788/ws/p2p/Qmak8HeMad8X1HGBmz2QmHfiidvGnhu6w6ugMKtx8TFc85',
-      //'/dns4/v5nvvfcfpceu6z6hao576ecbfvxin5ahmpbf6rovxbks2kevdxusfayd.onion/tcp/7788/ws/p2p/Qmak8HeMad8X1HGBmz2QmHfiidvGnhu6w6ugMKtx8TFc85',
-      '/dns4/plar2mmuuppanys347sh7of6mad74r63ruuurawzkyirfpetmbtmapqd.onion/tcp/7788/ws/p2p/QmUXEz4fN7oTLFvK6Ee4bRDL3s6dp1VCuHogmrrKxUngWW'
+      '/dns4/v5nvvfcfpceu6z6hao576ecbfvxin5ahmpbf6rovxbks2kevdxusfayd.onion/tcp/7788/ws/p2p/Qmak8HeMad8X1HGBmz2QmHfiidvGnhu6w6ugMKtx8TFc85',
     ]
 
     this.localAddress = `${addrs}/p2p/${peerId.toB58String()}`
@@ -82,15 +82,14 @@ export class ConnectionsManager {
     console.log('local address:', this.localAddress)
 
     await this.createAgent()
+
     this.libp2p = await this.createBootstrapNode({
       peerId,
       addrs,
       agent: this.socksProxyAgent,
       localAddr: this.localAddress,
-      bootstrapMultiaddrsList: bootstrapMultiaddrs,
-      isRelay: isRelay
+      bootstrapMultiaddrsList: bootstrapMultiaddrs
     })
-    console.log('Is NODE an active relay? ', isRelay)
     let alreadyStarted = false
     this.libp2p.connectionManager.on('peer:connect', async connection => {
       console.log('Connected to', connection.remotePeer.toB58String())
@@ -105,7 +104,7 @@ export class ConnectionsManager {
     this.libp2p.connectionManager.on('peer:disconnect', connection => {
       console.log('Disconnected from', connection.remotePeer.toB58String())
     })
-    await this.storage.init(this.libp2p)
+    await this.storage.init(this.libp2p, staticPeerId)
 
     return {
       address: this.localAddress,
@@ -200,8 +199,7 @@ export class ConnectionsManager {
     addrs,
     agent,
     localAddr,
-    bootstrapMultiaddrsList,
-    isRelay
+    bootstrapMultiaddrsList
   }): Promise<Libp2p> => {
     return Libp2p.create({
       peerId,

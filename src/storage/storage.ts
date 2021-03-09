@@ -4,6 +4,7 @@ import fs from 'fs'
 import OrbitDB from 'orbit-db'
 import KeyValueStore from 'orbit-db-kvstore'
 import EventStore from 'orbit-db-eventstore'
+import PeerId from 'peer-id'
 import { message as socketMessage } from '../socket/events/message'
 import { loadAllMessages } from '../socket/events/allMessages'
 
@@ -26,12 +27,6 @@ interface IZbayChannel {
   orbitAddress: string
   name: string
 }
-
-// const channelAddress =
-//   '/orbitdb/zdpuAmqqhvij9w3wqbSEam9p3V6HaPKDKUHTsfREnYCFiWAm3/zbay-public-channels'
-  
-
-
 
 export class Storage {
   private ipfs: IPFS.IPFS
@@ -75,7 +70,7 @@ export class Storage {
     })
   }
 
-  public async init(libp2p: any): Promise<void> {
+  public async init(libp2p: any, peerID: PeerId): Promise<void> {
     const targetPath = `${os.homedir()}/.zbay/ZbayChannels/`
     const orbitDbDir = `${os.homedir()}/.zbay/OrbitDB`
     this.createPaths([targetPath, orbitDbDir])
@@ -85,9 +80,11 @@ export class Storage {
       repo: targetPath,
       EXPERIMENTAL: {
         ipnsPubsub: true
-      }
+      },
+      // @ts-ignore
+      privateKey: peerID.toJSON().privKey 
     })
-    console.log('Created IPFS with EXPERIMENTAL.ipnsPubsub: true')
+
     this.orbitdb = await OrbitDB.createInstance(this.ipfs, {directory: orbitDbDir})
   }
 
@@ -99,33 +96,11 @@ export class Storage {
         },
         replicate: true
       })
-      // this.channels = await this.orbitdb.keyvalue<IZbayChannel>(channelAddress)
-      console.log(`-->> Channels db address: ${this.channels.address}`)
   
       this.logEvents(this.channels)
   
       await this.channels.load()
-      console.log('Loaded DB')
-      // console.log('Init - all channels:', this.channels.all)
-
-      // Run sync or pubsub manually:
-      // console.log('LOCAL heads path: ', this.channels.localHeadsPath)
-      // console.log('REMOTE heads path: ', this.channels.remoteHeadsPath)
-      // let localHeads = await this.channels._cache.get(this.channels.localHeadsPath)
-      // let remoteHeads = await this.channels._cache.get(this.channels.remoteHeadsPath)
-      // this.orbitdb._pubsub.publish(this.channels.address, [].concat(localHeads, remoteHeads))
-      // this.channels.sync(heads)
-
-      // Add something to DB:
-      // await this.channels.del('dummy2')
-      // console.log('Put DUMMY')
-      // await this.channels.put('dummy2', {
-      //   orbitAddress: `/orbitdb/dummy`,
-      //   name: 'dummy2'
-      // })
-      
     }
-    console.log('::::::::::::: Subscribing to all channels')
     for (const channelData of Object.values(this.channels.all)) {
       if (!this.repos.has(channelData.name)) {
         await this.createChannel(channelData.name)
@@ -169,9 +144,8 @@ export class Storage {
   private async createChannel(repoName: string): Promise<EventStore<IMessage>> {
     const channel = this.channels.get(repoName)
     let db: EventStore<IMessage>
-    console.log(`Get or create channel`)
     if (channel) {
-      console.log(`${channel} exists. Loading...`)
+      console.log(`Channel ${channel.name} exists. Loading...`)
       db = await this.orbitdb.log<IMessage>(channel.orbitAddress)
       await db.load()
     } else {
@@ -180,7 +154,6 @@ export class Storage {
           write: ['*']
         }
       })
-      await db.load()
       await this.channels.put(repoName, {
         orbitAddress: `/orbitdb/${db.address.root}/${db.address.path}`,
         name: repoName
