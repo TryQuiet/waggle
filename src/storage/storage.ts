@@ -86,21 +86,23 @@ export class Storage {
     })
 
     this.orbitdb = await OrbitDB.createInstance(this.ipfs, {directory: orbitDbDir})
+    await this.createDbForChannels()
+    await this.subscribeForAllChannels() 
+  }
+
+  private async createDbForChannels() {
+    this.channels = await this.orbitdb.keyvalue<IZbayChannel>('zbay-public-channels-test', {
+      accessController: {
+        write: ['*']
+      },
+      replicate: true
+    })
+
+    this.logEvents(this.channels)
+    await this.channels.load()
   }
 
   async subscribeForAllChannels() {
-    if (!this.channels) {
-      this.channels = await this.orbitdb.keyvalue<IZbayChannel>('zbay-public-channels-test', {
-        accessController: {
-          write: ['*']
-        },
-        replicate: true
-      })
-  
-      this.logEvents(this.channels)
-  
-      await this.channels.load()
-    }
     for (const channelData of Object.values(this.channels.all)) {
       if (!this.repos.has(channelData.name)) {
         await this.createChannel(channelData.name)
@@ -110,8 +112,6 @@ export class Storage {
 
   public async subscribeForChannel(channelAddress: string, io: any): Promise<void> {
     if (this.repos.has(channelAddress)) return
-
-    if (!this.channels) return
 
     console.log('Subscribing to channel', channelAddress)
     const db = await this.createChannel(channelAddress)

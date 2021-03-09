@@ -58,7 +58,7 @@ export class ConnectionsManager {
       process.exit(0)
     })
   }
-  
+
   private createAgent = () => {
     this.socksProxyAgent = new SocksProxyAgent({ port: this.agentPort, host: this.agentHost })
   }
@@ -81,7 +81,7 @@ export class ConnectionsManager {
     console.log('bootstrapMultiaddrs:', bootstrapMultiaddrs)
     console.log('local address:', this.localAddress)
 
-    await this.createAgent()
+    this.createAgent()
 
     this.libp2p = await this.createBootstrapNode({
       peerId,
@@ -90,13 +90,8 @@ export class ConnectionsManager {
       localAddr: this.localAddress,
       bootstrapMultiaddrsList: bootstrapMultiaddrs
     })
-    let alreadyStarted = false
     this.libp2p.connectionManager.on('peer:connect', async connection => {
       console.log('Connected to', connection.remotePeer.toB58String())
-      if (!alreadyStarted) {
-        alreadyStarted = true
-        await this.storage.subscribeForAllChannels()      
-      }
     })
     this.libp2p.connectionManager.on('peer:discovery', peer => {
       console.log(peer, 'peer discovery')
@@ -111,6 +106,7 @@ export class ConnectionsManager {
       peerId: peerId.toB58String()
     }
   }
+  
   public subscribeForTopic = async (channelAddress: string, io: any) => {
     await this.storage.subscribeForChannel(channelAddress, io)
   }
