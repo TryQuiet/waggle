@@ -14,4 +14,4 @@ COPY package.json .
 COPY package-lock.json .
 RUN npm install
 COPY . .
-CMD ["ts-node", "src/test.ts"]
+CMD ["ts-node", "src/entryNode.ts"]

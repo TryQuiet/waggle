@@ -1,7 +1,7 @@
 {
   "linterOptions": {
     "exclude": [
-      "src/test.ts"
+      "src/entryNode.ts"
     ]
   }
 }
