@@ -55,7 +55,7 @@ export class Storage {
   }
 
   private async createDbForChannels() {
-    this.channels = await this.orbitdb.keyvalue<IZbayChannel>('zbay-public-channels-test', {
+    this.channels = await this.orbitdb.keyvalue<IZbayChannel>('zbay-public-channels', {
       accessController: {
         write: ['*']
       },
@@ -82,7 +82,6 @@ export class Storage {
       socketMessage(io, { message: entry.payload.value, channelAddress })
     })
     db.events.on('replicated', () => {
-      console.log('Messages replicated ......')
       const all = db
         .iterator({ limit: -1 })
         .collect()
