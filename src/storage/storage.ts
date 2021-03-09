@@ -61,6 +61,7 @@ export class Storage {
       },
       replicate: true
     })
+    this.logEvents(this.channels)
     await this.channels.load()
   }
 
@@ -99,6 +100,7 @@ export class Storage {
   public async sendMessage(channelAddress: string, io: any, message: IMessage) {
     await this.subscribeForChannel(channelAddress, io)
     const db = this.repos.get(channelAddress).db
+    await db.load()
     await db.add(message)
   }
 
@@ -120,6 +122,9 @@ export class Storage {
       })
       console.log(`Created channel ${repoName}`)
     }
+    db.events.on('replicated', () => {
+      console.log(`log ${db.address.root} replicated`,)
+    })
     this.repos.set(repoName, { db })
     return db
   }
@@ -130,5 +135,40 @@ export class Storage {
         fs.mkdirSync(path, { recursive: true })
       }
     }
+  }
+
+  private logEvents(db) {
+    console.log('Replication status', db.replicationStatus)
+
+    db.events.on('write', (_address, entry) => {
+      console.log('Replication status', db.replicationStatus)
+      console.log('Event WRITE: ', _address, entry)
+    })
+
+    db.events.on('replicate.progress', (address, hash, entry, progress, have) => {
+      console.log('Event REPLICATE.PROGRESS: ', address)
+    })
+
+    db.events.on('replicate', (address) => {
+      console.log('Event REPLICATE (before): ', address)
+    })
+
+    db.events.on('replicated', async (address) => {
+      console.log('* Event REPLICATED (after): ', address)
+      console.log('* Replication status', db.replicationStatus)
+      await this.subscribeForAllChannels()
+    })
+
+    db.events.on('peer.exchanged', (peer, address, heads) => {
+      console.log('Event PEER.EXCHANGED')
+    })
+
+    db.events.on('peer', (peer) => {
+      console.log('Event PEER: ', peer)
+    })
+
+    db.events.on('load.progress', (address, hash, entry, progress, total) => {
+      console.log(`Event LOAD.PROGRESS ===> ${progress}/${total}`)
+    })
   }
 }
