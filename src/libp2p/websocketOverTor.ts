@@ -48,7 +48,7 @@ class WebsocketsOverTor extends WebSockets {
       log('outbound connection %s upgraded', maConn.remoteAddr)
       return conn
     } catch (e) {
-      console.log('error with peer redialing')
+      // console.log('error with peer redialing')
     }
   }
 

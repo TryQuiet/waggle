@@ -1,6 +1,7 @@
 import IPFS from 'ipfs'
-import os from 'os'
-import fs from 'fs'
+import path from 'path'
+import { ZBAY_DIR_PATH } from '../constants'
+import { createPaths } from '../utils'
 import OrbitDB from 'orbit-db'
 import KeyValueStore from 'orbit-db-kvstore'
 import EventStore from 'orbit-db-eventstore'
@@ -35,13 +36,13 @@ export class Storage {
   public repos: Map<String, IRepo> = new Map()
 
   public async init(libp2p: any, peerID: PeerId): Promise<void> {
-    const targetPath = `${os.homedir()}/.zbay/ZbayChannels/`
-    const orbitDbDir = `${os.homedir()}/.zbay/OrbitDB`
-    this.createPaths([targetPath, orbitDbDir])
+    const ipfsRepoPath = path.join(ZBAY_DIR_PATH, 'ZbayChannels')
+    const orbitDbDir = path.join(ZBAY_DIR_PATH, 'OrbitDB')
+    createPaths([ipfsRepoPath, orbitDbDir])
     this.ipfs = await IPFS.create({
       libp2p: () => libp2p,
       preload: { enabled: false },
-      repo: targetPath,
+      repo: ipfsRepoPath,
       EXPERIMENTAL: {
         ipnsPubsub: true
       },
@@ -87,6 +88,8 @@ export class Storage {
         .iterator({ limit: -1 })
         .collect()
         .map(e => e.payload.value)
+
+      console.log('Replicated messages:', all)
       loadAllMessages(io, all, channelAddress)
     })
     const all = db
@@ -98,10 +101,24 @@ export class Storage {
   }
 
   public async sendMessage(channelAddress: string, io: any, message: IMessage) {
+    console.log(`Sending a ${message.message} to ${channelAddress}`)
     await this.subscribeForChannel(channelAddress, io)
     const db = this.repos.get(channelAddress).db
+    this.logEvent(db)
     await db.load()
     await db.add(message)
+  }
+
+  private logEvent(db) {
+    db.events.on('replicated', async (address) => {
+      const all = db
+        .iterator({ limit: -1 })
+        .collect()
+        .map(e => e.payload.value)
+      console.log('*= REPLICATED MESSAGES: ', address)
+      console.log('*= Replication status', db.replicationStatus)
+      console.log('*= Messages:', all)
+    })
   }
 
   private async createChannel(repoName: string): Promise<EventStore<IMessage>> {
@@ -109,6 +126,7 @@ export class Storage {
     let db: EventStore<IMessage>
     if (channel) {
       db = await this.orbitdb.log<IMessage>(channel.orbitAddress)
+      this.logEvent(db)
       await db.load()
     } else {
       db = await this.orbitdb.log<IMessage>(`zbay.channels.${repoName}`, {
@@ -116,25 +134,15 @@ export class Storage {
           write: ['*']
         }
       })
+      this.logEvent(db)
       await this.channels.put(repoName, {
         orbitAddress: `/orbitdb/${db.address.root}/${db.address.path}`,
         name: repoName
       })
       console.log(`Created channel ${repoName}`)
     }
-    db.events.on('replicated', () => {
-      console.log(`log ${db.address.root} replicated`,)
-    })
     this.repos.set(repoName, { db })
     return db
-  }
-
-  private createPaths(paths: string[]) {
-    for (const path of paths) {
-      if (!fs.existsSync(path)) {
-        fs.mkdirSync(path, { recursive: true })
-      }
-    }
   }
 
   private logEvents(db) {
