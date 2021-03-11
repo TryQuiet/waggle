@@ -34,22 +34,17 @@ const main = async () => {
 
   const dataServer = new DataServer()
   dataServer.listen()
-  let peerId2Restored
-  if (!process.env.HIDDEN_SERVICE_SECRET) {
-    console.log('get from file')
-    const peerId2 = fs.readFileSync('peerId1.json')
-    const parsedId2 = JSON.parse(peerId2.toString()) as PeerId.JSONPeerId
-    peerId2Restored = await PeerId.createFromJSON(parsedId2)
-  }
-  
+  const peerId = fs.readFileSync('entryNodePeerId.json')
+  const parsedId = JSON.parse(peerId.toString()) as PeerId.JSONPeerId
+  const peerIdRestored = await PeerId.createFromJSON(parsedId)
   const connectonsManager = new ConnectionsManager({
     port: 7788,
     host: service1,
     agentHost: 'localhost',
     agentPort: 9050
   })
-  const node = await connectonsManager.initializeNode(peerId2Restored)
-  // process.nextTick(() => askWhatToDo(connectonsManager))
+  const node = await connectonsManager.initializeNode(peerIdRestored)
+
   console.log(node, 'node')
 
   initListeners(dataServer.io, connectonsManager)
