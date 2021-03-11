@@ -51,7 +51,7 @@ export class Tor {
     await this.torControl.setConf(`HTTPTunnelPort="${port}"`)
   }
 
-  public async addOnion({ virtPort, targetPort, privKey }: { virtPort: number, targetPort: number, privKey: string }): Promise<void> {
+  public async addOnion({ virtPort, targetPort, privKey }: { virtPort: number, targetPort: number, privKey: string }): Promise<string> {
     const status = await this.torControl.addOnion(
       `${privKey} Flags=Detach Port=${virtPort},127.0.0.1:${targetPort}`
     )
@@ -60,6 +60,7 @@ export class Tor {
       virtPort,
       address: onionAddress
     })
+    return onionAddress
   }
 
   public async deleteOnion(serviceId: string): Promise<void> {
