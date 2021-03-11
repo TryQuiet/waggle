@@ -1,7 +1,3 @@
-/*jslint node:true*/
-
-'use strict'
-
 var net = require('net')
 var EventEmitter = require('events').EventEmitter
 
@@ -12,9 +8,6 @@ interface IOpts {
   persistent?: boolean
   path?: string
 }
-
-type Callback = (err: Error, status: string) => void
-
 class TorControl {
   opts: IOpts = {}
   private connect: (params: any, cb: any) => { any: any }
@@ -159,29 +152,21 @@ class TorControl {
     }
   }
 
-  public async addOnion(request: string, cb: Callback) {
-    return this.sendCommand('ADD_ONION ' + request, cb)
+  public async addOnion(request: string): Promise<{ code: number; messages: string[] }> {
+    return this.sendCommand('ADD_ONION ' + request)
   }
-  public async delOnion(request: string, cb: Callback) {
-    return this.sendCommand('DEL_ONION ' + request, cb)
+  public async delOnion(request: string): Promise<{ code: number; messages: string[] }> {
+    return this.sendCommand('DEL_ONION ' + request)
   }
-  public signal(signal: string, cb: Callback, keepConnection: boolean) {
-    return this.sendCommand('SIGNAL ' + signal, cb, keepConnection)
+  public signal(signal: string): Promise<{ code: number; messages: string[] }> {
+    return this.sendCommand('SIGNAL ' + signal)
   }
-  public signalReload(cb: Callback) {
-    return this.signal('RELOAD', cb, true)
+  public signalReload(): Promise<{ code: number; messages: string[] }> {
+    return this.signal('RELOAD')
   }
-  public async setConf(request: string, cb: Callback) {
-    return this.sendCommand('SETCONF ' + request, cb)
+  public async setConf(request: string): Promise<{ code: number; messages: string[] }> {
+    return this.sendCommand('SETCONF ' + request)
   }
-  public resetConf(request: string, cb: Callback) {
-    return this.sendCommand('RESETCONF ' + request, cb)
-  }
-  public getConf(request: string, cb: Callback) {
-    return this.sendCommand('GETCONF ' + request, cb)
-  }
-  public saveConf(request: string, cb: Callback) {
-    return this.sendCommand('SAVECONF ' + request, cb)
-}}
+}
 
 export { TorControl }

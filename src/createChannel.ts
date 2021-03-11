@@ -33,7 +33,7 @@ const main = async () => {
     const staticOnionAddress = `PT0gZWQyNTUxOXYxLXNlY3JldDogdHlwZTAgPT0AAADQZeSBmBABj5X+4zo98d+zOfFEygXVYajYaTzthFtLa4muclClSkstifM4SQsaJlFkJN//FZsBfMSLTDPubgCP`
     service1 = tor.getServiceAddress(7788)
   } catch (e) {
-    service1 = await (await tor.addNewService({ port: 7788 })).onionAddress
+    service1 = await (await tor.addNewService(7788,7788 )).onionAddress
   }
   console.log('service1', service1)
   const connectonsManager = new ConnectionsManager({
