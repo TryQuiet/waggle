@@ -11,9 +11,8 @@ import Bootstrap from 'libp2p-bootstrap'
 import multihashing from 'multihashing-async'
 import { Storage } from '../storage'
 import { createPaths } from '../utils'
-import { Config } from '../constants'
+import { ZBAY_DIR_PATH } from '../constants'
 import fs from 'fs'
-import os from 'os'
 import path from 'path'
 
 interface IConstructor {
@@ -70,9 +69,9 @@ export class ConnectionsManager {
 
   private getPeerId = async (): Promise<PeerId> => {
     let peerId
-    const peerIdKeyPath = path.join(os.homedir(), Config.ZBAY_DIR, 'peerIdKey')
+    const peerIdKeyPath = path.join(ZBAY_DIR_PATH, 'peerIdKey')
     if (!fs.existsSync(peerIdKeyPath)) {
-      createPaths([Config.ZBAY_DIR])
+      createPaths([ZBAY_DIR_PATH])
       peerId = await PeerId.create()
       fs.writeFileSync(peerIdKeyPath, peerId.toJSON().privKey)
     } else {
