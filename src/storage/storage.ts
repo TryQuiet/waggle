@@ -1,6 +1,8 @@
 import IPFS from 'ipfs'
 import os from 'os'
-import fs from 'fs'
+import path from 'path'
+import { Config } from '../constants'
+import { createPaths } from '../utils'
 import OrbitDB from 'orbit-db'
 import KeyValueStore from 'orbit-db-kvstore'
 import EventStore from 'orbit-db-eventstore'
@@ -35,13 +37,13 @@ export class Storage {
   public repos: Map<String, IRepo> = new Map()
 
   public async init(libp2p: any, peerID: PeerId): Promise<void> {
-    const targetPath = `${os.homedir()}/.zbay/ZbayChannels/`
-    const orbitDbDir = `${os.homedir()}/.zbay/OrbitDB`
-    this.createPaths([targetPath, orbitDbDir])
+    const ipfsRepoPath = path.join(os.homedir(), Config.ZBAY_DIR, 'ZbayChannels')
+    const orbitDbDir = path.join(os.homedir(), Config.ZBAY_DIR, 'OrbitDB')
+    createPaths([ipfsRepoPath, orbitDbDir])
     this.ipfs = await IPFS.create({
       libp2p: () => libp2p,
       preload: { enabled: false },
-      repo: targetPath,
+      repo: ipfsRepoPath,
       EXPERIMENTAL: {
         ipnsPubsub: true
       },
@@ -122,13 +124,5 @@ export class Storage {
     }
     this.repos.set(repoName, { db })
     return db
-  }
-
-  private createPaths(paths: string[]) {
-    for (const path of paths) {
-      if (!fs.existsSync(path)) {
-        fs.mkdirSync(path, { recursive: true })
-      }
-    }
   }
 }

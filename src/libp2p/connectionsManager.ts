@@ -10,6 +10,11 @@ import Multiaddr from 'multiaddr'
 import Bootstrap from 'libp2p-bootstrap'
 import multihashing from 'multihashing-async'
 import { Storage } from '../storage'
+import { createPaths } from '../utils'
+import { Config } from '../constants'
+import fs from 'fs'
+import os from 'os'
+import path from 'path'
 
 interface IConstructor {
   host: string
@@ -63,10 +68,24 @@ export class ConnectionsManager {
     this.socksProxyAgent = new SocksProxyAgent({ port: this.agentPort, host: this.agentHost })
   }
 
+  private getPeerId = async (): Promise<PeerId> => {
+    let peerId
+    const peerIdKeyPath = path.join(os.homedir(), Config.ZBAY_DIR, 'peerIdKey')
+    if (!fs.existsSync(peerIdKeyPath)) {
+      createPaths([Config.ZBAY_DIR])
+      peerId = await PeerId.create()
+      fs.writeFileSync(peerIdKeyPath, peerId.toJSON().privKey)
+    } else {
+      const peerIdKey = fs.readFileSync(peerIdKeyPath, {encoding: 'utf8'})
+      peerId = PeerId.createFromPrivKey(peerIdKey)
+    }
+    return peerId
+  }
+
   public initializeNode = async (staticPeerId?: PeerId): Promise<ILibp2pStatus> => {
     let peerId
     if (!staticPeerId) {
-      peerId = await PeerId.create()
+      peerId = await this.getPeerId()
     } else {
       peerId = staticPeerId
     }
