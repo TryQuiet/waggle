@@ -28,7 +28,7 @@ const main = async () => {
   try {
     service1 = await tor.getServiceAddress(7788)
   } catch (e) {
-    service1 = await (await tor.addOnion({ virtPort: 7788, targetPort: 7788, privKey: process.env.HIDDEN_SERVICE_SECRET }))
+    service1 = await tor.addOnion({ virtPort: 7788, targetPort: 7788, privKey: process.env.HIDDEN_SERVICE_SECRET })
   }
   console.log('service1', service1)
 
