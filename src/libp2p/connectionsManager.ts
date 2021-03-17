@@ -134,7 +134,7 @@ export class ConnectionsManager {
     await this.storage.insertData(channelInfo)
   }
 
-  public updateChannelInfo = async (io) => {
+  public updateChannels = async (io) => {
     await this.storage.updateChannels(io)
   }
 

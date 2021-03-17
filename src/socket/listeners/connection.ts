@@ -1,14 +1,6 @@
 import { EventTypesServer } from '../constants'
-import { EventTypesResponse } from '../constantsReponse'
 import { ConnectionsManager } from '../../libp2p/connectionsManager'
 
-export interface IChannelInfo {
-  address: string
-  displayName?: string
-  description?: string
-  owner?: string
-  timestamp?: number
-}
 
 export const connections = (io, connectionsManager: ConnectionsManager) => {
   io.on(EventTypesServer.CONNECTION, socket => {
@@ -25,7 +17,7 @@ export const connections = (io, connectionsManager: ConnectionsManager) => {
       await connectionsManager.gimmeData(channelInfo)
     })
     socket.once(EventTypesServer.GET_PUBLIC_CHANNELS, async () => {
-      await connectionsManager.updateChannelInfo(io)
+      await connectionsManager.updateChannels(io)
     })
     // socket.on(EventTypesServer.ADD_TOR_SERVICE, async (port: number) => {
     //   try {

@@ -9,6 +9,8 @@ import PeerId from 'peer-id'
 import { message as socketMessage } from '../socket/events/message'
 import { loadAllMessages } from '../socket/events/allMessages'
 import { EventTypesResponse } from '../socket/constantsReponse'
+import fs from 'fs'
+import os from 'os'
 
 export interface IMessage {
   id: string
@@ -25,21 +27,36 @@ interface IRepo {
   db: EventStore<IMessage>
 }
 
+// TODO: merge channel interfaces/types
 interface IChannelInfo {
-  displayName: string
+  name: string
   description: string
   owner: string
   timestamp: number
   address: string
 }
 
-interface IZbayChannel {
+interface ChannelInfo {
+  name: string
+  description: string
+  owner: string
+  timestamp: number
+  address: string
+  keys: Record<'ivk', string>
+}
+
+interface ChannelInfoResponse {
+  [name: string]: ChannelInfo
+}
+
+interface IZbayChannel {  // this is saved in db, can be changed
   orbitAddress: string
   name: string
-  displayName?: string
+  address: string
   description?: string
   owner?: string
   timestamp?: number
+  keys?: Record<'ivk', string>
 }
 
 export class Storage {
@@ -68,12 +85,19 @@ export class Storage {
     await this.subscribeForAllChannels()
   }
 
+  private async loadInitChannels() {  // For testing purposes, remove
+    const initChannels = JSON.parse(fs.readFileSync(path.join(os.homedir(), 'channels.json')).toString())
+    for (const channel of Object.values(initChannels)) {
+      await this.insertData(channel)
+    }
+  }
+
   private async createDbForChannels() {
     this.channels = await this.orbitdb.keyvalue<IZbayChannel>('zbay-public-channels', {
       accessController: {
         write: ['*']
       },
-      replicate: true
+      replicate: false
     })
     this.channels.events.on('replicated', () => {
       console.log('REPLICATED CHANNELS')
@@ -86,6 +110,8 @@ export class Storage {
     //   }
       
     // }
+    // await this.loadInitChannels()
+    // console.log(this.channels.all)
     console.log('ALL CHANNELS COUNT:', Object.keys(this.channels.all).length)
   }
 
@@ -97,11 +123,26 @@ export class Storage {
     }
   }
 
+  private getChannels(): ChannelInfoResponse {
+    let channels = {}
+    for (const channel of Object.values(this.channels.all)) {
+      channels[channel.name] = {
+        address: channel.address,
+        description: channel.description,
+        owner: channel.owner,
+        timestamp: channel.timestamp,
+        keys: channel.keys,
+        name: channel.name
+      }
+    }
+    return channels
+  }
+
   public async updateChannels(io) {  // attach socket to channel db events - update list of available public channels
     console.log('Attaching to DB event')
     this.initPublicChannels(io)
     this.channels.events.on('replicated', (address) => {
-      const allChannels = this.channels.all
+      const allChannels = this.getChannels()
       console.log(`Sending info to Client (${address})`, Object.keys(allChannels).length)
       io.emit(EventTypesResponse.RESPONSE_GET_PUBLIC_CHANNELS, allChannels)
     })
@@ -109,7 +150,7 @@ export class Storage {
 
   private async initPublicChannels(io) {
     if (this.channels) {
-      io.emit(EventTypesResponse.RESPONSE_GET_PUBLIC_CHANNELS, this.channels.all)
+      io.emit(EventTypesResponse.RESPONSE_GET_PUBLIC_CHANNELS, this.getChannels())
     }
   }
 
@@ -156,26 +197,27 @@ export class Storage {
     await db.add(message)
   }
 
-  private async createChannel(repoName: string, channelData?: IChannelInfo): Promise<EventStore<IMessage>> {
-    const channel = this.channels.get(repoName)
+  private async createChannel(channelAddress: string, channelData?: IChannelInfo): Promise<EventStore<IMessage>> {
+    const channel = this.channels.get(channelAddress)
     let db: EventStore<IMessage>
     if (channel) {
       db = await this.orbitdb.log<IMessage>(channel.orbitAddress)
       await db.load()
     } else {
-      db = await this.orbitdb.log<IMessage>(`zbay.channels.${repoName}`, {
+      db = await this.orbitdb.log<IMessage>(`zbay.channels.${channelAddress}`, {
         accessController: {
           write: ['*']
-        }
+        },
+        replicate: false
       })
-      await this.channels.put(repoName, {
+      await this.channels.put(channelAddress, {
         orbitAddress: `/orbitdb/${db.address.root}/${db.address.path}`,
-        name: repoName,
+        address: channelAddress,
         ...channelData
       })
-      console.log(`Created channel ${repoName}`)
+      console.log(`Created channel ${channelAddress}`)
     }
-    this.repos.set(repoName, { db })
+    this.repos.set(channelAddress, { db })
     return db
   }
 }
