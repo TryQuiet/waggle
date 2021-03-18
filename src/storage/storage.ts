@@ -80,8 +80,7 @@ export class Storage {
     this.channels = await this.orbitdb.keyvalue<IZbayChannel>('zbay-public-channels', {
       accessController: {
         write: ['*']
-      },
-      replicate: false
+      }
     })
     this.channels.events.on('replicated', () => {
       console.log('REPLICATED CHANNELS')
@@ -98,16 +97,18 @@ export class Storage {
     }
   }
 
-  private getChannels(): ChannelInfoResponse {
-    let channels = {}
+  private getChannelsResponse(): ChannelInfoResponse {
+    let channels: ChannelInfoResponse = {}
     for (const channel of Object.values(this.channels.all)) {
-      channels[channel.name] = {
-        address: channel.address,
-        description: channel.description,
-        owner: channel.owner,
-        timestamp: channel.timestamp,
-        keys: channel.keys,
-        name: channel.name
+      if (channel.timestamp) { // Tmp, send only channels with full data
+        channels[channel.name] = {
+          address: channel.address,
+          description: channel.description,
+          owner: channel.owner,
+          timestamp: channel.timestamp,
+          keys: channel.keys,
+          name: channel.name
+        }
       }
     }
     return channels
@@ -115,11 +116,11 @@ export class Storage {
 
   public async updateChannels(io) {  // attach socket to channel db events - update list of available public channels
     if (this.channels) {
-      io.emit(EventTypesResponse.RESPONSE_GET_PUBLIC_CHANNELS, this.getChannels())
+      io.emit(EventTypesResponse.RESPONSE_GET_PUBLIC_CHANNELS, this.getChannelsResponse())
     }
     console.log('Attaching to channels store event')
     this.channels.events.on('replicated', (address) => {
-      const allChannels = this.getChannels()
+      const allChannels = this.getChannelsResponse()
       console.log(`Sending info to Client (${address})`, Object.keys(allChannels).length)
       io.emit(EventTypesResponse.RESPONSE_GET_PUBLIC_CHANNELS, allChannels)
     })
@@ -173,8 +174,7 @@ export class Storage {
       db = await this.orbitdb.log<IMessage>(`zbay.channels.${channelAddress}`, {
         accessController: {
           write: ['*']
-        },
-        replicate: false
+        }
       })
       await this.channels.put(channelAddress, {
         orbitAddress: `/orbitdb/${db.address.root}/${db.address.path}`,

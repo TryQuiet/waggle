@@ -4,7 +4,6 @@ import { ConnectionsManager } from '../../libp2p/connectionsManager'
 
 export const connections = (io, connectionsManager: ConnectionsManager) => {
   io.on(EventTypesServer.CONNECTION, socket => {
-    console.log('--------------- IO CONNECTION')
     socket.on(EventTypesServer.SUBSCRIBE_FOR_TOPIC, async (channelAddress: string) => {
       await connectionsManager.subscribeForTopic(channelAddress, io)
     })
