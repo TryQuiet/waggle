@@ -130,10 +130,6 @@ export class ConnectionsManager {
     await this.storage.subscribeForChannel(channelAddress, io)
   }
 
-  public gimmeData = async (channelInfo) => {  // Test, remove
-    await this.storage.insertData(channelInfo)
-  }
-
   public updateChannels = async (io) => {
     await this.storage.updateChannels(io)
   }
@@ -171,8 +167,8 @@ export class ConnectionsManager {
     await this.storage.sendMessage(channelAddress, io, messageToSend)
   }
 
-  public sendDataBack = async (io) => {
-    await this.storage.updateChannels(io)
+  public initializeData = async () => {
+    await this.storage.loadInitChannels()
   }
 
   // public startSendingMessages = async (channelAddress: string, git: Git): Promise<string> => {

@@ -42,6 +42,7 @@ const main = async () => {
     agentPort: 9050
   })
   const node = await connectonsManager.initializeNode(peerIdRestored)
+  await connectonsManager.initializeData()
   console.log(node, 'node')
 
   initListeners(dataServer.io, connectonsManager)

@@ -10,7 +10,6 @@ import { message as socketMessage } from '../socket/events/message'
 import { loadAllMessages } from '../socket/events/allMessages'
 import { EventTypesResponse } from '../socket/constantsReponse'
 import fs from 'fs'
-import os from 'os'
 
 export interface IMessage {
   id: string
@@ -27,16 +26,7 @@ interface IRepo {
   db: EventStore<IMessage>
 }
 
-// TODO: merge channel interfaces/types
 interface IChannelInfo {
-  name: string
-  description: string
-  owner: string
-  timestamp: number
-  address: string
-}
-
-interface ChannelInfo {
   name: string
   description: string
   owner: string
@@ -46,17 +36,11 @@ interface ChannelInfo {
 }
 
 interface ChannelInfoResponse {
-  [name: string]: ChannelInfo
+  [name: string]: IChannelInfo
 }
 
-interface IZbayChannel {  // this is saved in db, can be changed
+interface IZbayChannel extends IChannelInfo {
   orbitAddress: string
-  name: string
-  address: string
-  description?: string
-  owner?: string
-  timestamp?: number
-  keys?: Record<'ivk', string>
 }
 
 export class Storage {
@@ -85,10 +69,10 @@ export class Storage {
     await this.subscribeForAllChannels()
   }
 
-  private async loadInitChannels() {  // For testing purposes, remove
-    const initChannels = JSON.parse(fs.readFileSync(path.join(os.homedir(), 'channels.json')).toString())
+  public async loadInitChannels() {
+    const initChannels: ChannelInfoResponse = JSON.parse(fs.readFileSync('initialPublicChannels.json').toString())
     for (const channel of Object.values(initChannels)) {
-      await this.insertData(channel)
+      await this.createChannel(channel.address, channel)
     }
   }
 
@@ -103,22 +87,13 @@ export class Storage {
       console.log('REPLICATED CHANNELS')
     })
     await this.channels.load()
-    // for (const channel of Object.values(this.channels.all)) {
-    //   if (!channel.displayName) {
-    //     console.log(`Deleting ${channel.name}`)
-    //     await this.channels.del(channel.name)
-    //   }
-      
-    // }
-    // await this.loadInitChannels()
-    // console.log(this.channels.all)
     console.log('ALL CHANNELS COUNT:', Object.keys(this.channels.all).length)
   }
 
   async subscribeForAllChannels() {
     for (const channelData of Object.values(this.channels.all)) {
-      if (!this.repos.has(channelData.name)) {
-        await this.createChannel(channelData.name)
+      if (!this.repos.has(channelData.address)) {
+        await this.createChannel(channelData.address)
       }
     }
   }
@@ -139,24 +114,15 @@ export class Storage {
   }
 
   public async updateChannels(io) {  // attach socket to channel db events - update list of available public channels
-    console.log('Attaching to DB event')
-    this.initPublicChannels(io)
+    if (this.channels) {
+      io.emit(EventTypesResponse.RESPONSE_GET_PUBLIC_CHANNELS, this.getChannels())
+    }
+    console.log('Attaching to channels store event')
     this.channels.events.on('replicated', (address) => {
       const allChannels = this.getChannels()
       console.log(`Sending info to Client (${address})`, Object.keys(allChannels).length)
       io.emit(EventTypesResponse.RESPONSE_GET_PUBLIC_CHANNELS, allChannels)
     })
-  }
-
-  private async initPublicChannels(io) {
-    if (this.channels) {
-      io.emit(EventTypesResponse.RESPONSE_GET_PUBLIC_CHANNELS, this.getChannels())
-    }
-  }
-
-  public async insertData(channelInfo) {  // only for test, remove later
-    console.log('Inserting data ', channelInfo)
-    await this.createChannel(channelInfo.address, channelInfo)
   }
 
   public async subscribeForChannel(channelAddress: string, io: any): Promise<void> {

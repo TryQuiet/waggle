@@ -9,12 +9,7 @@ export const connections = (io, connectionsManager: ConnectionsManager) => {
       await connectionsManager.subscribeForTopic(channelAddress, io)
     })
     socket.on(EventTypesServer.SEND_MESSAGE, async ({ channelAddress, message }) => {
-      console.log('event MESSAGE')
       await connectionsManager.sendMessage(channelAddress, io, message)
-    })
-    socket.on('gimmeData', async (channelInfo) => {  // Test, remove later
-      console.log('received something: ', channelInfo)
-      await connectionsManager.gimmeData(channelInfo)
     })
     socket.once(EventTypesServer.GET_PUBLIC_CHANNELS, async () => {
       await connectionsManager.updateChannels(io)
