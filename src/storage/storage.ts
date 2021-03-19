@@ -26,7 +26,7 @@ interface IRepo {
   db: EventStore<IMessage>
 }
 
-interface IChannelInfo {
+export interface IChannelInfo {
   name: string
   description: string
   owner: string
@@ -92,45 +92,41 @@ export class Storage {
   async subscribeForAllChannels() {
     for (const channelData of Object.values(this.channels.all)) {
       if (!this.repos.has(channelData.address)) {
-        await this.createChannel(channelData.address)
+        await this.createChannel(channelData.address, channelData)
       }
     }
   }
 
   private getChannelsResponse(): ChannelInfoResponse {
     let channels: ChannelInfoResponse = {}
+    console.log(Object.keys(this.channels.all))
     for (const channel of Object.values(this.channels.all)) {
-      if (channel.timestamp) { // Tmp, send only channels with full data
-        channels[channel.name] = {
-          address: channel.address,
-          description: channel.description,
-          owner: channel.owner,
-          timestamp: channel.timestamp,
-          keys: channel.keys,
-          name: channel.name
-        }
+      channels[channel.name] = {
+        address: channel.address,
+        description: channel.description,
+        owner: channel.owner,
+        timestamp: channel.timestamp,
+        keys: channel.keys,
+        name: channel.name
       }
     }
     return channels
   }
 
-  public async updateChannels(io) {  // attach socket to channel db events - update list of available public channels
-    if (this.channels) {
-      io.emit(EventTypesResponse.RESPONSE_GET_PUBLIC_CHANNELS, this.getChannelsResponse())
-    }
-    console.log('Attaching to channels store event')
-    this.channels.events.on('replicated', (address) => {
-      const allChannels = this.getChannelsResponse()
-      console.log(`Sending info to Client (${address})`, Object.keys(allChannels).length)
-      io.emit(EventTypesResponse.RESPONSE_GET_PUBLIC_CHANNELS, allChannels)
-    })
+  public async updateChannels(io) {
+    /** Update list of available public channels */
+    io.emit(EventTypesResponse.RESPONSE_GET_PUBLIC_CHANNELS, this.getChannelsResponse())
   }
 
-  public async subscribeForChannel(channelAddress: string, io: any): Promise<void> {
+  public async subscribeForChannel(channelAddress: string, io: any, channelInfo?: IChannelInfo): Promise<void> {
     if (this.repos.has(channelAddress)) return
 
     console.log('Subscribing to channel', channelAddress)
-    const db = await this.createChannel(channelAddress)
+    const db = await this.createChannel(channelAddress, channelInfo)
+    if (!db) {
+      console.log(`Can't subscribe to channel ${channelAddress}`)
+      return
+    }
 
     db.events.on('write', (_address, entry) => {
       socketMessage(io, { message: entry.payload.value, channelAddress })
@@ -165,6 +161,10 @@ export class Storage {
   }
 
   private async createChannel(channelAddress: string, channelData?: IChannelInfo): Promise<EventStore<IMessage>> {
+    if (!channelAddress) {
+      console.log(`No channel address, can't create channel`)
+      return
+    }
     const channel = this.channels.get(channelAddress)
     let db: EventStore<IMessage>
     if (channel) {

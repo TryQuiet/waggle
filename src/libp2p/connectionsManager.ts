@@ -14,6 +14,7 @@ import { createPaths } from '../utils'
 import { ZBAY_DIR_PATH } from '../constants'
 import fs from 'fs'
 import path from 'path'
+import { IChannelInfo } from '../storage/storage'
 
 interface IConstructor {
   host: string
@@ -125,8 +126,8 @@ export class ConnectionsManager {
     }
   }
 
-  public subscribeForTopic = async (channelAddress: string, io: any) => {
-    await this.storage.subscribeForChannel(channelAddress, io)
+  public subscribeForTopic = async (channelData: IChannelInfo, io: any) => {
+    await this.storage.subscribeForChannel(channelData.address, io, channelData)
   }
 
   public updateChannels = async (io) => {
