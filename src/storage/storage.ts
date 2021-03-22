@@ -183,6 +183,9 @@ export class Storage {
       })
       console.log(`Created channel ${channelAddress}`)
     }
+    db.events.on('replicated', (address) => {
+      console.log(`replicated message ${address}`)
+    })
     this.repos.set(channelAddress, { db })
     return db
   }
