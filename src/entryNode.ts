@@ -31,13 +31,13 @@ const main = async () => {
   try {
     service1 = await tor.getServiceAddress(7788)
   } catch (e) {
-    service1 = await tor.addNewService(7788,7788)
+    service1 = await tor.addOnion({ virtPort: 7788, targetPort: 7788, privKey: process.env.HIDDEN_SERVICE_SECRET })
   }
   console.log('service1', service1)
 
   const dataServer = new DataServer()
   dataServer.listen()
-  const peerId = fs.readFileSync('peerId1.json')
+  const peerId = fs.readFileSync('entryNodePeerId.json')
   const parsedId = JSON.parse(peerId.toString()) as PeerId.JSONPeerId
   const peerIdRestored = await PeerId.createFromJSON(parsedId)
   const connectonsManager = new ConnectionsManager({
