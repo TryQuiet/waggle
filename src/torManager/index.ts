@@ -10,7 +10,6 @@ interface IService {
 }
 interface IConstructor {
   torPath: string
-  //settingsPath: string
   options?: child_process.SpawnOptionsWithoutStdio
   appDataPath?: string
   controlPort?: number
@@ -146,9 +145,7 @@ export class Tor {
           await sleep()
           try {
             console.log(`INFO: trying to kill tor on port ${oldProcessPid}`)
-            console.log(oldProcessPid)
             console.log(process.kill(oldProcessPid, 'SIGTERM'))
-            //await fkill(oldProcessPid, { force: true })
           } catch (e) {
             console.log(e)
             clearTimeout(timeout)
