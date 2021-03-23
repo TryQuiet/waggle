@@ -11,7 +11,6 @@ interface IOpts {
 class TorControl {
   opts: IOpts = {}
   constructor(opts: IOpts = {}) {
-    console.log(`opts are ${opts}`)
     var self = this
 
     opts = opts || {}
