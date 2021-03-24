@@ -105,13 +105,15 @@ export class Storage {
     let channels: ChannelInfoResponse = {}
     console.log(Object.keys(this.channels.all))
     for (const channel of Object.values(this.channels.all)) {
-      channels[channel.name] = {
-        address: channel.address,
-        description: channel.description,
-        owner: channel.owner,
-        timestamp: channel.timestamp,
-        keys: channel.keys,
-        name: channel.name
+      if (channel.keys) { // TODO: create proper validators
+        channels[channel.name] = {
+          address: channel.address,
+          description: channel.description,
+          owner: channel.owner,
+          timestamp: channel.timestamp,
+          keys: channel.keys,
+          name: channel.name
+        }
       }
     }
     return channels
@@ -169,17 +171,16 @@ export class Storage {
       console.log(`No channel address, can't create channel`)
       return
     }
+
+    const db: EventStore<IMessage> = await this.orbitdb.log<IMessage>(`zbay.channels.${channelAddress}`, {
+      accessController: {
+        write: ['*']
+      }
+    })
+    await db.load()
+
     const channel = this.channels.get(channelAddress)
-    let db: EventStore<IMessage>
-    if (channel) {
-      db = await this.orbitdb.log<IMessage>(channel.orbitAddress)
-      await db.load()
-    } else {
-      db = await this.orbitdb.log<IMessage>(`zbay.channels.${channelAddress}`, {
-        accessController: {
-          write: ['*']
-        }
-      })
+    if (!channel) {
       await this.channels.put(channelAddress, {
         orbitAddress: `/orbitdb/${db.address.root}/${db.address.path}`,
         address: channelAddress,
@@ -187,6 +188,7 @@ export class Storage {
       })
       console.log(`Created channel ${channelAddress}`)
     }
+
     db.events.on('replicated', (address) => {
       console.log(`replicated message ${address}`)
     })
