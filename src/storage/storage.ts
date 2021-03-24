@@ -133,20 +133,15 @@ export class Storage {
   }
 
   public async subscribeForChannel(channelAddress: string, io: any, channelInfo?: IChannelInfo): Promise<void> {
+    let db: EventStore<IMessage>
     if (this.repos.has(channelAddress)) {
-      const ddb = this.repos.get(channelAddress).db
-      ddb.events.on('replicated', () => {
-        loadAllMessages(io, this.getAllChannelMessages(ddb), channelAddress)
-      })
-      loadAllMessages(io, this.getAllChannelMessages(ddb), channelAddress)
-      return
-    }
-
-    console.log('Subscribing to channel', channelAddress)
-    const db = await this.createChannel(channelAddress, channelInfo)
-    if (!db) {
-      console.log(`Can't subscribe to channel ${channelAddress}`)
-      return
+      db = this.repos.get(channelAddress).db
+    } else {
+      db = await this.createChannel(channelAddress, channelInfo)
+      if (!db) {
+        console.log(`Can't subscribe to channel ${channelAddress}`)
+        return
+      }
     }
 
     db.events.on('write', (_address, entry) => {
@@ -156,7 +151,7 @@ export class Storage {
       loadAllMessages(io, this.getAllChannelMessages(db), channelAddress)
     })
     loadAllMessages(io, this.getAllChannelMessages(db), channelAddress)
-    console.log('Subscribtion to channel ready', channelAddress)
+    console.log('Subscription to channel ready', channelAddress)
   }
 
   public async sendMessage(channelAddress: string, io: any, message: IMessage) {
