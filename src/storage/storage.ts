@@ -31,7 +31,7 @@ export interface IChannelInfo {
   owner: string
   timestamp: number
   address: string
-  keys: Record<'ivk', string>
+  keys: { ivk?: string; sk?: string }
 }
 
 interface ChannelInfoResponse {
@@ -74,6 +74,7 @@ export class Storage {
   }
 
   public async loadInitChannels() {
+    // Temp, only for entrynode
     const initChannels: ChannelInfoResponse = JSON.parse(fs.readFileSync('initialPublicChannels.json').toString())
     for (const channel of Object.values(initChannels)) {
       await this.createChannel(channel.address, channel)
@@ -124,8 +125,22 @@ export class Storage {
     io.emit(EventTypesResponse.RESPONSE_GET_PUBLIC_CHANNELS, this.getChannelsResponse())
   }
 
+  private getAllChannelMessages(db: EventStore<IMessage>): IMessage[] { // TODO: move to e.g custom Store
+    return db
+      .iterator({ limit: -1 })
+      .collect()
+      .map(e => e.payload.value)
+  }
+
   public async subscribeForChannel(channelAddress: string, io: any, channelInfo?: IChannelInfo): Promise<void> {
-    if (this.repos.has(channelAddress)) return
+    if (this.repos.has(channelAddress)) {
+      const ddb = this.repos.get(channelAddress).db
+      ddb.events.on('replicated', () => {
+        loadAllMessages(io, this.getAllChannelMessages(ddb), channelAddress)
+      })
+      loadAllMessages(io, this.getAllChannelMessages(ddb), channelAddress)
+      return
+    }
 
     console.log('Subscribing to channel', channelAddress)
     const db = await this.createChannel(channelAddress, channelInfo)
@@ -138,17 +153,9 @@ export class Storage {
       socketMessage(io, { message: entry.payload.value, channelAddress })
     })
     db.events.on('replicated', () => {
-      const all = db
-        .iterator({ limit: -1 })
-        .collect()
-        .map(e => e.payload.value)
-      loadAllMessages(io, all, channelAddress)
+      loadAllMessages(io, this.getAllChannelMessages(db), channelAddress)
     })
-    const all = db
-      .iterator({ limit: -1 })
-      .collect()
-      .map(e => e.payload.value)
-    loadAllMessages(io, all, channelAddress)
+    loadAllMessages(io, this.getAllChannelMessages(db), channelAddress)
     console.log('Subscribtion to channel ready', channelAddress)
   }
 
@@ -156,11 +163,8 @@ export class Storage {
     await this.subscribeForChannel(channelAddress, io)
     const db = this.repos.get(channelAddress).db
     db.events.on('write', (address, entry, heads) => {
-      console.log('WRITE MESSAGE TO DB', entry)
-      const all = db
-        .iterator({ limit: -1 })
-        .collect()
-        .map(e => e.payload.value)
+      console.log('Writing message')
+      const all = this.getAllChannelMessages(db)
       console.log(`Count messages in ${entry.id}: ${all.length}`)  
     })
     await db.add(message)
@@ -188,10 +192,6 @@ export class Storage {
       })
       console.log(`Created channel ${channelAddress}`)
     }
-
-    db.events.on('replicated', (address) => {
-      console.log(`replicated message ${address}`)
-    })
     this.repos.set(channelAddress, { db })
     return db
   }
