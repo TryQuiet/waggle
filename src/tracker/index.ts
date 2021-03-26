@@ -4,29 +4,31 @@ import {ZBAY_DIR_PATH} from '../constants'
 import * as path from 'path'
 import * as os from 'os'
 import fs from 'fs'
+import multiaddr from 'multiaddr'
 
-class Tracker {
+export class Tracker {
   private _app: express.Application
   private _peers: Set<string>
-  private _onionAddress: string
+  private _port: number
+  private _controlPort: number
 
-  constructor() {
+  constructor(port?: number, controlPort?: number) {
     this._app = express()
     this._peers = new Set()
+    this._port = port || 7788
+    this._controlPort = controlPort || 9051
   }
 
   private async initTor() {
-    console.log(`${process.cwd()}`)
     const torPath = `${process.cwd()}/tor/tor`
     const pathDevLib = path.join.apply(null, [process.cwd(), 'tor'])
-    console.log(pathDevLib)
     if(!fs.existsSync(ZBAY_DIR_PATH)) {
       fs.mkdirSync(ZBAY_DIR_PATH)
     }
     const tor = new Tor({
       torPath,
       appDataPath: ZBAY_DIR_PATH,
-      controlPort: 9051,
+      controlPort: this._controlPort,
       options: {
         env: {
           LD_LIBRARY_PATH: pathDevLib,
@@ -36,22 +38,37 @@ class Tracker {
       }
     })
     await tor.init()
-    // await tor.setHttpTunnelPort(9082)
-    return await tor.addNewService(7788, 7788)  // this should be static
+    return await tor.addOnion({ virtPort: this._port, targetPort: this._port, privKey: process.env.HIDDEN_SERVICE_SECRET })
+  }
+
+  private addPeer(address: string) {
+    try {
+      multiaddr(address)
+    } catch (e) {
+      console.debug('Wrong address format:', e)
+      return
+    }
+    
+    this._peers.add(address)
+  }
+
+  private getPeers(): string[] {
+    return [...this._peers]
   }
 
   private setRouting() {
     this._app.use(express.json())
     this._app.get('/peers', (req, res) => {
-      res.send([...this._peers])
+      res.send(this.getPeers())
     })
     this._app.post('/register',(req, res) => {
-      console.log(req.body)  // todo: validate
-      if (!req.body['address']) {
+      console.log('body', req.body)
+      const address = req.body['address']
+      if (!address) {
         res.end()
         return
       }
-      this._peers.add(req.body['address'])
+      this.addPeer(address)
       res.end()
     })
   }
@@ -62,8 +79,8 @@ class Tracker {
   }
 
   public listen() {
-    this._app.listen(7788, () => {
-      console.log(`Tracker listening on port 7788`)
+    this._app.listen(this._port, () => {
+      console.debug(`Tracker listening on ${this._port}`)
     })
   }
 }
