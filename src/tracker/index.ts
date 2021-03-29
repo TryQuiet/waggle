@@ -5,16 +5,14 @@ import * as path from 'path'
 import * as os from 'os'
 import fs from 'fs'
 import multiaddr from 'multiaddr'
-import { filter } from 'streaming-iterables'
 
-interface IPeerAddress {
-  expirationTime: number
-  address: string
+interface IPeer {
+  [address: string]: number
 }
 
 export class Tracker {
   private _app: express.Application
-  private _peers: Set<IPeerAddress>
+  private _peers: IPeer
   private _port: number
   private _controlPort: number
   private _privKey: string
@@ -22,7 +20,7 @@ export class Tracker {
 
   constructor(hiddenServicePrivKey: string, port?: number, controlPort?: number, peerExpirationTime?: number) {
     this._app = express()
-    this._peers = new Set()
+    this._peers = {}
     this._privKey = hiddenServicePrivKey
     this._port = port || 7788
     this._controlPort = controlPort || 9051
@@ -65,12 +63,21 @@ export class Tracker {
     }
     
     const expirationTime = (new Date()).getTime() + this._peerExpirationTime
-    this._peers.add({address, expirationTime})
+    this._peers[address] = expirationTime
     return true
   }
 
+  private clearPeers() {
+    const now = (new Date()).getTime()
+    for (const address of Object.keys(this._peers)) {
+      if (now > this._peers[address]) {
+        delete this._peers[address]
+      }
+    }
+  }
+
   private getAddresses(): string[] {
-    return [...this._peers].map((data) => data.address)
+    return Object.keys(this._peers)
   }
 
   private setRouting() {
