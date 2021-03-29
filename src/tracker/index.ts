@@ -5,18 +5,28 @@ import * as path from 'path'
 import * as os from 'os'
 import fs from 'fs'
 import multiaddr from 'multiaddr'
+import { filter } from 'streaming-iterables'
+
+interface IPeerAddress {
+  expirationTime: number
+  address: string
+}
 
 export class Tracker {
   private _app: express.Application
-  private _peers: Set<string>
+  private _peers: Set<IPeerAddress>
   private _port: number
   private _controlPort: number
+  private _privKey: string
+  private _peerExpirationTime: number
 
-  constructor(port?: number, controlPort?: number) {
+  constructor(hiddenServicePrivKey: string, port?: number, controlPort?: number, peerExpirationTime?: number) {
     this._app = express()
     this._peers = new Set()
+    this._privKey = hiddenServicePrivKey
     this._port = port || 7788
     this._controlPort = controlPort || 9051
+    this._peerExpirationTime = peerExpirationTime || 60 * 60 * 1000
   }
 
   private async initTor() {
@@ -37,58 +47,71 @@ export class Tracker {
         detached: true
       }
     })
+    
     await tor.init()
-    return await tor.addOnion({ virtPort: this._port, targetPort: this._port, privKey: process.env.HIDDEN_SERVICE_SECRET })
+    return await tor.addOnion({ 
+      virtPort: this._port, 
+      targetPort: this._port, 
+      privKey: this._privKey 
+    })
   }
 
-  private addPeer(address: string) {
+  private addPeer(address: string): boolean {
     try {
       multiaddr(address)
     } catch (e) {
       console.debug('Wrong address format:', e)
-      return
+      return false
     }
     
-    this._peers.add(address)
+    const expirationTime = (new Date()).getTime() + this._peerExpirationTime
+    this._peers.add({address, expirationTime})
+    return true
   }
 
-  private getPeers(): string[] {
-    return [...this._peers]
+  private getAddresses(): string[] {
+    return [...this._peers].map((data) => data.address)
   }
 
   private setRouting() {
     this._app.use(express.json())
     this._app.get('/peers', (req, res) => {
-      res.send(this.getPeers())
+      res.send(this.getAddresses())
     })
     this._app.post('/register',(req, res) => {
-      console.log('body', req.body)
       const address = req.body['address']
       if (!address) {
-        res.end()
-        return
+        console.debug('No address in request data')
+        res.status(400)
       }
-      this.addPeer(address)
+      else if (!this.addPeer(address)) {
+        res.status(400)
+      }
       res.end()
     })
   }
 
   public async init() {
-    await this.initTor()
+    const address = await this.initTor()
+    console.log(address)
     this.setRouting()
   }
 
-  public listen() {
-    this._app.listen(this._port, () => {
-      console.debug(`Tracker listening on ${this._port}`)
-    })
+  public async listen(): Promise<void> {
+    return new Promise(resolve => {
+      this._app.listen(this._port, () => {
+        console.debug(`Tracker listening on ${this._port}`)
+        resolve()
+      })
+    })  
   }
+
 }
 
 const main = async () => {
-  const tracker = new Tracker()
+  const tracker = new Tracker(process.env.HIDDEN_SERVICE_SECRET)
   await tracker.init()
-  tracker.listen()
+  await tracker.listen()
 }
 
 main()
