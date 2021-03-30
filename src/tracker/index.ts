@@ -83,6 +83,7 @@ export class Tracker {
   private setRouting() {
     this._app.use(express.json())
     this._app.get('/peers', (req, res) => {
+      this.clearPeers()
       res.send(this.getAddresses())
     })
     this._app.post('/register',(req, res) => {
