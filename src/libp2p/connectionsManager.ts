@@ -10,11 +10,12 @@ import Multiaddr from 'multiaddr'
 import Bootstrap from 'libp2p-bootstrap'
 import multihashing from 'multihashing-async'
 import { Storage } from '../storage'
-import { createPaths } from '../utils'
+import { createPaths, fetchAbsolute } from '../utils'
 import { ZBAY_DIR_PATH } from '../constants'
 import fs from 'fs'
 import path from 'path'
 import { IChannelInfo } from '../storage/storage'
+import fetch from 'node-fetch';
 
 
 interface IOptions {
@@ -62,6 +63,7 @@ export class ConnectionsManager {
   zbayDir: string
   io: any
   peerId: PeerId
+  trackerApi: any
 
   constructor({ host, port, agentHost, agentPort, options, io }: IConstructor) {
     this.host = host
@@ -74,6 +76,8 @@ export class ConnectionsManager {
     this.zbayDir = options?.env.appDataPath || ZBAY_DIR_PATH
     this.storage = new Storage(this.zbayDir, this.io)
     this.peerId = null
+    this.trackerApi = fetchAbsolute(fetch)('http://okmlac2qjgo2577dkyhpisceua2phwxhdybw4pssortdop6ddycntsyd.onion:7788')
+
     process.on('unhandledRejection', error => {
       console.error(error)
       throw error
@@ -102,24 +106,43 @@ export class ConnectionsManager {
     return peerId
   }
 
+  private getInitialPeers = async (): Promise<Array<string>> => {
+    const options = {
+      method: 'GET',
+      agent: () => {
+        return this.socksProxyAgent;
+      }
+    };
+    const response = await this.trackerApi('/peers', options)
+    return response.json()
+  }
+  
+  private registerPeer = async (address: string): Promise<void> => {
+    const options = {
+      method: 'POST',
+      body: JSON.stringify({'address': address}),
+      headers: {'Content-Type': 'application/json'},
+      agent: () => {
+        return this.socksProxyAgent;
+      }
+    };
+    await this.trackerApi('/register', options)
+  }
+
   public initializeNode = async (staticPeerId?: PeerId): Promise<ILibp2pStatus> => {
     if (!staticPeerId) {
       this.peerId = await this.getPeerId()
     } else {
       this.peerId = staticPeerId
     }
+    this.createAgent()
     const addrs = [`/dns4/${this.host}/tcp/${this.port}/ws`]
-
-    const bootstrapMultiaddrs = [
-      '/dns4/2lmfmbj4ql56d55lmv7cdrhdlhls62xa4p6lzy6kymxuzjlny3vnwyqd.onion/tcp/7788/ws/p2p/Qmak8HeMad8X1HGBmz2QmHfiidvGnhu6w6ugMKtx8TFc85',
-    ]
-
     this.localAddress = `${addrs}/p2p/${this.peerId.toB58String()}`
-
-    console.log('bootstrapMultiaddrs:', bootstrapMultiaddrs)
     console.log('local address:', this.localAddress)
 
-    this.createAgent()
+    await this.registerPeer(this.localAddress)
+    const bootstrapMultiaddrs = await this.getInitialPeers()
+    console.log('bootstrapMultiaddrs:', bootstrapMultiaddrs)
 
     this.libp2p = await this.createBootstrapNode({
       peerId: this.peerId,
