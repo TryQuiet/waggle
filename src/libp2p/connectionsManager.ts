@@ -136,17 +136,23 @@ export class ConnectionsManager {
       this.peerId = staticPeerId
     }
     this.createAgent()
-    const addrs = [`/dns4/${this.host}/tcp/${this.port}/ws`]
-    this.localAddress = `${addrs}/p2p/${this.peerId.toB58String()}`
+
+    const listenAddrs = [`/dns4/${this.host}/tcp/${this.port}/ws`]
+    this.localAddress = `${listenAddrs}/p2p/${this.peerId.toB58String()}`
     console.log('local address:', this.localAddress)
 
-    await this.registerPeer(this.localAddress)
+    try {
+      await this.registerPeer(this.localAddress)
+    } catch (e) {
+      console.error('Couldn\'t register peer. Probably tracker is offline. Error:', e)
+      return
+    }
     const bootstrapMultiaddrs = await this.getInitialPeers()
     console.log('bootstrapMultiaddrs:', bootstrapMultiaddrs)
 
     this.libp2p = await this.createBootstrapNode({
       peerId: this.peerId,
-      addrs,
+      listenAddrs,
       agent: this.socksProxyAgent,
       localAddr: this.localAddress,
       bootstrapMultiaddrsList: bootstrapMultiaddrs
@@ -221,7 +227,7 @@ export class ConnectionsManager {
 
   private createBootstrapNode = ({
     peerId,
-    addrs,
+    listenAddrs,
     agent,
     localAddr,
     bootstrapMultiaddrsList
@@ -229,7 +235,7 @@ export class ConnectionsManager {
     return Libp2p.create({
       peerId,
       addresses: {
-        listen: addrs
+        listen: listenAddrs
       },
       modules: {
         transport: [WebsocketsOverTor],

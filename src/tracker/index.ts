@@ -24,7 +24,7 @@ export class Tracker {
     this._privKey = hiddenServicePrivKey
     this._port = port || 7788
     this._controlPort = controlPort || 9051
-    this._peerExpirationTime = peerExpirationTime || 60 * 60 * 1000
+    this._peerExpirationTime = peerExpirationTime || 2 * 60 * 60 * 1000
   }
 
   private async initTor() {
@@ -101,7 +101,6 @@ export class Tracker {
 
   public async init() {
     const address = await this.initTor()
-    console.log(address)
     this.setRouting()
   }
 
