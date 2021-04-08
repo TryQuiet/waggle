@@ -142,23 +142,22 @@ export class Storage {
   }
 
   public async subscribeForChannel(channelAddress: string, io: any, channelInfo?: IChannelInfo): Promise<void> {
-    console.log('Subscribing to channel ', channelAddress)
     let db: EventStore<IMessage>
-    const repo = this.repos.get(channelAddress)
+    let repo = this.repos.get(channelAddress)
 
     if (repo) {
       db = repo.db
     } else {
       db = await this.createChannel(channelAddress, channelInfo)
-    }
-
-    if (!db) {
-      console.log(`Can't subscribe to channel ${channelAddress}`)
-      return
+      if (!db) {
+        console.log(`Can't subscribe to channel ${channelAddress}`)
+        return
+      }
+      repo = this.repos.get(channelAddress)
     }
 
     if (repo && !repo.eventsAttached) {
-      console.log('Connecting to events for', channelAddress)
+      console.log('Subscribing to channel ', channelAddress)
       db.events.on('write', (_address, entry) => {
         console.log('Writing to messages db')
         socketMessage(io, { message: entry.payload.value, channelAddress })
@@ -169,13 +168,12 @@ export class Storage {
       })
       repo.eventsAttached = true
       loadAllMessages(io, this.getAllChannelMessages(db), channelAddress)
+      console.log('Subscription to channel ready', channelAddress)
     }
-    
-    console.log('Subscription to channel ready', channelAddress)
   }
 
   public async sendMessage(channelAddress: string, io: any, message: IMessage) {
-    await this.subscribeForChannel(channelAddress, io)
+    await this.subscribeForChannel(channelAddress, io) // Is it necessary?
     const db = this.repos.get(channelAddress).db
     await db.add(message)
   }
