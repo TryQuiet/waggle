@@ -163,8 +163,11 @@ export class Storage {
         socketMessage(io, { message: entry.payload.value, channelAddress })
       })
       db.events.on('replicated', () => {
-        console.log('Message replicated')
-        loadAllMessages(io, this.getAllChannelMessages(db), channelAddress)
+        console.log('Messages replicated')
+      })
+      db.events.on('replicate.progress', (address, hash, entry, progress, have) => {
+        console.log('Replicating message')
+        socketMessage(io, { message: entry.payload.value, channelAddress })
       })
       repo.eventsAttached = true
       loadAllMessages(io, this.getAllChannelMessages(db), channelAddress)
