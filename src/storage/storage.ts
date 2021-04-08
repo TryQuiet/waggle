@@ -150,12 +150,14 @@ export class Storage {
       db = repo.db
     } else {
       db = await this.createChannel(channelAddress, channelInfo)
-      if (!db) {
-        console.log(`Can't subscribe to channel ${channelAddress}`)
-        return
-      }
     }
-    if (!repo.eventsAttached) {
+
+    if (!db) {
+      console.log(`Can't subscribe to channel ${channelAddress}`)
+      return
+    }
+
+    if (repo && !repo.eventsAttached) {
       console.log('Connecting to events for', channelAddress)
       db.events.on('write', (_address, entry) => {
         console.log('Writing to messages db')
@@ -166,9 +168,9 @@ export class Storage {
         loadAllMessages(io, this.getAllChannelMessages(db), channelAddress)
       })
       repo.eventsAttached = true
+      loadAllMessages(io, this.getAllChannelMessages(db), channelAddress)
     }
     
-    loadAllMessages(io, this.getAllChannelMessages(db), channelAddress)
     console.log('Subscription to channel ready', channelAddress)
   }
 
