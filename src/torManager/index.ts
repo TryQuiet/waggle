@@ -37,7 +37,7 @@ export class Tor {
       }
 
       if (process.platform !== 'win32') {
-        await this.killHangingTorProcess()
+        //await this.killHangingTorProcess()
       }
 
       const TorDataDirectory = path.join.apply(null, [this.appDataPath, 'TorDataDirectory'])
@@ -60,7 +60,9 @@ export class Tor {
         reject('Process timeout')
       }, timeout)
       this.process.stdout.on('data', (data: Buffer) => {
-        console.log(data.toString())
+        if (!data.toString().includes('Closed 1 streams for service [scrubbed].onion for reason resolve failed. Fetch status: No more HSDir available to query.')) {
+          console.log(data.toString())
+        }
         if (data.toString().includes('100%')) {
           clearTimeout(id)
           resolve()

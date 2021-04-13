@@ -1,4 +1,5 @@
 import { Tor } from './torManager'
+import {Storage } from './storage'
 import { DataServer } from './socket/DataServer'
 import { ConnectionsManager } from './libp2p/connectionsManager'
 import initListeners from './socket/listeners/'
@@ -31,12 +32,12 @@ const main = async () => {
   try {
     service1 = await tor.getServiceAddress(7788)
   } catch (e) {
-    service1 = await tor.addOnion({ virtPort: 7788, targetPort: 7788, privKey: process.env.HIDDEN_SERVICE_SECRET })
+    service1 = await (await tor.addNewService(7788 ,7788)).onionAddress
   }
 
   const dataServer = new DataServer()
   dataServer.listen()
-  const peerId = fs.readFileSync('entryNodePeerId.json')
+  const peerId = fs.readFileSync('peerId1.json')
   const parsedId = JSON.parse(peerId.toString()) as PeerId.JSONPeerId
   const peerIdRestored = await PeerId.createFromJSON(parsedId)
   const connectonsManager = new ConnectionsManager({
@@ -47,6 +48,11 @@ const main = async () => {
   })
   const node = await connectonsManager.initializeNode(peerIdRestored)
   await connectonsManager.initializeData()
+  await connectonsManager.addUser('adres','polKlucz')
+  await connectonsManager.initializeConversation('asdfsdf','sdf')
+  await connectonsManager.getAvailableUsers()
+  //await connectonsManager.getPrivateConversations()
+  await connectonsManager.sendPrivateMessage('asdfsf','asdf')
   console.log(node, 'node')
 
   initListeners(dataServer.io, connectonsManager)

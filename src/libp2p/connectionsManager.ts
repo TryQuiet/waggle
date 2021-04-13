@@ -190,6 +190,39 @@ export class ConnectionsManager {
     await this.storage.loadInitChannels()
   }
 
+  // DMs
+
+  public addUser = async (
+    address: string,
+    halfKey: string,
+  ): Promise<void> => {
+    await this.storage.addUser(address, halfKey)
+  }
+
+  public initializeConversation = async (
+    address: string,
+    encryptedShit: string
+  ): Promise<void> => {
+    console.log('InitializeConversation in connections manager')
+    await this.storage.initializeConversation(address, encryptedShit)
+  }
+
+  public getAvailableUsers = async (io?) : Promise<void> => {
+    await this.storage.getAvailableUsers(io)
+  }
+
+  public getPrivateConversations = async (io): Promise<void> => {
+    console.log('zbay asked about private conversations')
+    await this.storage.getPrivateConversations(io)
+  }
+
+  public sendPrivateMessage = async (
+    address: string,
+    message: string
+  ): Promise<void> => {
+    await this.storage.sendPrivateMessage(address, message)
+  }
+
   // public startSendingMessages = async (channelAddress: string, git: Git): Promise<string> => {
   //   try {
   //     const chat = this.chatRooms.get(`${channelAddress}`)
