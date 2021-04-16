@@ -46,7 +46,7 @@ class TorControl {
 
       this.connection = net.connect(params)
 
-      //Handling connection errors
+      // Handling connection errors
       this.connection.once('error', function (err: any) {
         if (cb) {
           cb(new Error('Error connecting to control port: ' + err))
@@ -103,31 +103,32 @@ class TorControl {
       return this
     }
   }
-  private connect: (params: any, cb: any) => { any: any }
+
+  private readonly connect: (params: any, cb: any) => { any: any }
   private connection: any
-  private disconnect: any
-  private isPersistent: any
-  private setPersistent: any
-  private eventEmitter: any = new EventEmitter()
-  private sendCommand: any = (
+  private readonly disconnect: any
+  private readonly isPersistent: any
+  private readonly setPersistent: any
+  private readonly eventEmitter: any = new EventEmitter()
+  private readonly sendCommand: any = async (
     command: string,
     keepConnection: boolean
-  ): Promise<{ code: number; messages: string[] }> => {
-    return new Promise((resolve, reject) => {
-      var self = this,
-        tryDisconnect = function (callback: any) {
-          if (keepConnection || self.isPersistent() || !self.connection) {
-            return callback()
-          }
-          return self.disconnect(callback)
+  ): Promise<{ code: number, messages: string[] }> => {
+    return await new Promise((resolve, reject) => {
+      var self = this
+      var tryDisconnect = function (callback: any) {
+        if (keepConnection || self.isPersistent() || !self.connection) {
+          return callback()
         }
+        return self.disconnect(callback)
+      }
       return this.connect(null, function (err: any, connection: any) {
         if (err) {
           return reject(err)
         }
         connection.once('data', function (data: any) {
           return tryDisconnect(function () {
-            let messages = []
+            const messages = []
             let arr = []
             data = data.toString()
             console.log('dataaa', data)
@@ -152,19 +153,23 @@ class TorControl {
     })
   }
 
-  public async addOnion(request: string): Promise<{ code: number; messages: string[] }> {
+  public async addOnion(request: string): Promise<{ code: number, messages: string[] }> {
     return this.sendCommand('ADD_ONION ' + request)
   }
-  public async delOnion(request: string): Promise<{ code: number; messages: string[] }> {
+
+  public async delOnion(request: string): Promise<{ code: number, messages: string[] }> {
     return this.sendCommand('DEL_ONION ' + request)
   }
-  public signal(signal: string): Promise<{ code: number; messages: string[] }> {
+
+  public async signal(signal: string): Promise<{ code: number, messages: string[] }> {
     return this.sendCommand('SIGNAL ' + signal)
   }
-  public signalReload(): Promise<{ code: number; messages: string[] }> {
-    return this.signal('RELOAD')
+
+  public async signalReload(): Promise<{ code: number, messages: string[] }> {
+    return await this.signal('RELOAD')
   }
-  public async setConf(request: string): Promise<{ code: number; messages: string[] }> {
+
+  public async setConf(request: string): Promise<{ code: number, messages: string[] }> {
     return this.sendCommand('SETCONF ' + request)
   }
 }

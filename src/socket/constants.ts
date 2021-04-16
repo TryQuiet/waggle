@@ -13,5 +13,9 @@ export enum EventTypesServer {
   GET_AVAILABLE_USERS = 'getAvailableUsers',
   GET_PRIVATE_CONVERSATIONS = 'getPrivateConversations',
   SEND_PRIVATE_MESSAGE = 'sendPrivateMessage',
-  ADD_USER = 'addUser'
+  ADD_USER = 'addUser',
+  SEND_DIRECT_MESSAGE = 'sendDirectMessage',
+  FETCH_ALL_DIRECT_MESSAGES = 'fetchAllDirectMessages',
+  SUBSCRIBE_FOR_DIRECT_MESSAGE_THREAD = 'subscribeForDirectMessageThread',
+  DIRECT_MESSAGE = 'directMessage'
 }

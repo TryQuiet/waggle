@@ -30,14 +30,15 @@ export class Tor {
     this.appDataPath = appDataPath
     this.controlPort = controlPort
   }
-  public init = (timeout = 20000): Promise<void> =>
-    new Promise(async (resolve, reject) => {
+
+  public init = async (timeout = 20000): Promise<void> =>
+    await new Promise(async (resolve, reject) => {
       if (this.process) {
         throw new Error('Already initialized')
       }
 
       if (process.platform !== 'win32') {
-        //await this.killHangingTorProcess()
+        // await this.killHangingTorProcess()
       }
 
       const TorDataDirectory = path.join.apply(null, [this.appDataPath, 'TorDataDirectory'])
@@ -105,7 +106,7 @@ export class Tor {
   public async addNewService(
     virtPort: number,
     targetPort: number
-  ): Promise<{ onionAddress: string; privateKey: string }> {
+  ): Promise<{ onionAddress: string, privateKey: string }> {
     const status = await this.torControl.addOnion(
       `NEW:BEST Flags=Detach Port=${virtPort},127.0.0.1:${targetPort}`
     )
@@ -129,8 +130,8 @@ export class Tor {
     throw new Error('cannot get service addres')
   }
 
-  private killHangingTorProcess = async (): Promise<void> => {
-    return new Promise(async (resolve, reject) => {
+  private readonly killHangingTorProcess = async (): Promise<void> => {
+    return await new Promise(async (resolve, reject) => {
       const timeout = setTimeout(() => {
         reject('ERROR: Cannot kill hanging tor process, kill it manually and restart app')
       }, 30_000)
@@ -162,8 +163,8 @@ export class Tor {
     })
   }
 
-  public kill = (): Promise<void> =>
-    new Promise((resolve, reject) => {
+  public kill = async (): Promise<void> =>
+    await new Promise((resolve, reject) => {
       if (this.process === null) {
         reject('Process is not initalized.')
       }

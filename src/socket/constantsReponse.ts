@@ -5,5 +5,6 @@ export enum EventTypesResponse {
   RESPONSE_REMOVE_TOR_SERVICE = 'removeAddTorService',
   RESPONSE_GET_PUBLIC_CHANNELS = 'responseGetPublicChannels',
   RESPONSE_GET_AVAILABLE_USERS = 'responseGetAvailableUsers',
-  RESPONSE_GET_PRIVATE_CONVERSATIONS = 'responseGetPrivateConversations'
+  RESPONSE_GET_PRIVATE_CONVERSATIONS = 'responseGetPrivateConversations',
+  RESPONSE_FETCH_ALL_DIRECT_MESSAGES = 'responseFetchAllDirectMessages'
 }

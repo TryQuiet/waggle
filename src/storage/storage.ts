@@ -5,8 +5,8 @@ import OrbitDB from 'orbit-db'
 import KeyValueStore from 'orbit-db-kvstore'
 import EventStore from 'orbit-db-eventstore'
 import PeerId from 'peer-id'
-import { message as socketMessage } from '../socket/events/message'
-import { loadAllMessages } from '../socket/events/allMessages'
+import { message as socketMessage, directMessage as socketDirectMessage } from '../socket/events/message'
+import { loadAllMessages, loadAllDirectMessages } from '../socket/events/allMessages'
 import { EventTypesResponse } from '../socket/constantsReponse'
 import fs from 'fs'
 
@@ -32,7 +32,7 @@ export interface IChannelInfo {
   owner: string
   timestamp: number
   address: string
-  keys: { ivk?: string; sk?: string }
+  keys: { ivk?: string, sk?: string }
 }
 
 interface ChannelInfoResponse {
@@ -46,19 +46,19 @@ interface IZbayChannel extends IChannelInfo {
 interface IPublicKey {
   halfKey: string
 }
-type IMessageThreads = string
+type IMessageThread = string
 
 export class Storage {
   constructor(zbayDir: string) {
     this.zbayDir = zbayDir
   }
 
-  private zbayDir: string
+  private readonly zbayDir: string
   private ipfs: IPFS.IPFS
   private orbitdb: OrbitDB
   private channels: KeyValueStore<IZbayChannel>
   private directMessages: KeyValueStore<IPublicKey>
-  private messageThreads: KeyValueStore<IMessageThreads>
+  private messageThreads: KeyValueStore<IMessageThread>
   public repos: Map<String, IRepo> = new Map()
   public directMessagesRepos: Map<String, IRepo> = new Map()
 
@@ -73,7 +73,7 @@ export class Storage {
       EXPERIMENTAL: {
         ipnsPubsub: true
       },
-      // @ts-ignore
+      // @ts-expect-error
       privateKey: peerID.toJSON().privKey
     })
 
@@ -82,7 +82,7 @@ export class Storage {
     await this.subscribeForAllChannels()
     await this.createDbForDirectMessages()
     await this.createDbForMessageThreads()
-    //await this.subscribeForAllMessageThreads()
+    // await this.subscribeForAllMessageThreads()
   }
 
   public async loadInitChannels() {
@@ -110,7 +110,7 @@ export class Storage {
   }
 
   private async createDbForMessageThreads() {
-    this.messageThreads = await this.orbitdb.keyvalue<IMessageThreads>('message-threads', {
+    this.messageThreads = await this.orbitdb.keyvalue<IMessageThread>('message-threads', {
       accessController: {
         write: ['*']
       }
@@ -154,7 +154,7 @@ export class Storage {
   // }
 
   private getChannelsResponse(): ChannelInfoResponse {
-    let channels: ChannelInfoResponse = {}
+    const channels: ChannelInfoResponse = {}
     for (const channel of Object.values(this.channels.all)) {
       if (channel.keys) {
         // TODO: create proper validators
@@ -229,6 +229,8 @@ export class Storage {
     }
   }
 
+  // DIRECT MESSAGES
+
   public async sendMessage(channelAddress: string, io: any, message: IMessage) {
     await this.subscribeForChannel(channelAddress, io) // Is it necessary?
     const db = this.repos.get(channelAddress).db
@@ -240,7 +242,7 @@ export class Storage {
     channelData?: IChannelInfo
   ): Promise<EventStore<IMessage>> {
     if (!channelAddress) {
-      console.log(`No channel address, can't create channel`)
+      console.log('No channel address, can\'t create channel')
       return
     }
 
@@ -267,18 +269,25 @@ export class Storage {
     return db
   }
 
-  //private async createDirectMessage
+  // private async createDirectMessage
 
-  // DIRECT MESSAGES
+  // public async createDirectMessageThread(address: string) {
+  //   const db: EventStore<IMessage> = await this.orbitdb.log<IMessage>(
+  //     `direct.messages.${address}`,
+  //     {
+  //       accessController: {
+  //         write: ['*']
+  //       }
+  //     }
+  //   )
+  //   this.directMessagesRepos.set(address, {db, eventsAttached: true})
+  // }
 
   public async addUser(address: string, halfKey: string): Promise<void> {
-    await this.directMessages.put(address, {halfKey})
-    console.log(`Created DM entry ${address}`)
-    return
+    await this.directMessages.put(address, { halfKey })
   }
-  public async initializeConversation(address: string, encryptedPhrase: string): Promise<void> {
-    console.log('initialize ocnversation in storage waggle')
 
+  public async initializeConversation(address: string, encryptedPhrase: string, io): Promise<void> {
     const db: EventStore<IMessage> = await this.orbitdb.log<IMessage>(
       `direct.messages.${address}`,
       {
@@ -287,40 +296,89 @@ export class Storage {
         }
       }
     )
+
+      console.log(`WAGGLE_STORAGE: initializeConversation ${address}`)
+
     this.directMessagesRepos.set(address, { db, eventsAttached: false })
     await this.messageThreads.put(address, encryptedPhrase)
-    return
+    this.subscribeForDirectMessageThread(address, io)
+  }
+
+  public async subscribeForDirectMessageThread(channelAddress, io) {
+    console.log('Subscribing to channel ', channelAddress)
+    let db: EventStore<IMessage>
+    let repo = this.directMessagesRepos.get(channelAddress)
+
+    if (repo) {
+      db = repo.db
+    } else {
+      db = await this.createDirectMessageThread(channelAddress)
+      if (!db) {
+        console.log(`Can't subscribe to channel ${channelAddress}`)
+        return
+      }
+      repo = this.repos.get(channelAddress)
+    }
+
+    if (repo && !repo.eventsAttached) {
+      console.log('Subscribing to channel ', channelAddress)
+      db.events.on('write', (_address, entry) => {
+        console.log('Writing to messages db')
+        socketDirectMessage(io, { message: entry.payload.value, channelAddress })
+      })
+      db.events.on('replicated', () => {
+        console.log('Message replicated')
+        loadAllDirectMessages(io, this.getAllChannelMessages(db), channelAddress)
+      })
+      repo.eventsAttached = true
+      loadAllMessages(io, this.getAllChannelMessages(db), channelAddress)
+      console.log('Subscription to channel ready', channelAddress)
+    }
+  }
+
+  private async createDirectMessageThread(
+    channelAddress: string
+  ): Promise<EventStore<IMessage>> {
+    if (!channelAddress) {
+      console.log('No channel address, can\'t create channel')
+      return
+    }
+
+    const db: EventStore<IMessage> = await this.orbitdb.log<IMessage>(
+      `zbay.channels.${channelAddress}`,
+      {
+        accessController: {
+          write: ['*']
+        }
+      }
+    )
+    await db.load()
+
+    const channel = this.messageThreads.get(channelAddress)
+    if (!channel) {
+      await this.messageThreads.put(channelAddress, `/orbitdb/${db.address.root}/${db.address.path}`
+      )
+    }
+    this.repos.set(channelAddress, { db, eventsAttached: false })
+    return db
   }
 
   public async getAvailableUsers(io?): Promise<any> {
     await this.directMessages.load()
-    console.log(this.directMessages.all)
-
-    // for (const [key, value] of Object.entries(this.directMessages.all)) {
-    //   console.log(`publicKey is ${key} and diffieHellman is ${value}`)
-    // }
-
-    await this.directMessages.load()
     const payload = this.directMessages.all
-
-    console.log(`I am gonna to send this payload to zbay ${payload}`)
     io.emit(EventTypesResponse.RESPONSE_GET_AVAILABLE_USERS, payload)
-    return
   }
 
   public async getPrivateConversations(io): Promise<void> {
-    console.log('zbay asked of private conversations')
-    // Get new databases, and try decode first message using publickey
     await this.messageThreads.load()
     const payload = this.messageThreads.all
-    console.log('emitting answer')
     io.emit(EventTypesResponse.RESPONSE_GET_PRIVATE_CONVERSATIONS, payload)
-    // get public key, calculate shared secret, try decode.
-    return
   }
 
-  public async sendPrivateMessage(address: string, halfKey: string): Promise<void> {
-    // append encoded message to known channel
-    return
+  public async sendDirectMessage(channelAddress: string, io: any, message: IMessage) {
+    console.log(`STORAGE: sendDirectMessage channelAddress is ${channelAddress}`)
+    console.log(`STORAGE: sendDirectMessage message is ${message}`)
+    const db = this.directMessagesRepos.get(channelAddress).db
+    await db.add(message)
   }
 }

@@ -16,7 +16,6 @@ import fs from 'fs'
 import path from 'path'
 import { IChannelInfo } from '../storage/storage'
 
-
 interface IOptions {
   env: {
     appDataPath: string
@@ -79,11 +78,11 @@ export class ConnectionsManager {
     })
   }
 
-  private createAgent = () => {
+  private readonly createAgent = () => {
     this.socksProxyAgent = new SocksProxyAgent({ port: this.agentPort, host: this.agentHost })
   }
 
-  private getPeerId = async (): Promise<PeerId> => {
+  private readonly getPeerId = async (): Promise<PeerId> => {
     let peerId
     const peerIdKeyPath = path.join(this.zbayDir, 'peerIdKey')
     if (!fs.existsSync(peerIdKeyPath)) {
@@ -91,7 +90,7 @@ export class ConnectionsManager {
       peerId = await PeerId.create()
       fs.writeFileSync(peerIdKeyPath, peerId.toJSON().privKey)
     } else {
-      const peerIdKey = fs.readFileSync(peerIdKeyPath, {encoding: 'utf8'})
+      const peerIdKey = fs.readFileSync(peerIdKeyPath, { encoding: 'utf8' })
       peerId = PeerId.createFromPrivKey(peerIdKey)
     }
     return peerId
@@ -107,7 +106,7 @@ export class ConnectionsManager {
     const addrs = [`/dns4/${this.host}/tcp/${this.port}/ws`]
 
     const bootstrapMultiaddrs = [
-      '/dns4/2lmfmbj4ql56d55lmv7cdrhdlhls62xa4p6lzy6kymxuzjlny3vnwyqd.onion/tcp/7788/ws/p2p/Qmak8HeMad8X1HGBmz2QmHfiidvGnhu6w6ugMKtx8TFc85',
+      '/dns4/2lmfmbj4ql56d55lmv7cdrhdlhls62xa4p6lzy6kymxuzjlny3vnwyqd.onion/tcp/7788/ws/p2p/Qmak8HeMad8X1HGBmz2QmHfiidvGnhu6w6ugMKtx8TFc85'
     ]
 
     this.localAddress = `${addrs}/p2p/${peerId.toB58String()}`
@@ -194,34 +193,52 @@ export class ConnectionsManager {
 
   public addUser = async (
     address: string,
-    halfKey: string,
+    halfKey: string
   ): Promise<void> => {
     await this.storage.addUser(address, halfKey)
   }
 
   public initializeConversation = async (
     address: string,
-    encryptedShit: string
+    encryptedPhrase: string,
+    io
   ): Promise<void> => {
-    console.log('InitializeConversation in connections manager')
-    await this.storage.initializeConversation(address, encryptedShit)
+    await this.storage.initializeConversation(address, encryptedPhrase, io)
   }
 
-  public getAvailableUsers = async (io?) : Promise<void> => {
+  public getAvailableUsers = async (io?): Promise<void> => {
     await this.storage.getAvailableUsers(io)
   }
 
   public getPrivateConversations = async (io): Promise<void> => {
-    console.log('zbay asked about private conversations')
     await this.storage.getPrivateConversations(io)
   }
 
-  public sendPrivateMessage = async (
-    address: string,
-    message: string
+  public sendDirectMessage = async (
+    channelAddress: string,
+    messagePayload: IBasicMessage,
+    io?
   ): Promise<void> => {
-    await this.storage.sendPrivateMessage(address, message)
+    const { id, type, signature, r, createdAt, message, typeIndicator } = messagePayload
+    const messageToSend = {
+      id,
+      type,
+      signature,
+      createdAt,
+      r,
+      message,
+      typeIndicator,
+      channelId: channelAddress
+    }
+    await this.storage.sendDirectMessage(channelAddress, io, messageToSend)
   }
+
+  public subscribeForDirectMessageThread = async (address, io): Promise<void> => {
+    await this.storage.subscribeForDirectMessageThread(address, io)
+  }
+  // public fetchAllDirectMessages = async (channelAddress, io): Promise<void> => {
+  //   await this.storage.fetchAllDirectMessages(channelAddress, io)
+  // }
 
   // public startSendingMessages = async (channelAddress: string, git: Git): Promise<string> => {
   //   try {
@@ -269,7 +286,7 @@ export class ConnectionsManager {
   //     }
   //   })
   // }
-  private createBootstrapNode = ({
+  private readonly createBootstrapNode = async ({
     peerId,
     addrs,
     agent,
