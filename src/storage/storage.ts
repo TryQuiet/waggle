@@ -5,7 +5,7 @@ import OrbitDB from 'orbit-db'
 import KeyValueStore from 'orbit-db-kvstore'
 import EventStore from 'orbit-db-eventstore'
 import PeerId from 'peer-id'
-import { message as socketMessage, directMessage as socketDirectMessage } from '../socket/events/message'
+import { message as socketMessage, directMessage as socketDirectMessage, directMessage } from '../socket/events/message'
 import { loadAllMessages, loadAllDirectMessages } from '../socket/events/allMessages'
 import { EventTypesResponse } from '../socket/constantsReponse'
 import fs from 'fs'
@@ -79,9 +79,10 @@ export class Storage {
 
     this.orbitdb = await OrbitDB.createInstance(this.ipfs, { directory: orbitDbDir })
     await this.createDbForChannels()
-    await this.subscribeForAllChannels()
     await this.createDbForDirectMessages()
     await this.createDbForMessageThreads()
+    await this.subscribeForAllChannels()
+    await this.subscribeForAllDirectMessagesThreads()
     // await this.subscribeForAllMessageThreads()
   }
 
@@ -96,6 +97,7 @@ export class Storage {
   }
 
   private async createDbForChannels() {
+    console.log('creating channels count')
     this.channels = await this.orbitdb.keyvalue<IZbayChannel>('zbay-public-channels', {
       accessController: {
         write: ['*']
@@ -110,6 +112,7 @@ export class Storage {
   }
 
   private async createDbForMessageThreads() {
+    console.log('try to create db for messages')
     this.messageThreads = await this.orbitdb.keyvalue<IMessageThread>('message-threads', {
       accessController: {
         write: ['*']
@@ -117,6 +120,7 @@ export class Storage {
     })
     this.messageThreads.events.on('replicated', () => {
       console.log('REPLICATED CONVERSATIONS-ID')
+      this.subscribeForAllDirectMessagesThreads()
     })
     await this.messageThreads.load()
     console.log('ALL MESSAGE THREADS COUNT:', Object.keys(this.messageThreads.all).length)
@@ -304,8 +308,17 @@ export class Storage {
     this.subscribeForDirectMessageThread(address, io)
   }
 
+  private async subscribeForAllDirectMessagesThreads() {
+    for (const [key, value] of Object.entries(this.messageThreads.all)) {
+      console.log(`subscribing for all direct messages threads ${key}`)
+      if (!this.repos.has(key)) {
+        await this.createDirectMessageThread(key)
+      }
+    }
+  }
+
   public async subscribeForDirectMessageThread(channelAddress, io) {
-    console.log('Subscribing to channel ', channelAddress)
+    console.log('Subscribing to direct message channel ', channelAddress)
     let db: EventStore<IMessage>
     let repo = this.directMessagesRepos.get(channelAddress)
 
@@ -314,16 +327,16 @@ export class Storage {
     } else {
       db = await this.createDirectMessageThread(channelAddress)
       if (!db) {
-        console.log(`Can't subscribe to channel ${channelAddress}`)
+        console.log(`Can't subscribe to direct messages thread ${channelAddress}`)
         return
       }
       repo = this.repos.get(channelAddress)
     }
 
     if (repo && !repo.eventsAttached) {
-      console.log('Subscribing to channel ', channelAddress)
+      console.log('Subscribing to direct messages thread ', channelAddress)
       db.events.on('write', (_address, entry) => {
-        console.log('Writing to messages db')
+        console.log('Writing')
         socketDirectMessage(io, { message: entry.payload.value, channelAddress })
       })
       db.events.on('replicated', () => {
@@ -359,26 +372,32 @@ export class Storage {
       await this.messageThreads.put(channelAddress, `/orbitdb/${db.address.root}/${db.address.path}`
       )
     }
-    this.repos.set(channelAddress, { db, eventsAttached: false })
+    this.directMessagesRepos.set(channelAddress, { db, eventsAttached: false })
     return db
   }
 
   public async getAvailableUsers(io?): Promise<any> {
+    console.log(`STORAGE: getAvailableUsers entered`)
     await this.directMessages.load()
     const payload = this.directMessages.all
+    console.log(`STORAGE: getAvailableUsers ${payload}`)
     io.emit(EventTypesResponse.RESPONSE_GET_AVAILABLE_USERS, payload)
   }
 
   public async getPrivateConversations(io): Promise<void> {
+    console.log('STORAGE: getPrivateConversations enetered')
     await this.messageThreads.load()
     const payload = this.messageThreads.all
+    console.log(`STORAGE: getPrivateConversations payload payload`)
     io.emit(EventTypesResponse.RESPONSE_GET_PRIVATE_CONVERSATIONS, payload)
   }
 
   public async sendDirectMessage(channelAddress: string, io: any, message: IMessage) {
+    console.log(`STORAGE: sendDirectMessage entered`)
     console.log(`STORAGE: sendDirectMessage channelAddress is ${channelAddress}`)
     console.log(`STORAGE: sendDirectMessage message is ${message}`)
     const db = this.directMessagesRepos.get(channelAddress).db
+    console.log(`STORAGE: sendDirectMessage db is ${db}`)
     await db.add(message)
   }
 }
