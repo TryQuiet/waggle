@@ -7,7 +7,6 @@ import EventStore from 'orbit-db-eventstore'
 import PeerId from 'peer-id'
 import { message as socketMessage } from '../socket/events/message'
 import { loadAllMessages } from '../socket/events/allMessages'
-import { EventTypesResponse } from '../socket/constantsReponse'
 import fs from 'fs'
 import { loadAllPublicChannels } from '../socket/events/channels'
 
@@ -128,8 +127,7 @@ export class Storage {
       this.channels.events.on('replicated', () => {
         loadAllPublicChannels(io, this.getChannelsResponse())
       })
-      this.channels.events.on('ready', (dbname, heads) => {
-        console.log(`DB ${dbname} ready!`)
+      this.channels.events.on('ready', () => {
         loadAllPublicChannels(io, this.getChannelsResponse())
       })
       this.publicChannelsEventsAttached = true
@@ -178,8 +176,7 @@ export class Storage {
         console.log('Message replicated')
         loadAllMessages(io, this.getAllChannelMessages(db), channelAddress)
       })
-      db.events.on('ready', (dbname, heads) => {
-        console.log(`DB ${dbname} ready!`)
+      db.events.on('ready', () => {
         loadAllMessages(io, this.getAllChannelMessages(db), channelAddress)
       })
       repo.eventsAttached = true
