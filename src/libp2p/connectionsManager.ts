@@ -55,6 +55,7 @@ export class ConnectionsManager {
   agentPort: number
   socksProxyAgent: any
   libp2p: null | Libp2p
+  peerId: PeerId
   localAddress: string | null
   storage: Storage
   options: IOptions
@@ -65,6 +66,7 @@ export class ConnectionsManager {
     this.port = port
     this.agentPort = agentPort
     this.agentHost = agentHost
+    this.peerId = null
     this.localAddress = null
     this.options = options
     this.zbayDir = options?.env.appDataPath || ZBAY_DIR_PATH
@@ -98,11 +100,10 @@ export class ConnectionsManager {
   }
 
   public initializeNode = async (staticPeerId?: PeerId): Promise<ILibp2pStatus> => {
-    let peerId
     if (!staticPeerId) {
-      peerId = await this.getPeerId()
+      this.peerId = await this.getPeerId()
     } else {
-      peerId = staticPeerId
+      this.peerId = staticPeerId
     }
     const addrs = [`/dns4/${this.host}/tcp/${this.port}/ws`]
 
@@ -110,7 +111,7 @@ export class ConnectionsManager {
       '/dns4/2lmfmbj4ql56d55lmv7cdrhdlhls62xa4p6lzy6kymxuzjlny3vnwyqd.onion/tcp/7788/ws/p2p/Qmak8HeMad8X1HGBmz2QmHfiidvGnhu6w6ugMKtx8TFc85',
     ]
 
-    this.localAddress = `${addrs}/p2p/${peerId.toB58String()}`
+    this.localAddress = `${addrs}/p2p/${this.peerId.toB58String()}`
 
     console.log('bootstrapMultiaddrs:', bootstrapMultiaddrs)
     console.log('local address:', this.localAddress)
@@ -118,7 +119,7 @@ export class ConnectionsManager {
     this.createAgent()
 
     this.libp2p = await this.createBootstrapNode({
-      peerId,
+      peerId: this.peerId,
       addrs,
       agent: this.socksProxyAgent,
       localAddr: this.localAddress,
@@ -133,12 +134,15 @@ export class ConnectionsManager {
     this.libp2p.connectionManager.on('peer:disconnect', connection => {
       console.log('Disconnected from', connection.remotePeer.toB58String())
     })
-    await this.storage.init(this.libp2p, peerId)
 
     return {
       address: this.localAddress,
-      peerId: peerId.toB58String()
+      peerId: this.peerId.toB58String()
     }
+  }
+
+  public initStorage = async () => {
+    await this.storage.init(this.libp2p, this.peerId)
   }
 
   public subscribeForTopic = async (channelData: IChannelInfo, io: any) => {
