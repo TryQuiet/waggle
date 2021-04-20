@@ -9,6 +9,7 @@ import { message as socketMessage, directMessage as socketDirectMessage, directM
 import { loadAllMessages, loadAllDirectMessages } from '../socket/events/allMessages'
 import { EventTypesResponse } from '../socket/constantsReponse'
 import fs from 'fs'
+import { loadAllPublicChannels } from '../socket/events/channels'
 
 export interface IMessage {
   id: string
@@ -35,7 +36,7 @@ export interface IChannelInfo {
   keys: { ivk?: string, sk?: string }
 }
 
-interface ChannelInfoResponse {
+export interface ChannelInfoResponse {
   [name: string]: IChannelInfo
 }
 
@@ -49,11 +50,13 @@ interface IPublicKey {
 type IMessageThread = string
 
 export class Storage {
-  constructor(zbayDir: string) {
+  zbayDir: string
+  io: any
+  constructor(zbayDir: string, io: any) {
     this.zbayDir = zbayDir
+    this.io = io
   }
 
-  private readonly zbayDir: string
   private ipfs: IPFS.IPFS
   private orbitdb: OrbitDB
   private channels: KeyValueStore<IZbayChannel>
@@ -61,6 +64,7 @@ export class Storage {
   private messageThreads: KeyValueStore<IMessageThread>
   public repos: Map<String, IRepo> = new Map()
   public directMessagesRepos: Map<String, IRepo> = new Map()
+  private publicChannelsEventsAttached: boolean = false
 
   public async init(libp2p: any, peerID: PeerId): Promise<void> {
     const ipfsRepoPath = path.join(this.zbayDir, 'ZbayChannels')
@@ -81,9 +85,9 @@ export class Storage {
     await this.createDbForChannels()
     await this.createDbForDirectMessages()
     await this.createDbForMessageThreads()
-    await this.subscribeForAllChannels()
     await this.subscribeForAllDirectMessagesThreads()
     // await this.subscribeForAllMessageThreads()
+    await this.initAllChannels()
   }
 
   public async loadInitChannels() {
@@ -141,12 +145,12 @@ export class Storage {
     console.log('ALL USERS COUNT:', Object.keys(this.directMessages.all))
   }
 
-  async subscribeForAllChannels() {
-    for (const channelData of Object.values(this.channels.all)) {
-      if (!this.repos.has(channelData.address)) {
-        await this.createChannel(channelData.address, channelData)
+  async initAllChannels() {
+    await Promise.all(Object.values(this.channels.all).map(async channel => {
+      if (!this.repos.has(channel.address)) {
+        await this.createChannel(channel.address, channel)
       }
-    }
+    }))
   }
 
   // async subscribeForAllMessageThreads() {
@@ -175,9 +179,18 @@ export class Storage {
     return channels
   }
 
-  public async updateChannels(io) {
+  public async updateChannels() {
     /** Update list of available public channels */
-    io.emit(EventTypesResponse.RESPONSE_GET_PUBLIC_CHANNELS, this.getChannelsResponse())
+    if (!this.publicChannelsEventsAttached) {
+      this.channels.events.on('replicated', () => {
+        loadAllPublicChannels(this.io, this.getChannelsResponse())
+      })
+      this.channels.events.on('ready', () => {
+        loadAllPublicChannels(this.io, this.getChannelsResponse())
+      })
+      this.publicChannelsEventsAttached = true
+    }
+    loadAllPublicChannels(this.io, this.getChannelsResponse())
   }
 
   private getAllChannelMessages(db: EventStore<IMessage>): IMessage[] {
@@ -188,21 +201,16 @@ export class Storage {
       .map(e => e.payload.value)
   }
 
-  public loadAllChannelMessages(channelAddress: string, io: any) {
+  public loadAllChannelMessages(channelAddress: string) {
     // Load all channel messages for subscribed channel
     if (!this.repos.has(channelAddress)) {
       return
     }
     const db: EventStore<IMessage> = this.repos.get(channelAddress).db
-    loadAllMessages(io, this.getAllChannelMessages(db), channelAddress)
+    loadAllMessages(this.io, this.getAllChannelMessages(db), channelAddress)
   }
 
-  public async subscribeForChannel(
-    channelAddress: string,
-    io: any,
-    channelInfo?: IChannelInfo
-  ): Promise<void> {
-    console.log('Subscribing to channel ', channelAddress)
+  public async subscribeForChannel(channelAddress: string, channelInfo?: IChannelInfo): Promise<void> {
     let db: EventStore<IMessage>
     let repo = this.repos.get(channelAddress)
 
@@ -221,22 +229,23 @@ export class Storage {
       console.log('Subscribing to channel ', channelAddress)
       db.events.on('write', (_address, entry) => {
         console.log('Writing to messages db')
-        socketMessage(io, { message: entry.payload.value, channelAddress })
+        socketMessage(this.io, { message: entry.payload.value, channelAddress })
       })
       db.events.on('replicated', () => {
         console.log('Message replicated')
-        loadAllMessages(io, this.getAllChannelMessages(db), channelAddress)
+        loadAllMessages(this.io, this.getAllChannelMessages(db), channelAddress)
+      })
+      db.events.on('ready', () => {
+        loadAllMessages(this.io, this.getAllChannelMessages(db), channelAddress)
       })
       repo.eventsAttached = true
-      loadAllMessages(io, this.getAllChannelMessages(db), channelAddress)
+      loadAllMessages(this.io, this.getAllChannelMessages(db), channelAddress)
       console.log('Subscription to channel ready', channelAddress)
     }
   }
 
-  // DIRECT MESSAGES
-
-  public async sendMessage(channelAddress: string, io: any, message: IMessage) {
-    await this.subscribeForChannel(channelAddress, io) // Is it necessary?
+  public async sendMessage(channelAddress: string, message: IMessage) {
+    await this.subscribeForChannel(channelAddress, this.io) // Is it necessary?
     const db = this.repos.get(channelAddress).db
     await db.add(message)
   }
@@ -270,6 +279,7 @@ export class Storage {
       console.log(`Created channel ${channelAddress}`)
     }
     this.repos.set(channelAddress, { db, eventsAttached: false })
+    db.load()
     return db
   }
 
