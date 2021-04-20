@@ -61,6 +61,7 @@ export class ConnectionsManager {
   options: IOptions
   zbayDir: string
   io: any
+  peerId: PeerId
 
   constructor({ host, port, agentHost, agentPort, options, io }: IConstructor) {
     this.host = host
@@ -72,6 +73,7 @@ export class ConnectionsManager {
     this.options = options
     this.zbayDir = options?.env.appDataPath || ZBAY_DIR_PATH
     this.storage = new Storage(this.zbayDir, this.io)
+    this.peerId = null
     process.on('unhandledRejection', error => {
       console.error(error)
       throw error
@@ -101,11 +103,10 @@ export class ConnectionsManager {
   }
 
   public initializeNode = async (staticPeerId?: PeerId): Promise<ILibp2pStatus> => {
-    let peerId
     if (!staticPeerId) {
-      peerId = await this.getPeerId()
+      this.peerId = await this.getPeerId()
     } else {
-      peerId = staticPeerId
+      this.peerId = staticPeerId
     }
     const addrs = [`/dns4/${this.host}/tcp/${this.port}/ws`]
 
@@ -113,7 +114,7 @@ export class ConnectionsManager {
       '/dns4/2lmfmbj4ql56d55lmv7cdrhdlhls62xa4p6lzy6kymxuzjlny3vnwyqd.onion/tcp/7788/ws/p2p/Qmak8HeMad8X1HGBmz2QmHfiidvGnhu6w6ugMKtx8TFc85',
     ]
 
-    this.localAddress = `${addrs}/p2p/${peerId.toB58String()}`
+    this.localAddress = `${addrs}/p2p/${this.peerId.toB58String()}`
 
     console.log('bootstrapMultiaddrs:', bootstrapMultiaddrs)
     console.log('local address:', this.localAddress)
@@ -121,7 +122,7 @@ export class ConnectionsManager {
     this.createAgent()
 
     this.libp2p = await this.createBootstrapNode({
-      peerId,
+      peerId: this.peerId,
       addrs,
       agent: this.socksProxyAgent,
       localAddr: this.localAddress,
@@ -139,7 +140,7 @@ export class ConnectionsManager {
     
     return {
       address: this.localAddress,
-      peerId: peerId.toB58String()
+      peerId: this.peerId.toB58String()
     }
   }
   
@@ -147,14 +148,8 @@ export class ConnectionsManager {
     await this.storage.subscribeForChannel(channelData.address, channelData)
   }
   
-  public initStorage = async (staticPeerId?: PeerId) => {
-    let peerId
-    if (!staticPeerId) {
-      peerId = await this.getPeerId()
-    } else {
-      peerId = staticPeerId
-    }
-    await this.storage.init(this.libp2p, peerId)
+  public initStorage = async () => {
+    await this.storage.init(this.libp2p, this.peerId)
   }
 
   public updateChannels = async () => {
