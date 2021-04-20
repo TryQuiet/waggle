@@ -273,20 +273,6 @@ export class Storage {
     return db
   }
 
-  // private async createDirectMessage
-
-  // public async createDirectMessageThread(address: string) {
-  //   const db: EventStore<IMessage> = await this.orbitdb.log<IMessage>(
-  //     `direct.messages.${address}`,
-  //     {
-  //       accessController: {
-  //         write: ['*']
-  //       }
-  //     }
-  //   )
-  //   this.directMessagesRepos.set(address, {db, eventsAttached: true})
-  // }
-
   public async addUser(address: string, halfKey: string): Promise<void> {
     await this.directMessages.put(address, { halfKey })
   }
@@ -399,5 +385,6 @@ export class Storage {
     const db = this.directMessagesRepos.get(channelAddress).db
     console.log(`STORAGE: sendDirectMessage db is ${db}`)
     await db.add(message)
+    
   }
 }

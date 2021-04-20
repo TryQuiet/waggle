@@ -32,7 +32,7 @@ export const connections = (io, connectionsManager: ConnectionsManager) => {
     socket.on(EventTypesServer.SEND_DIRECT_MESSAGE, async ({channelAddress, message}) => {
       console.log(`WAGGLE_LISTENER: SEND_DIRECT_MESSAGE(channelAddress): ${channelAddress}`)
       console.log(`WAGGLE_LISTENER: SEND_DIRECT_MESSAGE(message): ${message}`)
-      await connectionsManager.sendDirectMessage(channelAddress, message)
+      await connectionsManager.sendDirectMessage(channelAddress, message, io)
     })
     // socket.on(EventTypesServer.FETCH_ALL_DIRECT_MESSAGES, async (channelAddress: string) => {
     //   await connectionsManager.fetchAllDirectMessages(channelAddress, io)
