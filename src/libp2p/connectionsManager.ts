@@ -31,7 +31,7 @@ interface IConstructor {
       appDataPath: string
     }
   }
-  io?: any
+  io: any
 }
 interface IBasicMessage {
   id: string
@@ -59,7 +59,7 @@ export class ConnectionsManager {
   storage: Storage
   options: IOptions
   zbayDir: string
-  io?: any
+  io: any
   peerId: PeerId
 
   constructor({ host, port, agentHost, agentPort, options, io }: IConstructor) {
