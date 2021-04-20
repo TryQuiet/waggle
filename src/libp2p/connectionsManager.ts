@@ -145,7 +145,7 @@ export class ConnectionsManager {
       await this.registerPeer(this.localAddress)
     } catch (e) {
       console.error('Couldn\'t register peer. Probably tracker is offline. Error:', e)
-      return
+      throw 'Couldn\'t register peer'
     }
     const bootstrapMultiaddrs = await this.getInitialPeers()
     console.log('bootstrapMultiaddrs:', bootstrapMultiaddrs)
