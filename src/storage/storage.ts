@@ -108,6 +108,7 @@ export class Storage {
     })
     this.channels.events.on('replicated', () => {
       console.log('REPLICATED CHANNELS')
+      
     })
     await this.channels.load()
     console.log('ALL CHANNELS COUNT:', Object.keys(this.channels.all).length)
@@ -121,8 +122,11 @@ export class Storage {
         write: ['*']
       }
     })
-    this.messageThreads.events.on('replicated', () => {
+    this.messageThreads.events.on('replicated', async () => {
       console.log('REPLICATED CONVERSATIONS-ID')
+      await this.messageThreads.load()
+      const payload = this.messageThreads.all
+      this.io.emit(EventTypesResponse.RESPONSE_GET_PRIVATE_CONVERSATIONS, payload)
       this.subscribeForAllDirectMessagesThreads()
     })
     await this.messageThreads.load()
@@ -136,7 +140,10 @@ export class Storage {
         write: ['*']
       }
     })
-    this.directMessagesUsers.events.on('replicated', () => {
+    this.directMessagesUsers.events.on('replicated', async () => {
+      await this.channels.load()
+      const payload = this.directMessagesUsers.all
+      this.io.emit(EventTypesResponse.RESPONSE_GET_AVAILABLE_USERS, payload)
       console.log('REPLICATED USERS')
     })
     await this.directMessagesUsers.load()
@@ -145,11 +152,13 @@ export class Storage {
   }
 
   async initAllChannels() {
+    console.time(`initAllChannels`)
     await Promise.all(Object.values(this.channels.all).map(async channel => {
       if (!this.publicChannelsRepos.has(channel.address)) {
         await this.createChannel(channel.address, channel)
       }
     }))
+    console.timeEnd(`initAllChannels`)
   }
 
   // async subscribeForAllMessageThreads() {
@@ -266,7 +275,6 @@ export class Storage {
         }
       }
     )
-    await db.load()
 
     const channel = this.channels.get(channelAddress)
     if (!channel) {
@@ -278,7 +286,7 @@ export class Storage {
       console.log(`Created channel ${channelAddress}`)
     }
     this.publicChannelsRepos.set(channelAddress, { db, eventsAttached: false })
-    db.load()
+    await db.load()
     return db
   }
 
@@ -306,7 +314,7 @@ export class Storage {
   private async subscribeForAllDirectMessagesThreads() {
     for (const [key, value] of Object.entries(this.messageThreads.all)) {
       console.log(`subscribing for all direct messages threads ${key}`)
-      if (!this.publicChannelsRepos.has(key)) {
+      if (!this.directMessagesRepos.has(key)) {
         await this.createDirectMessageThread(key)
       }
     }
