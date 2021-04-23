@@ -198,10 +198,11 @@ export class ConnectionsManager {
   // DMs
 
   public addUser = async (
-    address: string,
+    publicKey: string,
     halfKey: string
   ): Promise<void> => {
-    await this.storage.addUser(address, halfKey)
+    console.log(`CONNECTIONS MANAGER: addUser - publicKey ${publicKey} and halfKey ${halfKey}`)
+    await this.storage.addUser(publicKey, halfKey)
   }
 
   public initializeConversation = async (

@@ -18,6 +18,7 @@ export const connections = (io, connectionsManager: ConnectionsManager) => {
       await connectionsManager.loadAllMessages(channelAddress)
     })
     socket.on(EventTypesServer.ADD_USER, async ({ publicKey, halfKey }) => {
+      console.log(`received new user ${halfKey} and ${publicKey}`)
       await connectionsManager.addUser(publicKey, halfKey)
     })
     socket.on(EventTypesServer.GET_AVAILABLE_USERS, async () => {
@@ -30,8 +31,6 @@ export const connections = (io, connectionsManager: ConnectionsManager) => {
       await connectionsManager.getPrivateConversations()
     })
     socket.on(EventTypesServer.SEND_DIRECT_MESSAGE, async ({channelAddress, message}) => {
-      console.log(`WAGGLE_LISTENER: SEND_DIRECT_MESSAGE(channelAddress): ${channelAddress}`)
-      console.log(`WAGGLE_LISTENER: SEND_DIRECT_MESSAGE(message): ${message}`)
       await connectionsManager.sendDirectMessage(channelAddress, message)
     })
     // socket.on(EventTypesServer.FETCH_ALL_DIRECT_MESSAGES, async (channelAddress: string) => {
