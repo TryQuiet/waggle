@@ -333,11 +333,12 @@ export class Storage {
         console.log(`Can't subscribe to direct messages thread ${channelAddress}`)
         return
       }
-      repo = this.publicChannelsRepos.get(channelAddress)
+      repo = this.directMessagesRepos.get(channelAddress)
     }
 
     if (repo && !repo.eventsAttached) {
       console.log('Subscribing to direct messages thread ', channelAddress)
+      loadAllDirectMessages(this.io, this.getAllChannelMessages(db), channelAddress)
       db.events.on('write', (_address, entry) => {
         console.log('Writing')
         socketDirectMessage(this.io, { message: entry.payload.value, channelAddress })
