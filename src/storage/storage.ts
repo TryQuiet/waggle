@@ -362,7 +362,7 @@ export class Storage {
     }
 
     const db: EventStore<IMessage> = await this.orbitdb.log<IMessage>(
-      `zbay.channels.${channelAddress}`,
+      `direct.messages.${channelAddress}`,
       {
         accessController: {
           write: ['*']
