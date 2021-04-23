@@ -161,14 +161,6 @@ export class Storage {
     console.timeEnd(`initAllChannels`)
   }
 
-  // async subscribeForAllMessageThreads() {
-  //   for (const messageThread of Object.values(this.messageThreads.all)) {
-  //     if (!this.directMessagesRepos.has(messageThread.id)) {
-  //       await this.createDirectMessageThread(messageThread)
-  //     }
-  //   }
-  // }
-
   private getChannelsResponse(): ChannelInfoResponse {
     const channels: ChannelInfoResponse = {}
     for (const channel of Object.values(this.channels.all)) {
@@ -313,15 +305,13 @@ export class Storage {
 
   private async subscribeForAllDirectMessagesThreads() {
     for (const [key, value] of Object.entries(this.messageThreads.all)) {
-      console.log(`subscribing for all direct messages threads ${key}`)
       if (!this.directMessagesRepos.has(key)) {
-        await this.createDirectMessageThread(key)
+        await this.subscribeForDirectMessageThread(key)
       }
     }
   }
 
   public async subscribeForDirectMessageThread(channelAddress) {
-    console.log('Subscribing to direct message channel ', channelAddress)
     let db: EventStore<IMessage>
     let repo = this.directMessagesRepos.get(channelAddress)
 
@@ -346,6 +336,9 @@ export class Storage {
       db.events.on('replicated', () => {
         console.log('Message replicated')
         loadAllDirectMessages(this.io, this.getAllChannelMessages(db), channelAddress)
+      })
+      db.events.on('ready', () => {
+        console.log('DIRECT Messages thread ready')
       })
       repo.eventsAttached = true
       loadAllMessages(this.io, this.getAllChannelMessages(db), channelAddress)
@@ -382,11 +375,13 @@ export class Storage {
 
 
   public async sendDirectMessage(channelAddress: string, message: IMessage) {
+    await this.subscribeForDirectMessageThread(channelAddress) // Is it necessary? Yes it is atm
     console.log(`STORAGE: sendDirectMessage entered`)
     console.log(`STORAGE: sendDirectMessage channelAddress is ${channelAddress}`)
     console.log(`STORAGE: sendDirectMessage message is ${message}`)
     const db = this.directMessagesRepos.get(channelAddress).db
-    console.log(`STORAGE: sendDirectMessage db is ${db}`)
+    console.log(`STORAGE: sendDirectMessage db is ${db.address.root}`)
+    console.log(`STORAGE: sendDirectMessage db is ${db.address.path}`)
     await db.add(message)
     
   }
