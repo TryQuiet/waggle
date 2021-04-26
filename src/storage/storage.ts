@@ -146,13 +146,24 @@ export class Storage {
         write: ['*']
       }
     })
+    console.log('created or initialized database')
     this.directMessagesUsers.events.on('replicated', async () => {
-      await this.channels.load()
+      console.log('started replicating')
+      console.log('before loading database')
+      await this.directMessagesUsers.load()
+      console.log('after loading database')
       const payload = this.directMessagesUsers.all
+      console.log('paylaod is loaded')
       this.io.emit(EventTypesResponse.RESPONSE_GET_AVAILABLE_USERS, payload)
       console.log('REPLICATED USERS')
     })
-    await this.directMessagesUsers.load()
+    console.log('before loading database')
+    try {
+      await this.directMessagesUsers.load()
+    } catch (err) {
+      console.log(err)
+    }
+    console.log('after laoding database')
     console.log('ALL USERS COUNT:', Object.keys(this.directMessagesUsers.all).length)
     console.log('ALL USERS COUNT:', Object.keys(this.directMessagesUsers.all))
   }
