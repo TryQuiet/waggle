@@ -89,7 +89,7 @@ export class Storage {
     console.log('3')
     await this.createDbForMessageThreads()
     console.log('4')
-    await this.subscribeForAllDirectMessagesThreads()
+    //await this.subscribeForAllDirectMessagesThreads()
     console.log('5')
     await this.initAllChannels()
     console.log('6')
@@ -133,7 +133,7 @@ export class Storage {
       await this.messageThreads.load()
       const payload = this.messageThreads.all
       this.io.emit(EventTypesResponse.RESPONSE_GET_PRIVATE_CONVERSATIONS, payload)
-      this.subscribeForAllDirectMessagesThreads()
+      //this.subscribeForAllDirectMessagesThreads()
     })
     await this.messageThreads.load()
     console.log('ALL MESSAGE THREADS COUNT:', Object.keys(this.messageThreads.all).length)
@@ -320,13 +320,13 @@ export class Storage {
     this.subscribeForDirectMessageThread(address)
   }
 
-  private async subscribeForAllDirectMessagesThreads() {
-    for (const [key, value] of Object.entries(this.messageThreads.all)) {
-      if (!this.directMessagesRepos.has(key)) {
-        await this.subscribeForDirectMessageThread(key)
-      }
-    }
-  }
+  // private async subscribeForAllDirectMessagesThreads() {
+  //   for (const [key, value] of Object.entries(this.messageThreads.all)) {
+  //     if (!this.directMessagesRepos.has(key)) {
+  //       await this.subscribeForDirectMessageThread(key)
+  //     }
+  //   }
+  // }
 
   public async subscribeForDirectMessageThread(channelAddress) {
     let db: EventStore<IMessage>
