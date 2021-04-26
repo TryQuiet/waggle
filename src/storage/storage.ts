@@ -82,11 +82,17 @@ export class Storage {
     })
 
     this.orbitdb = await OrbitDB.createInstance(this.ipfs, { directory: orbitDbDir })
+    console.log('1')
     await this.createDbForChannels()
+    console.log('2')
     await this.createDbForDirectMessages()
+    console.log('3')
     await this.createDbForMessageThreads()
+    console.log('4')
     await this.subscribeForAllDirectMessagesThreads()
+    console.log('5')
     await this.initAllChannels()
+    console.log('6')
   }
 
   public async loadInitChannels() {
