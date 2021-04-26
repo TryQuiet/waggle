@@ -246,6 +246,7 @@ export class Storage {
       console.log('Subscribing to channel ', channelAddress)
       db.events.on('write', (_address, entry) => {
         console.log('Writing to messages db')
+        console.log(entry.payload.value)
         socketMessage(this.io, { message: entry.payload.value, channelAddress })
       })
       db.events.on('replicated', () => {
@@ -391,11 +392,11 @@ export class Storage {
   }
 
 
-  public async sendDirectMessage(channelAddress: string, message: IMessage) {
+  public async sendDirectMessage(channelAddress: string, message) {
     await this.subscribeForDirectMessageThread(channelAddress) // Is it necessary? Yes it is atm
     console.log(`STORAGE: sendDirectMessage entered`)
     console.log(`STORAGE: sendDirectMessage channelAddress is ${channelAddress}`)
-    console.log(`STORAGE: sendDirectMessage message is ${message}`)
+    console.log(`STORAGE: sendDirectMessage message is ${JSON.stringify(message)}`)
     const db = this.directMessagesRepos.get(channelAddress).db
     console.log(`STORAGE: sendDirectMessage db is ${db.address.root}`)
     console.log(`STORAGE: sendDirectMessage db is ${db.address.path}`)

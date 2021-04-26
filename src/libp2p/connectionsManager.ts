@@ -235,7 +235,7 @@ export class ConnectionsManager {
       typeIndicator,
       channelId: channelAddress
     }
-    await this.storage.sendDirectMessage(channelAddress, messageToSend)
+    await this.storage.sendDirectMessage(channelAddress, messagePayload)
   }
 
   public subscribeForDirectMessageThread = async (address): Promise<void> => {
