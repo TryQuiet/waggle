@@ -141,13 +141,22 @@ export class ConnectionsManager {
     this.localAddress = `${listenAddrs}/p2p/${this.peerId.toB58String()}`
     console.log('local address:', this.localAddress)
 
-    try {
-      await this.registerPeer(this.localAddress)
-    } catch (e) {
-      console.error('Couldn\'t register peer. Probably tracker is offline. Error:', e)
-      throw 'Couldn\'t register peer'
-    }
-    const bootstrapMultiaddrs = await this.getInitialPeers()
+    // TODO: Uncomment when we're ready to use tracker (so e.g when it runs on aws):
+    // try {
+    //   await this.registerPeer(this.localAddress)
+    // } catch (e) {
+    //   console.error('Couldn\'t register peer. Probably tracker is offline. Error:', e)
+    //   throw 'Couldn\'t register peer'
+    // }
+    // try {
+    //   const bootstrapMultiaddrs = await this.getInitialPeers()
+    // } catch (e) {
+    //   console.error('Couldn\'t retrieve initial peers from tracker. Error:', e)
+    //   throw 'Couldn\'t get initial peers'
+    // }
+    const bootstrapMultiaddrs = [
+      '/dns4/2lmfmbj4ql56d55lmv7cdrhdlhls62xa4p6lzy6kymxuzjlny3vnwyqd.onion/tcp/7788/ws/p2p/Qmak8HeMad8X1HGBmz2QmHfiidvGnhu6w6ugMKtx8TFc85',
+    ]
     console.log('bootstrapMultiaddrs:', bootstrapMultiaddrs)
 
     this.libp2p = await this.createBootstrapNode({
