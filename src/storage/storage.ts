@@ -89,10 +89,8 @@ export class Storage {
     console.log('3')
     await this.createDbForMessageThreads()
     console.log('4')
-    //await this.subscribeForAllDirectMessagesThreads()
-    console.log('5')
     await this.initAllChannels()
-    console.log('6')
+    console.log('5')
   }
 
   public async loadInitChannels() {

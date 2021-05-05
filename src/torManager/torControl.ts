@@ -27,9 +27,7 @@ class TorControl {
 
     this.connect = function connectTorControl(params, cb) {
       params = params || opts
-      console.log('tnis connect shittt')
       if (this.connection) {
-        console.log("this is inside connect")
         if (cb) {
           return cb(null, this.connection)
         }
@@ -45,18 +43,8 @@ class TorControl {
         }
       }
 
-      console.log("before net connect")
-
       this.connection = net.connect(params)
-
-      console.log('after net connects')
-
-      console.log('CONNECTION')
       console.log(this.connection)
-
-      this.connection.once('ready', () => {
-        console.log('I AM FUCKING READY')
-      })
 
       this.connection.once('error', function (err: any) {
         console.log('error connecting')
@@ -144,7 +132,6 @@ class TorControl {
           console.log(err)
           return reject(err)
         }
-        console.log('waiting for data like an idiot')
         connection.once('data', function (data: any) {
           return tryDisconnect(function () {
             const messages = []

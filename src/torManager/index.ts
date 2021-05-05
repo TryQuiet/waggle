@@ -53,15 +53,9 @@ export class Tor {
       this.process = child_process.spawn(this.torPath, ['-f', settingsPath], this.options)
 
       const a = async (retries: number, currentRetry: number, sleepTime: number) => {
-        console.log(retries)
-        console.log(currentRetry)
-        console.log('entered a')
         if (currentRetry < retries) {
           try {
-            const a = await this.torControl.signal('HEARTBEAT')
-
-            console.log('dying on await')
-            console.log(a)
+            await this.torControl.signal('HEARTBEAT')
             resolve()
           } catch (err) {
             console.log('error connecting')

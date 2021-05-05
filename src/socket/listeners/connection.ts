@@ -33,9 +33,6 @@ export const connections = (io, connectionsManager: ConnectionsManager) => {
     socket.on(EventTypesServer.SEND_DIRECT_MESSAGE, async ({channelAddress, message}) => {
       await connectionsManager.sendDirectMessage(channelAddress, message)
     })
-    // socket.on(EventTypesServer.FETCH_ALL_DIRECT_MESSAGES, async (channelAddress: string) => {
-    //   await connectionsManager.fetchAllDirectMessages(channelAddress, io)
-    // })
     socket.on(EventTypesServer.SUBSCRIBE_FOR_DIRECT_MESSAGE_THREAD, async (channelAddress: string) => {
       await connectionsManager.subscribeForDirectMessageThread(channelAddress)
     })
