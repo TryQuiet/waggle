@@ -302,6 +302,8 @@ export class Storage {
 
   public async addUser(address: string, halfKey: string): Promise<void> {
     await this.directMessagesUsers.put(address, { halfKey })
+    await this.getAvailableUsers()
+
   }
 
   public async initializeConversation(address: string, encryptedPhrase: string): Promise<void> {

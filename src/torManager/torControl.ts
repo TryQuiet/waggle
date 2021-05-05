@@ -27,8 +27,9 @@ class TorControl {
 
     this.connect = function connectTorControl(params, cb) {
       params = params || opts
-
+      console.log('tnis connect shittt')
       if (this.connection) {
+        console.log("this is inside connect")
         if (cb) {
           return cb(null, this.connection)
         }
@@ -44,10 +45,22 @@ class TorControl {
         }
       }
 
+      console.log("before net connect")
+
       this.connection = net.connect(params)
 
-      // Handling connection errors
+      console.log('after net connects')
+
+      console.log('CONNECTION')
+      console.log(this.connection)
+
+      this.connection.once('ready', () => {
+        console.log('I AM FUCKING READY')
+      })
+
       this.connection.once('error', function (err: any) {
+        console.log('error connecting')
+        self.connection = null
         if (cb) {
           cb(new Error('Error connecting to control port: ' + err))
         }
@@ -55,9 +68,11 @@ class TorControl {
 
       // piping events
       this.connection.on('data', (data: any) => {
+        console.log(`data is ${data}`)
         self.eventEmitter.emit('data', data)
       })
       this.connection.on('end', () => {
+        console.log('connection ended')
         self.connection = null
         self.eventEmitter.emit('end')
       })
@@ -123,9 +138,13 @@ class TorControl {
         return self.disconnect(callback)
       }
       return this.connect(null, function (err: any, connection: any) {
+        console.log('entered this.connect')
         if (err) {
+          console.log('reveived error inside this.connect')
+          console.log(err)
           return reject(err)
         }
+        console.log('waiting for data like an idiot')
         connection.once('data', function (data: any) {
           return tryDisconnect(function () {
             const messages = []
@@ -162,6 +181,7 @@ class TorControl {
   }
 
   public async signal(signal: string): Promise<{ code: number, messages: string[] }> {
+    console.log('received signal')
     return this.sendCommand('SIGNAL ' + signal)
   }
 
