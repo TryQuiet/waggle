@@ -7,3 +7,8 @@ export function createPaths(paths: string[]) {
     }
   }
 }
+
+export function fetchAbsolute(fetch: Function): Function {
+  return (baseUrl: string) => (url, ...otherParams) =>
+    url.startsWith('/') ? fetch(baseUrl + url, ...otherParams) : fetch(url, ...otherParams)
+}
