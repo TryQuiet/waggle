@@ -315,6 +315,7 @@ export class Storage {
     )
 
       console.log(`WAGGLE_STORAGE: initializeConversation ${address}`)
+      console.log(`encrypted phrase is ${encryptedPhrase}`)
 
     this.directMessagesRepos.set(address, { db, eventsAttached: false })
     await this.messageThreads.put(address, encryptedPhrase)

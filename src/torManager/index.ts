@@ -39,7 +39,7 @@ export class Tor {
       }
 
       if (process.platform !== 'win32') {
-        // await this.killHangingTorProcess()
+         await this.killHangingTorProcess()
       }
 
       const TorDataDirectory = path.join.apply(null, [this.appDataPath, 'TorDataDirectory'])
