@@ -47,7 +47,7 @@ const main = async () => {
     host: `${service1}.onion`,
     agentHost: 'localhost',
     agentPort: 9050,
-    io: '1234'
+    io: dataServer.io
   })
   const node = await connectonsManager.initializeNode(peerIdRestored)
   console.log(node)
