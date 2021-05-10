@@ -11,6 +11,11 @@ import { EventTypesResponse } from '../socket/constantsReponse'
 import fs from 'fs'
 import { loadAllPublicChannels } from '../socket/events/channels'
 
+import debug from 'debug'
+const log = Object.assign(debug('waggle:db'), {
+  error: debug('waggle:db:err')
+})
+
 export interface IMessage {
   id: string
   type: number
@@ -111,12 +116,12 @@ export class Storage {
       }
     })
     this.channels.events.on('replicated', () => {
-      console.log('REPLICATED CHANNELS')
+      log('REPLICATED CHANNELS')
       
     })
     await this.channels.load()
-    console.log('ALL CHANNELS COUNT:', Object.keys(this.channels.all).length)
-    console.log('ALL CHANNELS COUNT:', Object.keys(this.channels.all))
+    log('ALL CHANNELS COUNT:', Object.keys(this.channels.all).length)
+    log('ALL CHANNELS COUNT:', Object.keys(this.channels.all))
   }
 
   private async createDbForMessageThreads() {
@@ -134,8 +139,8 @@ export class Storage {
       //this.subscribeForAllDirectMessagesThreads()
     })
     await this.messageThreads.load()
-    console.log('ALL MESSAGE THREADS COUNT:', Object.keys(this.messageThreads.all).length)
-    console.log('ALL MESSAGE THREADS COUNT:', Object.keys(this.messageThreads.all))
+    log('ALL MESSAGE THREADS COUNT:', Object.keys(this.messageThreads.all).length)
+    log('ALL MESSAGE THREADS COUNT:', Object.keys(this.messageThreads.all))
   }
 
   private async createDbForDirectMessages() {
@@ -159,11 +164,11 @@ export class Storage {
     try {
       await this.directMessagesUsers.load()
     } catch (err) {
-      console.log(err)
+      log.error(err)
     }
     console.log('after laoding database')
-    console.log('ALL USERS COUNT:', Object.keys(this.directMessagesUsers.all).length)
-    console.log('ALL USERS COUNT:', Object.keys(this.directMessagesUsers.all))
+    log('ALL USERS COUNT:', Object.keys(this.directMessagesUsers.all).length)
+    log('ALL USERS COUNT:', Object.keys(this.directMessagesUsers.all))
   }
 
   async initAllChannels() {
@@ -241,14 +246,14 @@ export class Storage {
     }
 
     if (repo && !repo.eventsAttached) {
-      console.log('Subscribing to channel ', channelAddress)
+      log('Subscribing to channel ', channelAddress)
       db.events.on('write', (_address, entry) => {
-        console.log('Writing to messages db')
+        log('Writing to messages db')
         console.log(entry.payload.value)
         socketMessage(this.io, { message: entry.payload.value, channelAddress })
       })
       db.events.on('replicated', () => {
-        console.log('Message replicated')
+        log('Message replicated')
         loadAllMessages(this.io, this.getAllChannelMessages(db), channelAddress)
       })
       db.events.on('ready', () => {
@@ -256,7 +261,7 @@ export class Storage {
       })
       repo.eventsAttached = true
       loadAllMessages(this.io, this.getAllChannelMessages(db), channelAddress)
-      console.log('Subscription to channel ready', channelAddress)
+      log('Subscription to channel ready', channelAddress)
     }
   }
 
@@ -291,7 +296,7 @@ export class Storage {
         address: channelAddress,
         ...channelData
       })
-      console.log(`Created channel ${channelAddress}`)
+      log(`Created channel ${channelAddress}`)
     }
     this.publicChannelsRepos.set(channelAddress, { db, eventsAttached: false })
     await db.load()
@@ -345,14 +350,14 @@ export class Storage {
     }
 
     if (repo && !repo.eventsAttached) {
-      console.log('Subscribing to direct messages thread ', channelAddress)
+      log('Subscribing to direct messages thread ', channelAddress)
       loadAllDirectMessages(this.io, this.getAllChannelMessages(db), channelAddress)
       db.events.on('write', (_address, entry) => {
         console.log('Writing')
         socketDirectMessage(this.io, { message: entry.payload.value, channelAddress })
       })
       db.events.on('replicated', () => {
-        console.log('Message replicated')
+        log('Message replicated')
         loadAllDirectMessages(this.io, this.getAllChannelMessages(db), channelAddress)
       })
       db.events.on('ready', () => {
@@ -360,7 +365,7 @@ export class Storage {
       })
       repo.eventsAttached = true
       loadAllMessages(this.io, this.getAllChannelMessages(db), channelAddress)
-      console.log('Subscription to channel ready', channelAddress)
+      log('Subscription to channel ready', channelAddress)
     }
   }
 

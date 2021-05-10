@@ -1,5 +1,9 @@
 var net = require('net')
 var EventEmitter = require('events').EventEmitter
+import debug from 'debug'
+const log = Object.assign(debug('waggle:tor'), {
+  error: debug('waggle:tor:err')
+})
 
 interface IOpts {
   port?: number
@@ -44,7 +48,7 @@ class TorControl {
       }
 
       this.connection = net.connect(params)
-      console.log(this.connection)
+      log(this.connection)
 
       this.connection.once('error', function (err: any) {
         console.log('error connecting')
@@ -56,11 +60,11 @@ class TorControl {
 
       // piping events
       this.connection.on('data', (data: any) => {
-        console.log(`data is ${data}`)
+        log(`data is ${data}`)
         self.eventEmitter.emit('data', data)
       })
       this.connection.on('end', () => {
-        console.log('connection ended')
+        log('connection ended')
         self.connection = null
         self.eventEmitter.emit('end')
       })
@@ -137,7 +141,7 @@ class TorControl {
             const messages = []
             let arr = []
             data = data.toString()
-            console.log('dataaa', data)
+            log('dataaa', data)
             if (/250/.test(data)) {
               arr = data.split(/\r?\n/)
               for (let i = 0; i < arr.length; i += 1) {
