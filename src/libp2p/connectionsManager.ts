@@ -252,6 +252,7 @@ export class ConnectionsManager {
     address: string,
     encryptedPhrase: string
   ): Promise<void> => {
+    console.log(`INSIDE WAGGLE: ${encryptedPhrase}`)
     await this.storage.initializeConversation(address, encryptedPhrase)
   }
 

@@ -43,7 +43,7 @@ export class Tor {
       }
 
       if (process.platform !== 'win32') {
-        // await this.killHangingTorProcess()
+         await this.killHangingTorProcess()
       }
 
       const TorDataDirectory = path.join.apply(null, [this.appDataPath, 'TorDataDirectory'])
@@ -59,6 +59,7 @@ export class Tor {
       const a = async (retries: number, currentRetry: number, sleepTime: number) => {
         if (currentRetry < retries) {
           try {
+            console.log('INITIALIZING TOR')
             await this.torControl.signal('HEARTBEAT')
             resolve()
           } catch (err) {
@@ -67,10 +68,9 @@ export class Tor {
             await a(retries, currentRetry + 1, sleepTime)
           }
         } else {
-          console.log('inside reject')
-          reject('too many attempts')
+          console.log('TOO MANY ATTEMPTS, TOR INITIALIZATION FAILED, CHECK IF TOR PROCESS IS NOT RUNNING ALREADY')
+          reject()
         }
-        console.log('outside conditional')
       }
 
       await a(20, 0, 1000)

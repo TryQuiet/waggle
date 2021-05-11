@@ -37,21 +37,21 @@ const main = async () => {
   }
 
   console.log(service1)
-//   const dataServer = new DataServer()
-//   dataServer.listen()
-//   const peerId = fs.readFileSync('peerId1.json')
-//   const parsedId = JSON.parse(peerId.toString()) as PeerId.JSONPeerId
-//   const peerIdRestored = await PeerId.createFromJSON(parsedId)
-//   const connectonsManager = new ConnectionsManager({
-//     port: 7788,
-//     host: `${service1}.onion`,
-//     agentHost: 'localhost',
-//     agentPort: 9050,
-//     io: '1234'
-//   })
-//   const node = await connectonsManager.initializeNode(peerIdRestored)
-//   console.log(node)
-//   initListeners(dataServer.io, connectonsManager)
+  const dataServer = new DataServer()
+  dataServer.listen()
+  const peerId = fs.readFileSync('peerId1.json')
+  const parsedId = JSON.parse(peerId.toString()) as PeerId.JSONPeerId
+  const peerIdRestored = await PeerId.createFromJSON(parsedId)
+  const connectonsManager = new ConnectionsManager({
+    port: 7788,
+    host: `${service1}.onion`,
+    agentHost: 'localhost',
+    agentPort: 9050,
+    io: dataServer.io
+  })
+  const node = await connectonsManager.initializeNode(peerIdRestored)
+  console.log(node)
+  initListeners(dataServer.io, connectonsManager)
 }
 
 main()
