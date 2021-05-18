@@ -39,7 +39,7 @@ const main = async () => {
   console.log(service1)
   const dataServer = new DataServer()
   dataServer.listen()
-  const peerId = fs.readFileSync('peerId1.json')
+  const peerId = fs.readFileSync('entryNodePeerId.json')
   const parsedId = JSON.parse(peerId.toString()) as PeerId.JSONPeerId
   const peerIdRestored = await PeerId.createFromJSON(parsedId)
   const connectonsManager = new ConnectionsManager({
