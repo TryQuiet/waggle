@@ -12,9 +12,6 @@ export const loadAllMessages = (socket: any, messages: IMessage[], channelAddres
 }
 
 export const loadAllDirectMessages = (socket, messages, channelAddress) => {
-  console.log(`WAGGLE: events - emitting all message to ZbayLite`)
-  console.log(`channel address is ${channelAddress}`)
-  console.log(`messages is ${messages}`)
   socket.emit(EventTypesResponse.RESPONSE_FETCH_ALL_DIRECT_MESSAGES, {
     channelAddress,
     messages

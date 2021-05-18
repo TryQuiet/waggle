@@ -15,7 +15,7 @@ import { ZBAY_DIR_PATH } from '../constants'
 import fs from 'fs'
 import path from 'path'
 import { IChannelInfo } from '../storage/storage'
-import fetch from 'node-fetch';
+import fetch from 'node-fetch'
 
 interface IOptions {
   env: {
@@ -105,26 +105,26 @@ export class ConnectionsManager {
     return peerId
   }
 
-  private getInitialPeers = async (): Promise<Array<string>> => {
+  private readonly getInitialPeers = async (): Promise<string[]> => {
     const options = {
       method: 'GET',
       agent: () => {
-        return this.socksProxyAgent;
+        return this.socksProxyAgent
       }
-    };
+    }
     const response = await this.trackerApi('/peers', options)
     return response.json()
   }
-  
-  private registerPeer = async (address: string): Promise<void> => {
+
+  private readonly registerPeer = async (address: string): Promise<void> => {
     const options = {
       method: 'POST',
-      body: JSON.stringify({'address': address}),
-      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ address: address }),
+      headers: { 'Content-Type': 'application/json' },
       agent: () => {
-        return this.socksProxyAgent;
+        return this.socksProxyAgent
       }
-    };
+    }
     await this.trackerApi('/register', options)
   }
 
@@ -174,17 +174,17 @@ export class ConnectionsManager {
     this.libp2p.connectionManager.on('peer:disconnect', connection => {
       console.log('Disconnected from', connection.remotePeer.toB58String())
     })
-    
+
     return {
       address: this.localAddress,
       peerId: this.peerId.toB58String()
     }
   }
-  
+
   public subscribeForTopic = async (channelData: IChannelInfo) => {
     await this.storage.subscribeForChannel(channelData.address, channelData)
   }
-  
+
   public initStorage = async () => {
     await this.storage.init(this.libp2p, this.peerId)
   }
@@ -280,7 +280,7 @@ export class ConnectionsManager {
   public subscribeForDirectMessageThread = async (address): Promise<void> => {
     await this.storage.subscribeForDirectMessageThread(address)
   }
- 
+
   private readonly createBootstrapNode = async ({
     peerId,
     listenAddrs,

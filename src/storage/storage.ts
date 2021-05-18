@@ -80,8 +80,8 @@ export class Storage {
       },
       privateKey: peerID.toJSON().privKey
     })
-    
-    this.orbitdb = await OrbitDB.createInstance(this.ipfs, { directory: orbitDbDir})
+
+    this.orbitdb = await OrbitDB.createInstance(this.ipfs, { directory: orbitDbDir })
     console.log('1')
     await this.createDbForChannels()
     console.log('2')
@@ -112,10 +112,9 @@ export class Storage {
         write: ['*']
       }
     })
-    console.log('keyvaluestore created')
+
     this.channels.events.on('replicated', () => {
       console.log('REPLICATED CHANNELS')
-      
     })
 
     await this.channels.load({ fetchEntryTimeout: 2000 })
@@ -149,48 +148,40 @@ export class Storage {
         write: ['*']
       }
     })
-    console.log('created or initialized database')
+
     this.directMessagesUsers.events.on('replicated', async () => {
-      console.log('started replicating')
-      console.log('before loading database')
       await this.directMessagesUsers.load()
-      console.log('after loading database')
       const payload = this.directMessagesUsers.all
-      console.log('paylaod is loaded')
       this.io.emit(EventTypesResponse.RESPONSE_GET_AVAILABLE_USERS, payload)
       console.log('REPLICATED USERS')
     })
-    console.log('before loading database')
     try {
-      console.log('before loading users')
       await this.directMessagesUsers.load()
-      console.log('after loading users')
     } catch (err) {
       console.log(err)
     }
-    console.log('after laoding database')
     console.log('ALL USERS COUNT:', Object.keys(this.directMessagesUsers.all).length)
     console.log('ALL USERS COUNT:', Object.keys(this.directMessagesUsers.all))
   }
 
   async initAllChannels() {
-    console.time(`initAllChannels`)
+    console.time('initAllChannels')
     await Promise.all(Object.values(this.channels.all).map(async channel => {
       if (!this.publicChannelsRepos.has(channel.address)) {
         await this.createChannel(channel.address, channel)
       }
     }))
-    console.timeEnd(`initAllChannels`)
+    console.timeEnd('initAllChannels')
   }
 
   async initAllConversations() {
-    console.time(`initAllConversations`)
+    console.time('initAllConversations')
     await Promise.all(Object.keys(this.messageThreads.all).map(async conversation => {
       if (!this.directMessagesRepos.has(conversation)) {
         await this.createDirectMessageThread(conversation)
       }
     }))
-    console.timeEnd(`initAllConversations`)
+    console.timeEnd('initAllConversations')
   }
 
   private getChannelsResponse(): ChannelInfoResponse {
@@ -315,12 +306,8 @@ export class Storage {
     return db
   }
 
-  
-
   public async addUser(address: string, halfKey: string): Promise<void> {
     await this.directMessagesUsers.put(address, { halfKey })
-    // await this.getAvailableUsers()
-
   }
 
   public async initializeConversation(address: string, encryptedPhrase: string): Promise<void> {
@@ -400,20 +387,19 @@ export class Storage {
     return db
   }
 
-
   public async sendDirectMessage(channelAddress: string, message) {
     await this.subscribeForDirectMessageThread(channelAddress) // Is it necessary? Yes it is atm
-    console.log(`STORAGE: sendDirectMessage entered`)
+    console.log('STORAGE: sendDirectMessage entered')
     console.log(`STORAGE: sendDirectMessage channelAddress is ${channelAddress}`)
     console.log(`STORAGE: sendDirectMessage message is ${JSON.stringify(message)}`)
     const db = this.directMessagesRepos.get(channelAddress).db
     console.log(`STORAGE: sendDirectMessage db is ${db.address.root}`)
     console.log(`STORAGE: sendDirectMessage db is ${db.address.path}`)
     await db.add(message)
-    
   }
+
   public async getAvailableUsers(): Promise<any> {
-    console.log(`STORAGE: getAvailableUsers entered`)
+    console.log('STORAGE: getAvailableUsers entered')
     await this.directMessagesUsers.load()
     const payload = this.directMessagesUsers.all
     console.log(`STORAGE: getAvailableUsers ${payload}`)
@@ -425,7 +411,7 @@ export class Storage {
     console.log('STORAGE: getPrivateConversations enetered')
     await this.messageThreads.load()
     const payload = this.messageThreads.all
-    console.log(`STORAGE: getPrivateConversations payload payload`)
+    console.log('STORAGE: getPrivateConversations payload payload')
     this.io.emit(EventTypesResponse.RESPONSE_GET_PRIVATE_CONVERSATIONS, payload)
   }
 }

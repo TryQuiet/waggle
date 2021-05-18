@@ -33,7 +33,7 @@ export const connections = (io, connectionsManager: ConnectionsManager) => {
       console.log('get private conversations')
       await connectionsManager.getPrivateConversations()
     })
-    socket.on(EventTypesServer.SEND_DIRECT_MESSAGE, async ({channelAddress, message}) => {
+    socket.on(EventTypesServer.SEND_DIRECT_MESSAGE, async ({ channelAddress, message }) => {
       await connectionsManager.sendDirectMessage(channelAddress, message)
     })
     socket.on(EventTypesServer.SUBSCRIBE_FOR_DIRECT_MESSAGE_THREAD, async (channelAddress: string) => {
