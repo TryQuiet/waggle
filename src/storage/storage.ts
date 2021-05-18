@@ -1,3 +1,4 @@
+// @ts-nocheck
 import IPFS from 'ipfs'
 import path from 'path'
 import { createPaths } from '../utils'
@@ -77,11 +78,10 @@ export class Storage {
       EXPERIMENTAL: {
         ipnsPubsub: true
       },
-      // @ts-expect-error
       privateKey: peerID.toJSON().privKey
     })
-
-    this.orbitdb = await OrbitDB.createInstance(this.ipfs, { directory: orbitDbDir })
+    
+    this.orbitdb = await OrbitDB.createInstance(this.ipfs, { directory: orbitDbDir})
     console.log('1')
     await this.createDbForChannels()
     console.log('2')
@@ -91,6 +91,8 @@ export class Storage {
     console.log('4')
     await this.initAllChannels()
     console.log('5')
+    await this.initAllConversations()
+    console.log('6')
   }
 
   public async loadInitChannels() {
@@ -104,17 +106,19 @@ export class Storage {
   }
 
   private async createDbForChannels() {
-    console.log('creating channels count')
+    console.log('createDbForChannels init')
     this.channels = await this.orbitdb.keyvalue<IZbayChannel>('zbay-public-channels', {
       accessController: {
         write: ['*']
       }
     })
+    console.log('keyvaluestore created')
     this.channels.events.on('replicated', () => {
       console.log('REPLICATED CHANNELS')
       
     })
-    await this.channels.load()
+
+    await this.channels.load({ fetchEntryTimeout: 2000 })
     console.log('ALL CHANNELS COUNT:', Object.keys(this.channels.all).length)
     console.log('ALL CHANNELS COUNT:', Object.keys(this.channels.all))
   }
@@ -131,11 +135,12 @@ export class Storage {
       await this.messageThreads.load()
       const payload = this.messageThreads.all
       this.io.emit(EventTypesResponse.RESPONSE_GET_PRIVATE_CONVERSATIONS, payload)
-      //this.subscribeForAllDirectMessagesThreads()
+      this.initAllConversations()
     })
     await this.messageThreads.load()
     console.log('ALL MESSAGE THREADS COUNT:', Object.keys(this.messageThreads.all).length)
     console.log('ALL MESSAGE THREADS COUNT:', Object.keys(this.messageThreads.all))
+    console.log('ALL MESSAGE THREADS COUNT:', Object.values(this.messageThreads.all))
   }
 
   private async createDbForDirectMessages() {
@@ -157,7 +162,9 @@ export class Storage {
     })
     console.log('before loading database')
     try {
+      console.log('before loading users')
       await this.directMessagesUsers.load()
+      console.log('after loading users')
     } catch (err) {
       console.log(err)
     }
@@ -174,6 +181,16 @@ export class Storage {
       }
     }))
     console.timeEnd(`initAllChannels`)
+  }
+
+  async initAllConversations() {
+    console.time(`initAllConversations`)
+    await Promise.all(Object.keys(this.messageThreads.all).map(async conversation => {
+      if (!this.directMessagesRepos.has(conversation)) {
+        await this.createDirectMessageThread(conversation)
+      }
+    }))
+    console.timeEnd(`initAllConversations`)
   }
 
   private getChannelsResponse(): ChannelInfoResponse {
@@ -274,7 +291,7 @@ export class Storage {
       console.log('No channel address, can\'t create channel')
       return
     }
-
+    console.log('BEFORE CREATING NEW ZBAY CHANNEL')
     const db: EventStore<IMessage> = await this.orbitdb.log<IMessage>(
       `zbay.channels.${channelAddress}`,
       {
@@ -298,9 +315,11 @@ export class Storage {
     return db
   }
 
+  
+
   public async addUser(address: string, halfKey: string): Promise<void> {
     await this.directMessagesUsers.put(address, { halfKey })
-    await this.getAvailableUsers()
+    // await this.getAvailableUsers()
 
   }
 
@@ -314,21 +333,10 @@ export class Storage {
       }
     )
 
-      console.log(`WAGGLE_STORAGE: initializeConversation ${address}`)
-      console.log(`encrypted phrase is ${encryptedPhrase}`)
-
     this.directMessagesRepos.set(address, { db, eventsAttached: false })
     await this.messageThreads.put(address, encryptedPhrase)
     this.subscribeForDirectMessageThread(address)
   }
-
-  // private async subscribeForAllDirectMessagesThreads() {
-  //   for (const [key, value] of Object.entries(this.messageThreads.all)) {
-  //     if (!this.directMessagesRepos.has(key)) {
-  //       await this.subscribeForDirectMessageThread(key)
-  //     }
-  //   }
-  // }
 
   public async subscribeForDirectMessageThread(channelAddress) {
     let db: EventStore<IMessage>
@@ -373,6 +381,8 @@ export class Storage {
       return
     }
 
+    console.log(`creatin direct message thread for ${channelAddress}`)
+
     const db: EventStore<IMessage> = await this.orbitdb.log<IMessage>(
       `direct.messages.${channelAddress}`,
       {
@@ -381,13 +391,11 @@ export class Storage {
         }
       }
     )
+    db.events.on('replicated', () => {
+      console.log('replicated some messages')
+    })
     await db.load()
 
-    const channel = this.messageThreads.get(channelAddress)
-    if (!channel) {
-      await this.messageThreads.put(channelAddress, `/orbitdb/${db.address.root}/${db.address.path}`
-      )
-    }
     this.directMessagesRepos.set(channelAddress, { db, eventsAttached: false })
     return db
   }
@@ -410,6 +418,7 @@ export class Storage {
     const payload = this.directMessagesUsers.all
     console.log(`STORAGE: getAvailableUsers ${payload}`)
     this.io.emit(EventTypesResponse.RESPONSE_GET_AVAILABLE_USERS, payload)
+    console.log('emitted')
   }
 
   public async getPrivateConversations(): Promise<void> {

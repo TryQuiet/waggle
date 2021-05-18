@@ -22,12 +22,15 @@ export const connections = (io, connectionsManager: ConnectionsManager) => {
       await connectionsManager.addUser(publicKey, halfKey)
     })
     socket.on(EventTypesServer.GET_AVAILABLE_USERS, async () => {
+      console.log('CONNECTIONS: GET_AVAILABLE_USERS')
       await connectionsManager.getAvailableUsers()
     })
     socket.on(EventTypesServer.INITIALIZE_CONVERSATION, async ({ address, encryptedPhrase }) => {
+      console.log(`CONNECTIONS: INITIALIZE_CONVERSATION: address is ${address} and encryptedPhrase is ${encryptedPhrase}`)
       await connectionsManager.initializeConversation(address, encryptedPhrase)
     })
     socket.on(EventTypesServer.GET_PRIVATE_CONVERSATIONS, async () => {
+      console.log('get private conversations')
       await connectionsManager.getPrivateConversations()
     })
     socket.on(EventTypesServer.SEND_DIRECT_MESSAGE, async ({channelAddress, message}) => {

@@ -43,8 +43,7 @@ export class Tor {
       }
 
       const TorDataDirectory = path.join.apply(null, [this.appDataPath, 'TorDataDirectory'])
-      const torrc = `ControlPort ${this.controlPort}\nDataDirectory ${TorDataDirectory}\nLog notice file ${this.appDataPath}/notices.log\nLog debug file ${this.appDataPath}/debug.log`
-      //const torrc = `ControlPort ${this.controlPort}\nDataDirectory ${TorDataDirectory}`
+      const torrc = `ControlPort ${this.controlPort}\nDataDirectory ${TorDataDirectory}`
       fs.writeFileSync(`${this.appDataPath}/torrc`, torrc, 'utf8')
       const settingsPath = `${this.appDataPath}/torrc`
 
