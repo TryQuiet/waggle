@@ -51,7 +51,7 @@ class TorControl {
       log(this.connection)
 
       this.connection.once('error', function (err: any) {
-        console.log('error connecting')
+        log.error('error connecting')
         self.connection = null
         if (cb) {
           cb(new Error('Error connecting to control port: ' + err))
@@ -130,10 +130,10 @@ class TorControl {
         return self.disconnect(callback)
       }
       return this.connect(null, function (err: any, connection: any) {
-        console.log('entered this.connect')
+        log('entered this.connect')
         if (err) {
-          console.log('reveived error inside this.connect')
-          console.log(err)
+          log.error('reveived error inside this.connect')
+          log.error(err)
           return reject(err)
         }
         connection.once('data', function (data: any) {
@@ -172,7 +172,7 @@ class TorControl {
   }
 
   public async signal(signal: string): Promise<{ code: number, messages: string[] }> {
-    console.log('received signal')
+    log('received signal')
     return this.sendCommand('SIGNAL ' + signal)
   }
 

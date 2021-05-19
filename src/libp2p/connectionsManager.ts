@@ -82,11 +82,11 @@ export class ConnectionsManager {
     this.trackerApi = fetchAbsolute(fetch)('http://okmlac2qjgo2577dkyhpisceua2phwxhdybw4pssortdop6ddycntsyd.onion:7788')
 
     process.on('unhandledRejection', error => {
-      log.error(error)
+      console.error(error)
       throw error
     })
     process.on('SIGINT', function() {
-      log('\nGracefully shutting down from SIGINT (Ctrl-C)')
+      console.log('\nGracefully shutting down from SIGINT (Ctrl-C)')
       process.exit(0)
     })
   }
@@ -243,7 +243,7 @@ export class ConnectionsManager {
     publicKey: string,
     halfKey: string
   ): Promise<void> => {
-    console.log(`CONNECTIONS MANAGER: addUser - publicKey ${publicKey} and halfKey ${halfKey}`)
+    log(`CONNECTIONS MANAGER: addUser - publicKey ${publicKey} and halfKey ${halfKey}`)
     await this.storage.addUser(publicKey, halfKey)
   }
 
@@ -251,7 +251,7 @@ export class ConnectionsManager {
     address: string,
     encryptedPhrase: string
   ): Promise<void> => {
-    console.log(`INSIDE WAGGLE: ${encryptedPhrase}`)
+    log(`INSIDE WAGGLE: ${encryptedPhrase}`)
     await this.storage.initializeConversation(address, encryptedPhrase)
   }
 

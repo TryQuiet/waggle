@@ -63,7 +63,7 @@ export class Tracker {
     try {
       maddr = multiaddr(address)
     } catch (e) {
-      log.error('waggle:Wrong address format:', e)
+      log.error('Wrong address format:', e)
       return false
     }
 
@@ -95,7 +95,7 @@ export class Tracker {
     this._app.post('/register', (req, res) => {
       const address = req.body.address
       if (!address) {
-        log('waggle:No address in request data')
+        log('No address in request data')
         res.status(400)
       } else if (!this.addPeer(address)) {
         res.status(400)
