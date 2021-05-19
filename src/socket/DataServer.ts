@@ -1,10 +1,11 @@
 import express from 'express'
 import { createServer, Server } from 'http'
 const socketio = require('socket.io')
+
 export class DataServer {
   public PORT: number
-  private _app: express.Application
-  private server: Server
+  private readonly _app: express.Application
+  private readonly server: Server
   public io: SocketIO.Server
   constructor(port?: number) {
     this.PORT = port || 4677
@@ -13,11 +14,11 @@ export class DataServer {
     this.initSocket()
   }
 
-  private initSocket = (): void => {
+  private readonly initSocket = (): void => {
     this.io = socketio(this.server)
-    }
+  }
 
-    public listen = (): void => {
+  public listen = (): void => {
     this.server.listen(this.PORT, () => {
       console.debug(`Server running on port ${this.PORT}`)
     })
