@@ -68,6 +68,7 @@ export class Storage {
   private publicChannelsEventsAttached: boolean = false
 
   public async init(libp2p: any, peerID: PeerId): Promise<void> {
+    console.log('STORAGE: Entered init')
     const ipfsRepoPath = path.join(this.zbayDir, 'ZbayChannels')
     const orbitDbDir = path.join(this.zbayDir, 'OrbitDB')
     createPaths([ipfsRepoPath, orbitDbDir])
@@ -82,17 +83,18 @@ export class Storage {
     })
 
     this.orbitdb = await OrbitDB.createInstance(this.ipfs, { directory: orbitDbDir })
-    console.log('1')
+    console.log('1/6')
     await this.createDbForChannels()
-    console.log('2')
+    console.log('2/6')
     await this.createDbForDirectMessages()
-    console.log('3')
+    console.log('3/6')
     await this.createDbForMessageThreads()
-    console.log('4')
+    console.log('4/6')
     await this.initAllChannels()
-    console.log('5')
+    console.log('5/6')
     await this.initAllConversations()
-    console.log('6')
+    console.log('6/6')
+    console.log('STORAGE: Finished init')
   }
 
   public async loadInitChannels() {
@@ -106,7 +108,7 @@ export class Storage {
   }
 
   private async createDbForChannels() {
-    console.log('createDbForChannels init')
+    console.log('STORAGE: Entered createDbForChannels')
     this.channels = await this.orbitdb.keyvalue<IZbayChannel>('zbay-public-channels', {
       accessController: {
         write: ['*']
@@ -114,23 +116,29 @@ export class Storage {
     })
 
     this.channels.events.on('replicated', () => {
-      console.log('REPLICATED CHANNELS')
+      console.log('REPLICATED: CHANNELS')
     })
+    // this.channels.events.on('replicate.progress', (address, hash, entry, progress, have) => {
+    //   console.log(address)
+    //   console.log(hash)
+    //   console.log(entry)
+    //   console.log(progress)
+    //   console.log(have)
+    // } )
 
-    await this.channels.load({ fetchEntryTimeout: 2000 })
+    //await this.channels.load({ fetchEntryTimeout: 2000 })
     console.log('ALL CHANNELS COUNT:', Object.keys(this.channels.all).length)
     console.log('ALL CHANNELS COUNT:', Object.keys(this.channels.all))
+    console.log('STORAGE: Finished createDbForChannels')
   }
 
   private async createDbForMessageThreads() {
-    console.log('try to create db for messages')
     this.messageThreads = await this.orbitdb.keyvalue<IMessageThread>('message-threads', {
       accessController: {
         write: ['*']
       }
     })
     this.messageThreads.events.on('replicated', async () => {
-      console.log('REPLICATED CONVERSATIONS-ID')
       await this.messageThreads.load()
       const payload = this.messageThreads.all
       this.io.emit(EventTypesResponse.RESPONSE_GET_PRIVATE_CONVERSATIONS, payload)
@@ -307,6 +315,7 @@ export class Storage {
   }
 
   public async addUser(address: string, halfKey: string): Promise<void> {
+    console.log('adding new user into waggle')
     await this.directMessagesUsers.put(address, { halfKey })
   }
 
@@ -325,7 +334,16 @@ export class Storage {
     this.subscribeForDirectMessageThread(address)
   }
 
+  public async subscribeForAllConversations(conversations) {
+    console.time('subscribeForAllConversations')
+    await Promise.all(conversations.map(async channel => {
+        await this.subscribeForDirectMessageThread(channel)
+    }))
+    console.timeEnd('subscribeForAllConversations')
+  }
+
   public async subscribeForDirectMessageThread(channelAddress) {
+    console.log(`subscribing for ${channelAddress}`)
     let db: EventStore<IMessage>
     let repo = this.directMessagesRepos.get(channelAddress)
 
@@ -386,6 +404,8 @@ export class Storage {
     this.directMessagesRepos.set(channelAddress, { db, eventsAttached: false })
     return db
   }
+
+
 
   public async sendDirectMessage(channelAddress: string, message) {
     await this.subscribeForDirectMessageThread(channelAddress) // Is it necessary? Yes it is atm
