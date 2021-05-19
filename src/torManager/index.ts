@@ -43,12 +43,11 @@ export class Tor {
       }
 
       if (process.platform !== 'win32') {
-         await this.killHangingTorProcess()
+        await this.killHangingTorProcess()
       }
 
       const TorDataDirectory = path.join.apply(null, [this.appDataPath, 'TorDataDirectory'])
-      const torrc = `ControlPort ${this.controlPort}\nDataDirectory ${TorDataDirectory}\nLog notice file ${this.appDataPath}/notices.log\nLog debug file ${this.appDataPath}/debug.log`
-      //const torrc = `ControlPort ${this.controlPort}\nDataDirectory ${TorDataDirectory}`
+      const torrc = `ControlPort ${this.controlPort}\nDataDirectory ${TorDataDirectory}`
       fs.writeFileSync(`${this.appDataPath}/torrc`, torrc, 'utf8')
       const settingsPath = `${this.appDataPath}/torrc`
 
@@ -129,7 +128,7 @@ export class Tor {
   public async addNewService(
     virtPort: number,
     targetPort: number
-  ): Promise<{ onionAddress: string; privateKey: string }> {
+  ): Promise<{ onionAddress: string, privateKey: string }> {
     const status = await this.torControl.addOnion(
       `NEW:BEST Flags=Detach Port=${virtPort},127.0.0.1:${targetPort}`
     )

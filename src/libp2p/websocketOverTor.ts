@@ -43,10 +43,10 @@ class WebsocketsOverTor extends WebSockets {
     let socket
     let maConn
     try {
-      socket = await this._connect(ma, { websocket: this._websocketOpts, ...options, localAddr: this.localAddress  })
+      socket = await this._connect(ma, { websocket: this._websocketOpts, ...options, localAddr: this.localAddress })
     } catch (e) {
       log('error connecting to %s. Details: %s', ma, e.message)
-      return 
+      return
     }
     try {
       maConn = toConnection(socket, { remoteAddr: ma, signal: options.signal })
@@ -55,7 +55,7 @@ class WebsocketsOverTor extends WebSockets {
       log('error creating new outbound connection %s. Details: %s', ma, e.message)
       return
     }
-      
+
     try {
       conn = await this._upgrader.upgradeOutbound(maConn)
       log('outbound connection %s upgraded', maConn.remoteAddr)

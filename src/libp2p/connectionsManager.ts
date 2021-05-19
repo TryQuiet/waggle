@@ -21,7 +21,6 @@ const log = Object.assign(debug('waggle:libp2p'), {
   error: debug('waggle:libp2p:err')
 })
 
-
 interface IOptions {
   env: {
     appDataPath: string
@@ -110,26 +109,26 @@ export class ConnectionsManager {
     return peerId
   }
 
-  private getInitialPeers = async (): Promise<Array<string>> => {
+  private readonly getInitialPeers = async (): Promise<string[]> => {
     const options = {
       method: 'GET',
       agent: () => {
-        return this.socksProxyAgent;
+        return this.socksProxyAgent
       }
-    };
+    }
     const response = await this.trackerApi('/peers', options)
     return response.json()
   }
-  
-  private registerPeer = async (address: string): Promise<void> => {
+
+  private readonly registerPeer = async (address: string): Promise<void> => {
     const options = {
       method: 'POST',
-      body: JSON.stringify({'address': address}),
-      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ address: address }),
+      headers: { 'Content-Type': 'application/json' },
       agent: () => {
-        return this.socksProxyAgent;
+        return this.socksProxyAgent
       }
-    };
+    }
     await this.trackerApi('/register', options)
   }
 
@@ -179,17 +178,17 @@ export class ConnectionsManager {
     this.libp2p.connectionManager.on('peer:disconnect', connection => {
       log('Disconnected from', connection.remotePeer.toB58String())
     })
-    
+
     return {
       address: this.localAddress,
       peerId: this.peerId.toB58String()
     }
   }
-  
+
   public subscribeForTopic = async (channelData: IChannelInfo) => {
     await this.storage.subscribeForChannel(channelData.address, channelData)
   }
-  
+
   public initStorage = async () => {
     await this.storage.init(this.libp2p, this.peerId)
   }
@@ -285,7 +284,7 @@ export class ConnectionsManager {
   public subscribeForDirectMessageThread = async (address): Promise<void> => {
     await this.storage.subscribeForDirectMessageThread(address)
   }
- 
+
   private readonly createBootstrapNode = async ({
     peerId,
     listenAddrs,
