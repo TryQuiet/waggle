@@ -168,8 +168,9 @@ export class ConnectionsManager {
     this.libp2p.connectionManager.on('peer:connect', async connection => {
       console.log('Connected to', connection.remotePeer.toB58String())
     })
-    this.libp2p.connectionManager.on('peer:discovery', peer => {
+    this.libp2p.on('peer:discovery', (peer: PeerId) => {
       console.log(peer, 'peer discovery')
+      this.removeInactivePeer(peer)
     })
     this.libp2p.connectionManager.on('peer:disconnect', connection => {
       console.log('Disconnected from', connection.remotePeer.toB58String())
@@ -202,6 +203,22 @@ export class ConnectionsManager {
     await this.libp2p.dial(target, {
       localAddr: this.localAddress,
       remoteAddr: new Multiaddr(target)
+    })
+  }
+
+  private removeInactivePeer = (peer: PeerId) => {    
+    this.libp2p.dial(peer).then((value) => {
+      if (value === undefined) {
+        console.log(`cannot dial peer ${peer.toJSON().id}`)
+        const removed = this.libp2p.peerStore.delete(peer)
+        if (removed) {
+          console.log('REMOVED ', peer.toJSON().id)
+          console.log('addressbook', this.libp2p.peerStore.addressBook.data.keys())
+        }
+      }
+      else {
+        console.log(`Dialed peer ${peer.toJSON().id}`)
+      }
     })
   }
 
@@ -306,7 +323,8 @@ export class ConnectionsManager {
           [Bootstrap.tag]: {
             enabled: true,
             list: bootstrapMultiaddrsList // provide array of multiaddrs
-          }
+          },
+          autoDial: false
         },
         relay: {
           enabled: true,
