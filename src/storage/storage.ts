@@ -412,7 +412,7 @@ export class Storage {
 
 
   public async sendDirectMessage(channelAddress: string, message) {
-    //await this.subscribeForDirectMessageThread(channelAddress) // Is it necessary? Yes it is atm
+    await this.subscribeForDirectMessageThread(channelAddress) // Is it necessary? Yes it is atm
     console.log('STORAGE: sendDirectMessage entered')
     console.log(`STORAGE: sendDirectMessage channelAddress is ${channelAddress}`)
     console.log(`STORAGE: sendDirectMessage message is ${JSON.stringify(message)}`)
