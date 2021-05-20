@@ -142,7 +142,7 @@ export class Storage {
     })
     await this.messageThreads.load()
     log('ALL MESSAGE THREADS COUNT:', Object.keys(this.messageThreads.all).length)
-    log('ALL MESSAGE THREADS COUNT:', Object.keys(this.messageThreads.all))
+    // log('ALL MESSAGE THREADS COUNT:', Object.keys(this.messageThreads.all))
   }
 
   private async createDbForDirectMessages() {
