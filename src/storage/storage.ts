@@ -84,13 +84,13 @@ export class Storage {
 
     this.orbitdb = await OrbitDB.createInstance(this.ipfs, { directory: orbitDbDir })
     console.log('1/6')
-    //await this.createDbForChannels()
+    await this.createDbForChannels()
     console.log('2/6')
-    await this.createDbForDirectMessages()
+    await this.createDbForUsers()
     console.log('3/6')
     await this.createDbForMessageThreads()
     console.log('4/6')
-    //await this.initAllChannels()
+    await this.initAllChannels()
     console.log('5/6')
     await this.initAllConversations()
     console.log('6/6')
@@ -126,7 +126,7 @@ export class Storage {
     //   console.log(have)
     // } )
 
-    //await this.channels.load({ fetchEntryTimeout: 2000 })
+    await this.channels.load({ fetchEntryTimeout: 15000 })
     console.log('ALL CHANNELS COUNT:', Object.keys(this.channels.all).length)
     console.log('ALL CHANNELS COUNT:', Object.keys(this.channels.all))
     console.log('STORAGE: Finished createDbForChannels')
@@ -139,18 +139,18 @@ export class Storage {
       }
     })
     this.messageThreads.events.on('replicated', async () => {
-      await this.messageThreads.load()
+      await this.messageThreads.load({ fetchEntryTimeout: 2000 })
       const payload = this.messageThreads.all
       this.io.emit(EventTypesResponse.RESPONSE_GET_PRIVATE_CONVERSATIONS, payload)
       this.initAllConversations()
     })
-    await this.messageThreads.load()
+    await this.messageThreads.load({ fetchEntryTimeout: 2000 })
     console.log('ALL MESSAGE THREADS COUNT:', Object.keys(this.messageThreads.all).length)
     console.log('ALL MESSAGE THREADS COUNT:', Object.keys(this.messageThreads.all))
     console.log('ALL MESSAGE THREADS COUNT:', Object.values(this.messageThreads.all))
   }
 
-  private async createDbForDirectMessages() {
+  private async createDbForUsers() {
     this.directMessagesUsers = await this.orbitdb.keyvalue<IPublicKey>('direct-messages', {
       accessController: {
         write: ['*']
@@ -158,13 +158,13 @@ export class Storage {
     })
 
     this.directMessagesUsers.events.on('replicated', async () => {
-      await this.directMessagesUsers.load()
+      await this.directMessagesUsers.load({ fetchEntryTimeout: 2000 })
       const payload = this.directMessagesUsers.all
       this.io.emit(EventTypesResponse.RESPONSE_GET_AVAILABLE_USERS, payload)
       console.log('REPLICATED USERS')
     })
     try {
-      await this.directMessagesUsers.load()
+      await this.directMessagesUsers.load({ fetchEntryTimeout: 2000 })
     } catch (err) {
       console.log(err)
     }
@@ -310,13 +310,17 @@ export class Storage {
       console.log(`Created channel ${channelAddress}`)
     }
     this.publicChannelsRepos.set(channelAddress, { db, eventsAttached: false })
-    await db.load()
+    await db.load({ fetchEntryTimeout: 2000 })
     return db
   }
 
   public async addUser(address: string, halfKey: string): Promise<void> {
-    console.log('adding new user into waggle')
+    console.log(`Waggle: Storage: addUser - adding user ${address} ${halfKey}`)
     await this.directMessagesUsers.put(address, { halfKey })
+    await this.directMessagesUsers.load({ fetchEntryTimeout: 2000 })
+    const payload = this.directMessagesUsers.all
+    this.io.emit(EventTypesResponse.RESPONSE_GET_AVAILABLE_USERS, payload)
+
   }
 
   public async initializeConversation(address: string, encryptedPhrase: string): Promise<void> {
@@ -399,7 +403,7 @@ export class Storage {
     db.events.on('replicated', () => {
       console.log('replicated some messages')
     })
-    await db.load()
+    await db.load({ fetchEntryTimeout: 2000 })
 
     this.directMessagesRepos.set(channelAddress, { db, eventsAttached: false })
     return db
@@ -408,7 +412,7 @@ export class Storage {
 
 
   public async sendDirectMessage(channelAddress: string, message) {
-    await this.subscribeForDirectMessageThread(channelAddress) // Is it necessary? Yes it is atm
+    //await this.subscribeForDirectMessageThread(channelAddress) // Is it necessary? Yes it is atm
     console.log('STORAGE: sendDirectMessage entered')
     console.log(`STORAGE: sendDirectMessage channelAddress is ${channelAddress}`)
     console.log(`STORAGE: sendDirectMessage message is ${JSON.stringify(message)}`)
@@ -420,7 +424,7 @@ export class Storage {
 
   public async getAvailableUsers(): Promise<any> {
     console.log('STORAGE: getAvailableUsers entered')
-    await this.directMessagesUsers.load()
+    await this.directMessagesUsers.load({ fetchEntryTimeout: 2000 })
     const payload = this.directMessagesUsers.all
     console.log(`STORAGE: getAvailableUsers ${payload}`)
     this.io.emit(EventTypesResponse.RESPONSE_GET_AVAILABLE_USERS, payload)
@@ -429,7 +433,7 @@ export class Storage {
 
   public async getPrivateConversations(): Promise<void> {
     console.log('STORAGE: getPrivateConversations enetered')
-    await this.messageThreads.load()
+    await this.messageThreads.load({ fetchEntryTimeout: 2000 })
     const payload = this.messageThreads.all
     console.log('STORAGE: getPrivateConversations payload payload')
     this.io.emit(EventTypesResponse.RESPONSE_GET_PRIVATE_CONVERSATIONS, payload)
