@@ -119,7 +119,7 @@ export class Storage {
 
     await this.channels.load({ fetchEntryTimeout: 2000 })
     console.log('ALL CHANNELS COUNT:', Object.keys(this.channels.all).length)
-    console.log('ALL CHANNELS COUNT:', Object.keys(this.channels.all))
+    // console.log('ALL CHANNELS COUNT:', Object.keys(this.channels.all))
   }
 
   private async createDbForMessageThreads() {
@@ -138,8 +138,8 @@ export class Storage {
     })
     await this.messageThreads.load()
     console.log('ALL MESSAGE THREADS COUNT:', Object.keys(this.messageThreads.all).length)
-    console.log('ALL MESSAGE THREADS COUNT:', Object.keys(this.messageThreads.all))
-    console.log('ALL MESSAGE THREADS COUNT:', Object.values(this.messageThreads.all))
+    // console.log('ALL MESSAGE THREADS COUNT:', Object.keys(this.messageThreads.all))
+    // console.log('ALL MESSAGE THREADS COUNT:', Object.values(this.messageThreads.all))
   }
 
   private async createDbForDirectMessages() {
@@ -161,7 +161,7 @@ export class Storage {
       console.log(err)
     }
     console.log('ALL USERS COUNT:', Object.keys(this.directMessagesUsers.all).length)
-    console.log('ALL USERS COUNT:', Object.keys(this.directMessagesUsers.all))
+    // console.log('ALL USERS COUNT:', Object.keys(this.directMessagesUsers.all))
   }
 
   async initAllChannels() {
@@ -203,6 +203,9 @@ export class Storage {
   }
 
   public async updateChannels() {
+    // if (!this.channels) {
+    //   loadAllPublicChannels(this.io, [])
+    // }
     /** Update list of available public channels */
     if (!this.publicChannelsEventsAttached) {
       this.channels.events.on('replicated', () => {

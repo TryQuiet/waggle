@@ -136,6 +136,7 @@ export class Tor {
       virtPort,
       address: onionAddress
     })
+    console.log('pkey', privateKey)
     return {
       onionAddress,
       privateKey

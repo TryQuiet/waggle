@@ -16,6 +16,7 @@ import fs from 'fs'
 import path from 'path'
 import { IChannelInfo } from '../storage/storage'
 import fetch from 'node-fetch'
+import LevelStore from 'datastore-level'
 
 interface IOptions {
   env: {
@@ -153,9 +154,16 @@ export class ConnectionsManager {
     //   console.error('Couldn\'t retrieve initial peers from tracker. Error:', e)
     //   throw 'Couldn\'t get initial peers'
     // }
-    const bootstrapMultiaddrs = [
-      '/dns4/2lmfmbj4ql56d55lmv7cdrhdlhls62xa4p6lzy6kymxuzjlny3vnwyqd.onion/tcp/7788/ws/p2p/Qmak8HeMad8X1HGBmz2QmHfiidvGnhu6w6ugMKtx8TFc85'
-    ]
+    let bootstrapMultiaddrs = []
+    if (process.env.BOOTSTRAP_ADDRS) {
+      bootstrapMultiaddrs = [process.env.BOOTSTRAP_ADDRS]
+    } else {
+      bootstrapMultiaddrs = [
+        '/dns4/2lmfmbj4ql56d55lmv7cdrhdlhls62xa4p6lzy6kymxuzjlny3vnwyqd.onion/tcp/7788/ws/p2p/Qmak8HeMad8X1HGBmz2QmHfiidvGnhu6w6ugMKtx8TFc85',
+        // '/dns4/c3llbahfsfjvdecvgzirsrn6m5w5e4nyftqaduqruv6xfo2rbm4dgkad.onion/tcp/7788/ws/p2p/QmTk7Mxkoy2MGvuhYj6fnYUwSatmqsaRkEtnSq7JHGQBHG'  // local guy
+      ]
+    }
+    
     console.log('bootstrapMultiaddrs:', bootstrapMultiaddrs)
 
     this.libp2p = await this.createBootstrapNode({
@@ -169,11 +177,12 @@ export class ConnectionsManager {
       console.log('Connected to', connection.remotePeer.toB58String())
     })
     this.libp2p.on('peer:discovery', (peer: PeerId) => {
-      console.log(peer, 'peer discovery')
+      console.count(`Discovered ${peer.toB58String()}`)
       this.removeInactivePeer(peer)
     })
     this.libp2p.connectionManager.on('peer:disconnect', connection => {
       console.log('Disconnected from', connection.remotePeer.toB58String())
+      this.removeInactivePeer(connection.remotePeer)
     })
 
     return {
@@ -209,15 +218,15 @@ export class ConnectionsManager {
   private removeInactivePeer = (peer: PeerId) => {    
     this.libp2p.dial(peer).then((value) => {
       if (value === undefined) {
-        console.log(`cannot dial peer ${peer.toJSON().id}`)
+        // console.log(`cannot dial peer ${peer.toB58String()}, removing`)
         const removed = this.libp2p.peerStore.delete(peer)
         if (removed) {
-          console.log('REMOVED ', peer.toJSON().id)
+          console.count(`REMOVED ${peer.toB58String()}`)
           console.log('addressbook', this.libp2p.peerStore.addressBook.data.keys())
         }
       }
       else {
-        console.log(`Dialed peer ${peer.toJSON().id}`)
+        // console.log(`Dialed peer ${peer.toB58String()}`)
       }
     })
   }
@@ -326,6 +335,11 @@ export class ConnectionsManager {
           },
           autoDial: false
         },
+        // datastore: new LevelStore(path.join(this.zbayDir, 'datastore-test')), // import LevelStore from 'datastore-level'
+        // peerStore: {
+        //   persistence: true,
+        //   threshold: 5
+        // },
         relay: {
           enabled: true,
           hop: {

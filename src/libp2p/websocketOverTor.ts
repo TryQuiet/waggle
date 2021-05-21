@@ -77,13 +77,16 @@ class WebsocketsOverTor extends WebSockets {
       await rawSocket.connected()
 
       log('connected %s', ma)
+      console.count(`Connected ${ma}`)
       return rawSocket
     }
 
     // Allow abort via signal during connect
     let onAbort
     const abort = new Promise((resolve, reject) => {
+      console.count(`Aborting ${ma}`)
       onAbort = () => {
+        // console.count(`Already aborted ${ma}`)
         reject(new AbortError())
         rawSocket.close()
       }
