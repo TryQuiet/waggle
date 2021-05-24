@@ -13,15 +13,25 @@ import PeerId from 'peer-id'
 class Node {
   tor: Tor
   torPath: string
+  torAppDataPath: string
   pathDevLib: string
   hiddenServiceSecret: string | null
   peer: PeerId
   peerIdFileName: string | null
+  port: number
+  socksProxyPort: number
+  torControlPort: number
+  hiddenServicePort: number
 
-  constructor(torPath?: string, pathDevLib?: string, peerIdFileName?: string) {
+  constructor(torPath?: string, pathDevLib?: string, peerIdFileName?: string, port = 7788, socksProxyPort = 9050, torControlPort = 9051, hiddenServicePort = 7788, torAppDataPath = ZBAY_DIR_PATH) {
     this.torPath = torPath || this.getTorPath()
+    this.torAppDataPath = torAppDataPath
     this.pathDevLib = pathDevLib || this.getPathDevLib()
     this.peerIdFileName = peerIdFileName || this.getPeerIdFileName()
+    this.port = port
+    this.socksProxyPort = socksProxyPort
+    this.torControlPort = torControlPort
+    this.hiddenServicePort = hiddenServicePort
   }
 
   public getHiddenServiceSecret (): string {
@@ -71,8 +81,8 @@ class Node {
   async spawnTor (): Promise<Tor> {
     const tor = new Tor({
       torPath: this.torPath,
-      appDataPath: ZBAY_DIR_PATH,
-      controlPort: 9051,
+      appDataPath: this.torAppDataPath,
+      controlPort: this.torControlPort,
       options: {
         env: {
           LD_LIBRARY_PATH: this.pathDevLib,
@@ -89,12 +99,16 @@ class Node {
     console.log('Spawning service')
     let service: string
     try {
-      service = this.tor.getServiceAddress(7788)
+      service = this.tor.getServiceAddress(this.hiddenServicePort)
     } catch (e) {
       if (this.getHiddenServiceSecret()) {
-        service = await (await this.tor.addOnion({virtPort: 7788, targetPort: 7788, privKey: this.getHiddenServiceSecret()}))
+        service = await (await this.tor.addOnion({
+          virtPort: this.hiddenServicePort, 
+          targetPort: this.hiddenServicePort, 
+          privKey: this.getHiddenServiceSecret()
+        }))
       } else {
-        service = await (await this.tor.addNewService(7788, 7788)).onionAddress
+        service = await (await this.tor.addNewService(this.hiddenServicePort, this.hiddenServicePort)).onionAddress
       }
     }
     return `${service}.onion`
@@ -110,11 +124,14 @@ class Node {
   async initStorage(dataServer: DataServer, host: string): Promise<ConnectionsManager> {
     const peer = await this.getPeer()
     const connectonsManager = new ConnectionsManager({
-      port: 7788,
+      port: this.port,
       host: host,
       agentHost: 'localhost',
-      agentPort: 9050,
-      io: dataServer.io
+      agentPort: this.socksProxyPort,
+      io: dataServer.io,
+      options: {
+        bootstrapMultiaddrs: process.env.BOOTSTRAP_ADDRS ? [process.env.BOOTSTRAP_ADDRS] : null
+      }
     })
     const node = await connectonsManager.initializeNode(peer)
     console.log(node)
@@ -131,56 +148,6 @@ class Node {
 const main = async () => {
   const node = new Node()
   await node.init()
-  // const torPath = `${process.cwd()}/tor/tor`
-  // const pathDevLib = path.join.apply(null, [process.cwd(), 'tor'])
-  // if (!fs.existsSync(ZBAY_DIR_PATH)) {
-  //   fs.mkdirSync(ZBAY_DIR_PATH)
-  // }
-  // const tor = new Tor({
-  //   torPath,
-  //   appDataPath: ZBAY_DIR_PATH,
-  //   controlPort: 9051,
-  //   options: {
-  //     env: {
-  //       LD_LIBRARY_PATH: pathDevLib,
-  //       HOME: os.homedir()
-  //     },
-  //     detached: true
-  //   }
-  // })
-  // await tor.init()
-  // console.log('afeter tor init')
-  // let service1: string
-  // try {
-  //   service1 = await tor.getServiceAddress(7788)
-  // } catch (e) {
-  //   if (process.env.HIDDEN_SERVICE_SECRET) {
-  //     service1 = await (await tor.addOnion({virtPort: 7788, targetPort: 7788, privKey: process.env.HIDDEN_SERVICE_SECRET}))
-  //   } else {
-  //     service1 = await (await tor.addNewService(7788, 7788)).onionAddress
-  //   }
-  // }
-
-  // console.log(service1)
-  // const dataServer = new DataServer()
-  // dataServer.listen()
-  // const peerId = fs.readFileSync('entryNodePeerId.json')
-  // const parsedId = JSON.parse(peerId.toString()) as PeerId.JSONPeerId
-  // const peerIdRestored = await PeerId.createFromJSON(parsedId)
-  // const connectonsManager = new ConnectionsManager({
-  //   port: 7788,
-  //   host: `${service1}.onion`,
-  //   agentHost: 'localhost',
-  //   agentPort: 9050,
-  //   io: dataServer.io
-  // })
-  // const node = await connectonsManager.initializeNode(peerIdRestored)
-  // await connectonsManager.initStorage()
-  // console.log(node)
-  // initListeners(dataServer.io, connectonsManager)
-
 }
-
-
 
 main()

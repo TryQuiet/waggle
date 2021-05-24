@@ -16,23 +16,19 @@ import fs from 'fs'
 import path from 'path'
 import { IChannelInfo } from '../storage/storage'
 import fetch from 'node-fetch'
-import LevelStore from 'datastore-level'
 
 interface IOptions {
-  env: {
+  env?: {
     appDataPath: string
-  }
+  },
+  bootstrapMultiaddrs?: Array<string>
 }
 interface IConstructor {
   host: string
   port: number
   agentPort: number
   agentHost: string
-  options?: {
-    env: {
-      appDataPath: string
-    }
-  }
+  options?: IOptions
   io: any
 }
 interface IBasicMessage {
@@ -63,6 +59,7 @@ export class ConnectionsManager {
   zbayDir: string
   io: any
   peerId: PeerId
+  bootstrapMultiaddrs: Array<string>
   trackerApi: any
 
   constructor({ host, port, agentHost, agentPort, options, io }: IConstructor) {
@@ -73,9 +70,10 @@ export class ConnectionsManager {
     this.agentHost = agentHost
     this.localAddress = null
     this.options = options
-    this.zbayDir = options?.env.appDataPath || ZBAY_DIR_PATH
+    this.zbayDir = options?.env?.appDataPath || ZBAY_DIR_PATH
     this.storage = new Storage(this.zbayDir, this.io)
     this.peerId = null
+    this.bootstrapMultiaddrs = options?.bootstrapMultiaddrs || this.defaultBootstrapMultiaddrs()
     this.trackerApi = fetchAbsolute(fetch)('http://okmlac2qjgo2577dkyhpisceua2phwxhdybw4pssortdop6ddycntsyd.onion:7788')
 
     process.on('unhandledRejection', error => {
@@ -90,6 +88,12 @@ export class ConnectionsManager {
 
   private readonly createAgent = () => {
     this.socksProxyAgent = new SocksProxyAgent({ port: this.agentPort, host: this.agentHost })
+  }
+
+  private readonly defaultBootstrapMultiaddrs = () => {
+    return [
+      '/dns4/2lmfmbj4ql56d55lmv7cdrhdlhls62xa4p6lzy6kymxuzjlny3vnwyqd.onion/tcp/7788/ws/p2p/Qmak8HeMad8X1HGBmz2QmHfiidvGnhu6w6ugMKtx8TFc85',
+    ]
   }
 
   private readonly getPeerId = async (): Promise<PeerId> => {
@@ -140,38 +144,14 @@ export class ConnectionsManager {
     const listenAddrs = [`/dns4/${this.host}/tcp/${this.port}/ws`]
     this.localAddress = `${listenAddrs}/p2p/${this.peerId.toB58String()}`
     console.log('local address:', this.localAddress)
-
-    // TODO: Uncomment when we're ready to use tracker (so e.g when it runs on aws):
-    // try {
-    //   await this.registerPeer(this.localAddress)
-    // } catch (e) {
-    //   console.error('Couldn\'t register peer. Probably tracker is offline. Error:', e)
-    //   throw 'Couldn\'t register peer'
-    // }
-    // try {
-    //   const bootstrapMultiaddrs = await this.getInitialPeers()
-    // } catch (e) {
-    //   console.error('Couldn\'t retrieve initial peers from tracker. Error:', e)
-    //   throw 'Couldn\'t get initial peers'
-    // }
-    let bootstrapMultiaddrs = []
-    if (process.env.BOOTSTRAP_ADDRS) {
-      bootstrapMultiaddrs = [process.env.BOOTSTRAP_ADDRS]
-    } else {
-      bootstrapMultiaddrs = [
-        '/dns4/2lmfmbj4ql56d55lmv7cdrhdlhls62xa4p6lzy6kymxuzjlny3vnwyqd.onion/tcp/7788/ws/p2p/Qmak8HeMad8X1HGBmz2QmHfiidvGnhu6w6ugMKtx8TFc85',
-        // '/dns4/c3llbahfsfjvdecvgzirsrn6m5w5e4nyftqaduqruv6xfo2rbm4dgkad.onion/tcp/7788/ws/p2p/QmTk7Mxkoy2MGvuhYj6fnYUwSatmqsaRkEtnSq7JHGQBHG'  // local guy
-      ]
-    }
-    
-    console.log('bootstrapMultiaddrs:', bootstrapMultiaddrs)
+    console.log('bootstrapMultiaddrs:', this.bootstrapMultiaddrs)
 
     this.libp2p = await this.createBootstrapNode({
       peerId: this.peerId,
       listenAddrs,
       agent: this.socksProxyAgent,
       localAddr: this.localAddress,
-      bootstrapMultiaddrsList: bootstrapMultiaddrs
+      bootstrapMultiaddrsList: this.bootstrapMultiaddrs
     })
     this.libp2p.connectionManager.on('peer:connect', async connection => {
       console.log('Connected to', connection.remotePeer.toB58String())
@@ -218,15 +198,12 @@ export class ConnectionsManager {
   private removeInactivePeer = (peer: PeerId) => {    
     this.libp2p.dial(peer).then((value) => {
       if (value === undefined) {
-        // console.log(`cannot dial peer ${peer.toB58String()}, removing`)
         const removed = this.libp2p.peerStore.delete(peer)
         if (removed) {
-          console.count(`REMOVED ${peer.toB58String()}`)
-          console.log('addressbook', this.libp2p.peerStore.addressBook.data.keys())
+          console.count(`Removed peer ${peer.toB58String()}`)
         }
-      }
-      else {
-        // console.log(`Dialed peer ${peer.toB58String()}`)
+      } else {
+        console.log(`Dialed peer ${peer.toB58String()}`)
       }
     })
   }
@@ -335,11 +312,6 @@ export class ConnectionsManager {
           },
           autoDial: false
         },
-        // datastore: new LevelStore(path.join(this.zbayDir, 'datastore-test')), // import LevelStore from 'datastore-level'
-        // peerStore: {
-        //   persistence: true,
-        //   threshold: 5
-        // },
         relay: {
           enabled: true,
           hop: {

@@ -10,11 +10,18 @@ services:
         <<: *common-variables
         HIDDEN_SERVICE_SECRET: ED25519-V3:+OQSh718QNMfTV+jpsO1moEjSRVnHvPOlEhS1WKdGGkP0OPwMG0iXWx6FJ9liCsbhJGFwLg/I13v6qhB8KVv5Q==
         PEERID_FILE: localEntryNodePeerId.json
-        
-  peer:
+    volumes:
+        - entrynode-data:/root/.config/Zbay
+  
+  peer: &peer
     build: .
-    environment: *common-variables
+    environment: 
+        <<: *common-variables
+        HIDDEN_SERVICE_SECRET: null
+        PEERID_FILE: ""
 
-  peer-to-kill:
-    build: .
-    environment: *common-variables
+  peer-extra:
+    <<: *peer
+
+volumes:
+    entrynode-data:
