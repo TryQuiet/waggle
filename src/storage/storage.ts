@@ -203,9 +203,6 @@ export class Storage {
   }
 
   public async updateChannels() {
-    // if (!this.channels) {
-    //   loadAllPublicChannels(this.io, [])
-    // }
     /** Update list of available public channels */
     if (!this.publicChannelsEventsAttached) {
       this.channels.events.on('replicated', () => {
