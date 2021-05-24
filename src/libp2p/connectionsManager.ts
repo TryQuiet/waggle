@@ -15,7 +15,11 @@ import { ZBAY_DIR_PATH } from '../constants'
 import fs from 'fs'
 import path from 'path'
 import { IChannelInfo } from '../storage/storage'
-import fetch from 'node-fetch'
+import fetch from 'node-fetch';
+import debug from 'debug'
+const log = Object.assign(debug('waggle:libp2p'), {
+  error: debug('waggle:libp2p:err')
+})
 
 interface IOptions {
   env?: {
@@ -154,14 +158,14 @@ export class ConnectionsManager {
       bootstrapMultiaddrsList: this.bootstrapMultiaddrs
     })
     this.libp2p.connectionManager.on('peer:connect', async connection => {
-      console.log('Connected to', connection.remotePeer.toB58String())
+      log('Connected to', connection.remotePeer.toB58String())
     })
     this.libp2p.on('peer:discovery', (peer: PeerId) => {
       console.count(`Discovered ${peer.toB58String()}`)
       this.removeInactivePeer(peer)
     })
     this.libp2p.connectionManager.on('peer:disconnect', connection => {
-      console.log('Disconnected from', connection.remotePeer.toB58String())
+      log('Disconnected from', connection.remotePeer.toB58String())
       this.removeInactivePeer(connection.remotePeer)
     })
 
@@ -188,7 +192,7 @@ export class ConnectionsManager {
   }
 
   public connectToNetwork = async (target: string) => {
-    console.log(`Attempting to dial ${target}`)
+    log(`Attempting to dial ${target}`)
     await this.libp2p.dial(target, {
       localAddr: this.localAddress,
       remoteAddr: new Multiaddr(target)
@@ -203,7 +207,7 @@ export class ConnectionsManager {
           console.count(`Removed peer ${peer.toB58String()}`)
         }
       } else {
-        console.log(`Dialed peer ${peer.toB58String()}`)
+        console.count(`Dialed peer ${peer.toB58String()}`)
       }
     })
   }
@@ -242,7 +246,7 @@ export class ConnectionsManager {
     publicKey: string,
     halfKey: string
   ): Promise<void> => {
-    console.log(`CONNECTIONS MANAGER: addUser - publicKey ${publicKey} and halfKey ${halfKey}`)
+    log(`CONNECTIONS MANAGER: addUser - publicKey ${publicKey} and halfKey ${halfKey}`)
     await this.storage.addUser(publicKey, halfKey)
   }
 
@@ -250,7 +254,7 @@ export class ConnectionsManager {
     address: string,
     encryptedPhrase: string
   ): Promise<void> => {
-    console.log(`INSIDE WAGGLE: ${encryptedPhrase}`)
+    log(`INSIDE WAGGLE: ${encryptedPhrase}`)
     await this.storage.initializeConversation(address, encryptedPhrase)
   }
 
