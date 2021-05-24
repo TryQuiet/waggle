@@ -75,13 +75,15 @@ export class ConnectionsManager {
     this.zbayDir = options?.env.appDataPath || ZBAY_DIR_PATH
     this.storage = new Storage(this.zbayDir, this.io)
     this.peerId = null
-    this.trackerApi = fetchAbsolute(fetch)('http://okmlac2qjgo2577dkyhpisceua2phwxhdybw4pssortdop6ddycntsyd.onion:7788')
+    this.trackerApi = fetchAbsolute(fetch)(
+      'http://okmlac2qjgo2577dkyhpisceua2phwxhdybw4pssortdop6ddycntsyd.onion:7788'
+    )
 
     process.on('unhandledRejection', error => {
       console.error(error)
-      throw error
+      throw new Error()
     })
-    process.on('SIGINT', function() {
+    process.on('SIGINT', function () {
       console.log('\nGracefully shutting down from SIGINT (Ctrl-C)')
       process.exit(0)
     })
@@ -105,28 +107,28 @@ export class ConnectionsManager {
     return peerId
   }
 
-  private readonly getInitialPeers = async (): Promise<string[]> => {
-    const options = {
-      method: 'GET',
-      agent: () => {
-        return this.socksProxyAgent
-      }
-    }
-    const response = await this.trackerApi('/peers', options)
-    return response.json()
-  }
+  // private readonly getInitialPeers = async (): Promise<string[]> => {
+  //   const options = {
+  //     method: 'GET',
+  //     agent: () => {
+  //       return this.socksProxyAgent
+  //     }
+  //   }
+  //   const response = await this.trackerApi('/peers', options)
+  //   return response.json()
+  // }
 
-  private readonly registerPeer = async (address: string): Promise<void> => {
-    const options = {
-      method: 'POST',
-      body: JSON.stringify({ address: address }),
-      headers: { 'Content-Type': 'application/json' },
-      agent: () => {
-        return this.socksProxyAgent
-      }
-    }
-    await this.trackerApi('/register', options)
-  }
+  // private readonly registerPeer = async (address: string): Promise<void> => {
+  //   const options = {
+  //     method: 'POST',
+  //     body: JSON.stringify({ address: address }),
+  //     headers: { 'Content-Type': 'application/json' },
+  //     agent: () => {
+  //       return this.socksProxyAgent
+  //     }
+  //   }
+  //   await this.trackerApi('/register', options)
+  // }
 
   public initializeNode = async (staticPeerId?: PeerId): Promise<ILibp2pStatus> => {
     if (!staticPeerId) {
@@ -175,10 +177,16 @@ export class ConnectionsManager {
       console.log('Disconnected from', connection.remotePeer.toB58String())
     })
 
+    
+
     return {
       address: this.localAddress,
       peerId: this.peerId.toB58String()
     }
+  }
+
+  public stopLibp2p = async () => {
+    await this.libp2p.stop()
   }
 
   public subscribeForTopic = async (channelData: IChannelInfo) => {
@@ -187,6 +195,11 @@ export class ConnectionsManager {
 
   public initStorage = async () => {
     await this.storage.init(this.libp2p, this.peerId)
+    console.log('finishe init stoargasrgasdfg')
+  }
+
+  public closeStorage = async () => {
+    await this.storage.kill()
   }
 
   public updateChannels = async () => {
@@ -235,10 +248,7 @@ export class ConnectionsManager {
 
   // DMs
 
-  public addUser = async (
-    publicKey: string,
-    halfKey: string
-  ): Promise<void> => {
+  public addUser = async (publicKey: string, halfKey: string): Promise<void> => {
     console.log(`CONNECTIONS MANAGER: addUser - publicKey ${publicKey} and halfKey ${halfKey}`)
     await this.storage.addUser(publicKey, halfKey)
   }
@@ -261,19 +271,8 @@ export class ConnectionsManager {
 
   public sendDirectMessage = async (
     channelAddress: string,
-    messagePayload: IBasicMessage
+    messagePayload: string
   ): Promise<void> => {
-    const { id, type, signature, r, createdAt, message, typeIndicator } = messagePayload
-    const messageToSend = {
-      id,
-      type,
-      signature,
-      createdAt,
-      r,
-      message,
-      typeIndicator,
-      channelId: channelAddress
-    }
     await this.storage.sendDirectMessage(channelAddress, messagePayload)
   }
 
@@ -281,7 +280,7 @@ export class ConnectionsManager {
     await this.storage.subscribeForDirectMessageThread(address)
   }
 
-  public subscribeForAllConversations = async (conversations: string[]) :Promise<void> => {
+  public subscribeForAllConversations = async (conversations: string[]): Promise<void> => {
     await this.storage.subscribeForAllConversations(conversations)
   }
 

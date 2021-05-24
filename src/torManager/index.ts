@@ -4,7 +4,7 @@ import path from 'path'
 import { TorControl } from './torControl'
 import { ZBAY_DIR_PATH } from '../constants'
 import { sleep } from './../sleep'
-import { isConditionalExpression } from 'typescript'
+import { dir } from 'console'
 interface IService {
   virtPort: number
   address: string
@@ -22,80 +22,83 @@ export class Tor {
   services: Map<number, IService>
   torControl: TorControl
   appDataPath: string
-  controlPort: number
+  controlPort: string
+  torDataDirectory: string
+  torPidPath: string
   constructor({ torPath, options, appDataPath, controlPort }: IConstructor) {
     this.torPath = torPath
     this.options = options
     this.services = new Map()
-    this.torControl = new TorControl({ port: controlPort })
+    this.torControl = new TorControl({ port: controlPort, host: 'localhost' })
     this.appDataPath = appDataPath
-    this.controlPort = controlPort
+    this.controlPort = controlPort.toString()
   }
 
-  public init = async (timeout = 80000): Promise<void> =>
-    await new Promise(async (resolve, reject) => {
+  public init = async () => {
+    return new Promise((resolve, reject) => {
       if (this.process) {
-        throw new Error('Already initialized')
+        throw new Error('Tor already initialized')
       }
 
-      if (process.platform !== 'win32') {
-        await this.killHangingTorProcess()
+      const dirPath = this.appDataPath || ZBAY_DIR_PATH
+
+      if (!fs.existsSync(dirPath)) {
+        fs.mkdirSync(dirPath)
       }
 
-      const TorDataDirectory = path.join.apply(null, [this.appDataPath, 'TorDataDirectory'])
-      const torrc = `ControlPort ${this.controlPort}\nDataDirectory ${TorDataDirectory}`
-      fs.writeFileSync(`${this.appDataPath}/torrc`, torrc, 'utf8')
-      const settingsPath = `${this.appDataPath}/torrc`
+      this.torDataDirectory = path.join.apply(null, [dirPath, 'TorDataDirectory'])
+      this.torPidPath = path.join.apply(null, [dirPath, 'torPid.json'])
+      let oldTorPid = null
 
-      const TorPidPath = path.join.apply(null, [this.appDataPath || ZBAY_DIR_PATH, 'torPid.json'])
+      if (fs.existsSync(this.torPidPath)) {
+        const file = fs.readFileSync(this.torPidPath)
+        oldTorPid = Number(file.toString())
+      }
 
-      this.process = child_process.spawn(this.torPath, ['-f', settingsPath], this.options)
-
-      const a = async (retries: number, currentRetry: number, sleepTime: number) => {
-        if (currentRetry < retries) {
-          try {
-            console.log('INITIALIZING TOR')
-            await this.torControl.signal('HEARTBEAT')
-            resolve()
-          } catch (err) {
-            console.log('ERROR CONNECTING TOR')
-            console.log('TRYING AGAIN')
-            await sleep(sleepTime)
-            await a(retries, currentRetry + 1, sleepTime)
+      if (oldTorPid) {
+        child_process.exec(`ps -p ${oldTorPid} -o comm=`, (err, stdout, stderr) => {
+          if (stdout.trim() === 'tor') {
+            process.kill(oldTorPid, 'SIGTERM')
+          } else {
+            fs.unlinkSync(this.torPidPath)
           }
-        } else {
-          console.log('TOO MANY ATTEMPTS, TOR INITIALIZATION FAILED, CHECK IF TOR PROCESS IS NOT RUNNING ALREADY')
-          reject()
-        }
+          this.spawnTor(resolve)
+        })
+      } else {
+        this.spawnTor(resolve)
       }
-
-      await a(20, 0, 1000)
-
-      const newProcessPid = {
-        pid: this.process.pid
-      }
-
-      const pidJson = JSON.stringify(newProcessPid)
-      fs.writeFileSync(TorPidPath, pidJson)
-      this.process.stdout.on('data', (data: Buffer) => {
-        if (
-          !data
-            .toString()
-            .includes(
-              'Closed 1 streams for service [scrubbed].onion for reason resolve failed. Fetch status: No more HSDir available to query.'
-            )
-        ) {
-          console.log(data.toString())
-        }
-      })
     })
+  }
 
   public async setSocksPort(port: number): Promise<void> {
     await this.torControl.setConf(`SocksPort="${port}"`)
   }
 
-  public async setHttpTunnelPort(port: number): Promise<void> {
-    await this.torControl.setConf(`HTTPTunnelPort="${port}"`)
+  // public async setHttpTunnelPort(port: number): Promise<void> {
+  //   await this.torControl.setConf(`HTTPTunnelPort="${port}"`)
+  // }
+
+  private spawnTor =(resolve) => {
+    this.process = child_process.spawn(
+      this.torPath,
+      [
+        // '--SocksPort',
+        // this.socksPort,
+        '--ControlPort',
+        this.controlPort,
+        '--PidFile',
+        this.torPidPath,
+        '--DataDirectory',
+        this.torDataDirectory
+      ],
+      this.options
+    )
+    this.process.stdout.on('data', data => {
+      console.log(data.toString())
+      const regexp = /Bootstrapped 100%/
+      const bootstrapped = data.toString('utf8').match(/Bootstrapped (\d+)/)
+      if (regexp.test(data.toString())) resolve()
+    })
   }
 
   public async addOnion({
@@ -125,7 +128,7 @@ export class Tor {
   public async addNewService(
     virtPort: number,
     targetPort: number
-  ): Promise<{ onionAddress: string, privateKey: string }> {
+  ): Promise<{ onionAddress: string; privateKey: string }> {
     const status = await this.torControl.addOnion(
       `NEW:BEST Flags=Detach Port=${virtPort},127.0.0.1:${targetPort}`
     )
@@ -149,45 +152,13 @@ export class Tor {
     throw new Error('cannot get service addres')
   }
 
-  private readonly killHangingTorProcess = async (): Promise<void> => {
-    return await new Promise(async (resolve, reject) => {
-      const timeout = setTimeout(() => {
-        reject('ERROR: Cannot kill hanging tor process, kill it manually and restart app')
-      }, 30_000)
-      const TorPidPath = path.join.apply(null, [this.appDataPath || ZBAY_DIR_PATH, 'torPid.json'])
-      fs.access(TorPidPath, fs.constants.F_OK, async err => {
-        if (err) {
-          console.log('INFO: Cannot find old tor pid file, probably it is the first launch of Zbay')
-          resolve()
-        }
-        const file: unknown = fs.readFileSync(TorPidPath)
-        const oldProcessPid = JSON.parse(file as string).pid
-
-        let isAlive = true
-
-        while (isAlive) {
-          await sleep()
-          try {
-            console.log(`INFO: trying to kill tor on port ${oldProcessPid}`)
-            console.log(process.kill(oldProcessPid, 'SIGTERM'))
-          } catch (e) {
-            console.log(e)
-            clearTimeout(timeout)
-            console.log(`SUCCESS: Killed old tor process hanging on port ${oldProcessPid}`)
-            isAlive = false
-            resolve()
-          }
-        }
-      })
-    })
-  }
-
   public kill = async (): Promise<void> =>
     await new Promise((resolve, reject) => {
       if (this.process === null) {
-        reject('Process is not initalized.')
+        reject(new Error('Process is not initalized.'))
       }
       this.process?.on('close', () => {
+        console.log('before closing tor')
         resolve()
       })
       this.process?.kill()

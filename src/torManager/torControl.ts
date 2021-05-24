@@ -1,3 +1,5 @@
+import { runInThisContext } from 'vm'
+
 var net = require('net')
 var EventEmitter = require('events').EventEmitter
 
@@ -74,7 +76,7 @@ class TorControl {
           return cb(new Error('Authentication failed with message: ' + data))
         })
       }
-
+console.log('before authentication')
       this.connection.write('AUTHENTICATE "' + (params.password || opts.password) + '"\r\n') // Chapter 3.5
       return this
     }
@@ -174,6 +176,11 @@ class TorControl {
 
   public async signalReload(): Promise<{ code: number, messages: string[] }> {
     return await this.signal('RELOAD')
+  }
+
+  public async command(command: string): Promise<{code: number, messages: string[]}> {
+    console.log('received command')
+    return this.sendCommand(command)
   }
 
   public async setConf(request: string): Promise<{ code: number, messages: string[] }> {

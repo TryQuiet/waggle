@@ -55,7 +55,7 @@ export class Tracker {
   }
 
   private addPeer(address: string): boolean {
-    let maddr = null
+    let maddr: multiaddr = null
     try {
       maddr = multiaddr(address)
     } catch (e) {
@@ -84,7 +84,7 @@ export class Tracker {
 
   private setRouting() {
     this._app.use(express.json())
-    this._app.get('/peers', (req, res) => {
+    this._app.get('/peers', (_req, res) => {
       this.clearPeers()
       res.send(this.getAddresses())
     })

@@ -43,7 +43,11 @@ class WebsocketsOverTor extends WebSockets {
     let socket
     let maConn
     try {
-      socket = await this._connect(ma, { websocket: this._websocketOpts, ...options, localAddr: this.localAddress })
+      socket = await this._connect(ma, {
+        websocket: this._websocketOpts,
+        ...options,
+        localAddr: this.localAddress
+      })
     } catch (e) {
       log('error connecting to %s. Details: %s', ma, e.message)
       return
@@ -65,13 +69,13 @@ class WebsocketsOverTor extends WebSockets {
     }
   }
 
-  async _connect (ma, options: any = {}) {
-    if (options.signal && options.signal.aborted) {
+  async _connect(ma: multiaddr, options: any = {}) {
+    if (options.signal?.aborted) {
       throw new AbortError()
     }
     const cOpts = ma.toOptions()
     log('dialing %s:%s', cOpts.host, cOpts.port)
-    const myUri = `${toUri(ma)}/?remoteAddress=${encodeURIComponent(this.localAddress)}`
+    const myUri = `${toUri(ma) as string}/?remoteAddress=${encodeURIComponent(this.localAddress)}`
     const rawSocket = connect(myUri, Object.assign({ binary: true }, options))
     if (!options.signal) {
       await rawSocket.connected()
@@ -82,7 +86,7 @@ class WebsocketsOverTor extends WebSockets {
 
     // Allow abort via signal during connect
     let onAbort
-    const abort = new Promise((resolve, reject) => {
+    const abort = new Promise((_resolve, reject) => {
       onAbort = () => {
         reject(new AbortError())
         rawSocket.close()
@@ -111,8 +115,6 @@ class WebsocketsOverTor extends WebSockets {
     const server = createServer(options, async (stream, request) => {
       let maConn, conn
       const query = url.parse(request.url, true).query
-      // console.log('request', request)
-      // console.log('query', query)
       console.log('query', query.remoteAddress)
       try {
         maConn = toConnection(stream, { remoteAddr: multiaddr(query.remoteAddress.toString()) })
@@ -126,7 +128,7 @@ class WebsocketsOverTor extends WebSockets {
       } catch (err) {
         console.log('error', err)
         log.error('inbound connection failed to upgrade', err)
-        return maConn && maConn.close()
+        return maConn?.close()
       }
 
       log('inbound connection %s upgraded', maConn.remoteAddr)
@@ -152,7 +154,7 @@ class WebsocketsOverTor extends WebSockets {
       return server.close()
     }
 
-    listener.listen = (ma) => {
+    listener.listen = ma => {
       listeningMultiaddr = ma
 
       return server.listen(ma.toOptions())
@@ -166,21 +168,21 @@ class WebsocketsOverTor extends WebSockets {
         throw new Error('Listener is not ready yet')
       }
 
-      const ipfsId = listeningMultiaddr.getPeerId()
+      const ipfsId: string = listeningMultiaddr.getPeerId()
 
       // Because TCP will only return the IPv6 version
       // we need to capture from the passed multiaddr
       if (listeningMultiaddr.toString().indexOf('ip4') !== -1) {
         let m = listeningMultiaddr.decapsulate('tcp')
-        m = m.encapsulate('/tcp/' + address.port + '/ws')
+        m = m.encapsulate(`/tcp/' + ${address.port as string} + '/ws`)
         if (listeningMultiaddr.getPeerId()) {
           m = m.encapsulate('/p2p/' + ipfsId)
         }
 
         if (m.toString().indexOf('0.0.0.0') !== -1) {
           const netInterfaces = os.networkInterfaces()
-          Object.keys(netInterfaces).forEach((niKey) => {
-            netInterfaces[niKey].forEach((ni) => {
+          Object.keys(netInterfaces).forEach(niKey => {
+            netInterfaces[niKey].forEach(ni => {
               if (ni.family === 'IPv4') {
                 multiaddrs.push(multiaddr(m.toString().replace('0.0.0.0', ni.address)))
               }
@@ -196,14 +198,14 @@ class WebsocketsOverTor extends WebSockets {
     return listener
   }
 
-  createListener (options = {}, handler) {
-    if (typeof options === 'function') {
-      handler = options
-      options = {}
-    }
+  // createListener(options = {}, handler) {
+  //   if (typeof options === 'function') {
+  //     handler = options
+  //     options = {}
+  //   }
 
-    return this.prepareListener({ handler, upgrader: this._upgrader }, options)
-  }
+  //   return this.prepareListener({ handler, upgrader: this._upgrader }, options)
+  // }
 }
 
 export default withIs(WebsocketsOverTor, {

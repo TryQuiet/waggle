@@ -1,5 +1,4 @@
 import { Tor } from './torManager'
-import { Storage } from './storage'
 import { DataServer } from './socket/DataServer'
 import { ConnectionsManager } from './libp2p/connectionsManager'
 import initListeners from './socket/listeners/'
@@ -54,4 +53,6 @@ const main = async () => {
   initListeners(dataServer.io, connectonsManager)
 }
 
-main()
+main().catch(err => {
+  console.log(`Couldn't start entryNode: ${err as string}`)
+})
