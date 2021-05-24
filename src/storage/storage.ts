@@ -121,7 +121,7 @@ export class Storage {
     })
 
     this.channels.events.on('replicated', () => {
-    console.log('REPLICATED: CHANNELS')
+    log('REPLICATED: CHANNELS')
     })
     await this.channels.load({ fetchEntryTimeout: 15000 })
     log('ALL CHANNELS COUNT:', Object.keys(this.channels.all).length)
@@ -416,7 +416,7 @@ export class Storage {
   }
 
   public async getAvailableUsers(): Promise<any> {
-    console.log('STORAGE: getAvailableUsers entered')
+    log('STORAGE: getAvailableUsers entered')
     await this.directMessagesUsers.load({ fetchEntryTimeout: 2000 })
     const payload = this.directMessagesUsers.all
     log(`STORAGE: getAvailableUsers ${payload}`)
@@ -425,7 +425,7 @@ export class Storage {
   }
 
   public async getPrivateConversations(): Promise<void> {
-    console.log('STORAGE: getPrivateConversations enetered')
+    log('STORAGE: getPrivateConversations enetered')
     await this.messageThreads.load({ fetchEntryTimeout: 2000 })
     const payload = this.messageThreads.all
     log('STORAGE: getPrivateConversations payload payload')
