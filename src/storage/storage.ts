@@ -12,6 +12,11 @@ import { EventTypesResponse } from '../socket/constantsReponse'
 import fs from 'fs'
 import { loadAllPublicChannels } from '../socket/events/channels'
 
+import debug from 'debug'
+const log = Object.assign(debug('waggle:db'), {
+  error: debug('waggle:db:err')
+})
+
 export interface IMessage {
   id: string
   type: number
@@ -68,7 +73,7 @@ export class Storage {
   private publicChannelsEventsAttached: boolean = false
 
   public async init(libp2p: any, peerID: PeerId): Promise<void> {
-    console.log('STORAGE: Entered init')
+    log('STORAGE: Entered init')
     const ipfsRepoPath = path.join(this.zbayDir, 'ZbayChannels')
     const orbitDbDir = path.join(this.zbayDir, 'OrbitDB')
     createPaths([ipfsRepoPath, orbitDbDir])
@@ -108,7 +113,7 @@ export class Storage {
   }
 
   private async createDbForChannels() {
-    console.log('STORAGE: Entered createDbForChannels')
+    log('createDbForChannels init')
     this.channels = await this.orbitdb.keyvalue<IZbayChannel>('zbay-public-channels', {
       accessController: {
         write: ['*']
@@ -116,20 +121,12 @@ export class Storage {
     })
 
     this.channels.events.on('replicated', () => {
-      console.log('REPLICATED: CHANNELS')
+    console.log('REPLICATED: CHANNELS')
     })
-    // this.channels.events.on('replicate.progress', (address, hash, entry, progress, have) => {
-    //   console.log(address)
-    //   console.log(hash)
-    //   console.log(entry)
-    //   console.log(progress)
-    //   console.log(have)
-    // } )
-
     await this.channels.load({ fetchEntryTimeout: 15000 })
-    console.log('ALL CHANNELS COUNT:', Object.keys(this.channels.all).length)
-    console.log('ALL CHANNELS COUNT:', Object.keys(this.channels.all))
-    console.log('STORAGE: Finished createDbForChannels')
+    log('ALL CHANNELS COUNT:', Object.keys(this.channels.all).length)
+    log('ALL CHANNELS COUNT:', Object.keys(this.channels.all))
+    log('STORAGE: Finished createDbForChannels')
   }
 
   private async createDbForMessageThreads() {
@@ -145,9 +142,7 @@ export class Storage {
       this.initAllConversations()
     })
     await this.messageThreads.load({ fetchEntryTimeout: 2000 })
-    console.log('ALL MESSAGE THREADS COUNT:', Object.keys(this.messageThreads.all).length)
-    console.log('ALL MESSAGE THREADS COUNT:', Object.keys(this.messageThreads.all))
-    console.log('ALL MESSAGE THREADS COUNT:', Object.values(this.messageThreads.all))
+    log('ALL MESSAGE THREADS COUNT:', Object.keys(this.messageThreads.all).length)
   }
 
   private async createDbForUsers() {
@@ -161,15 +156,15 @@ export class Storage {
       await this.directMessagesUsers.load({ fetchEntryTimeout: 2000 })
       const payload = this.directMessagesUsers.all
       this.io.emit(EventTypesResponse.RESPONSE_GET_AVAILABLE_USERS, payload)
-      console.log('REPLICATED USERS')
+      log('REPLICATED USERS')
     })
     try {
       await this.directMessagesUsers.load({ fetchEntryTimeout: 2000 })
     } catch (err) {
-      console.log(err)
+      log.error(err)
     }
-    console.log('ALL USERS COUNT:', Object.keys(this.directMessagesUsers.all).length)
-    console.log('ALL USERS COUNT:', Object.keys(this.directMessagesUsers.all))
+    log('ALL USERS COUNT:', Object.keys(this.directMessagesUsers.all).length)
+    log('ALL USERS COUNT:', Object.keys(this.directMessagesUsers.all))
   }
 
   async initAllChannels() {
@@ -257,14 +252,14 @@ export class Storage {
     }
 
     if (repo && !repo.eventsAttached) {
-      console.log('Subscribing to channel ', channelAddress)
+      log('Subscribing to channel ', channelAddress)
       db.events.on('write', (_address, entry) => {
-        console.log('Writing to messages db')
-        console.log(entry.payload.value)
+        log('Writing to messages db')
+        log(entry.payload.value)
         socketMessage(this.io, { message: entry.payload.value, channelAddress })
       })
       db.events.on('replicated', () => {
-        console.log('Message replicated')
+        log('Message replicated')
         loadAllMessages(this.io, this.getAllChannelMessages(db), channelAddress)
       })
       db.events.on('ready', () => {
@@ -272,7 +267,7 @@ export class Storage {
       })
       repo.eventsAttached = true
       loadAllMessages(this.io, this.getAllChannelMessages(db), channelAddress)
-      console.log('Subscription to channel ready', channelAddress)
+      log('Subscription to channel ready', channelAddress)
     }
   }
 
@@ -290,7 +285,7 @@ export class Storage {
       console.log('No channel address, can\'t create channel')
       return
     }
-    console.log('BEFORE CREATING NEW ZBAY CHANNEL')
+    log('BEFORE CREATING NEW ZBAY CHANNEL')
     const db: EventStore<IMessage> = await this.orbitdb.log<IMessage>(
       `zbay.channels.${channelAddress}`,
       {
@@ -307,7 +302,7 @@ export class Storage {
         address: channelAddress,
         ...channelData
       })
-      console.log(`Created channel ${channelAddress}`)
+      log(`Created channel ${channelAddress}`)
     }
     this.publicChannelsRepos.set(channelAddress, { db, eventsAttached: false })
     await db.load({ fetchEntryTimeout: 2000 })
@@ -315,7 +310,6 @@ export class Storage {
   }
 
   public async addUser(address: string, halfKey: string): Promise<void> {
-    console.log(`Waggle: Storage: addUser - adding user ${address} ${halfKey}`)
     await this.directMessagesUsers.put(address, { halfKey })
     await this.directMessagesUsers.load({ fetchEntryTimeout: 2000 })
     const payload = this.directMessagesUsers.all
@@ -347,7 +341,6 @@ export class Storage {
   }
 
   public async subscribeForDirectMessageThread(channelAddress) {
-    console.log(`subscribing for ${channelAddress}`)
     let db: EventStore<IMessage>
     let repo = this.directMessagesRepos.get(channelAddress)
 
@@ -363,22 +356,22 @@ export class Storage {
     }
 
     if (repo && !repo.eventsAttached) {
-      console.log('Subscribing to direct messages thread ', channelAddress)
+      log('Subscribing to direct messages thread ', channelAddress)
       loadAllDirectMessages(this.io, this.getAllChannelMessages(db), channelAddress)
       db.events.on('write', (_address, entry) => {
-        console.log('Writing')
+        log('Writing')
         socketDirectMessage(this.io, { message: entry.payload.value, channelAddress })
       })
       db.events.on('replicated', () => {
-        console.log('Message replicated')
+        log('Message replicated')
         loadAllDirectMessages(this.io, this.getAllChannelMessages(db), channelAddress)
       })
       db.events.on('ready', () => {
-        console.log('DIRECT Messages thread ready')
+        log('DIRECT Messages thread ready')
       })
       repo.eventsAttached = true
       loadAllMessages(this.io, this.getAllChannelMessages(db), channelAddress)
-      console.log('Subscription to channel ready', channelAddress)
+      log('Subscription to channel ready', channelAddress)
     }
   }
 
@@ -390,7 +383,7 @@ export class Storage {
       return
     }
 
-    console.log(`creatin direct message thread for ${channelAddress}`)
+    log(`creatin direct message thread for ${channelAddress}`)
 
     const db: EventStore<IMessage> = await this.orbitdb.log<IMessage>(
       `direct.messages.${channelAddress}`,
@@ -401,7 +394,7 @@ export class Storage {
       }
     )
     db.events.on('replicated', () => {
-      console.log('replicated some messages')
+      log('replicated some messages')
     })
     await db.load({ fetchEntryTimeout: 2000 })
 
@@ -413,12 +406,12 @@ export class Storage {
 
   public async sendDirectMessage(channelAddress: string, message) {
     await this.subscribeForDirectMessageThread(channelAddress) // Is it necessary? Yes it is atm
-    console.log('STORAGE: sendDirectMessage entered')
-    console.log(`STORAGE: sendDirectMessage channelAddress is ${channelAddress}`)
-    console.log(`STORAGE: sendDirectMessage message is ${JSON.stringify(message)}`)
+    log('STORAGE: sendDirectMessage entered')
+    log(`STORAGE: sendDirectMessage channelAddress is ${channelAddress}`)
+    log(`STORAGE: sendDirectMessage message is ${JSON.stringify(message)}`)
     const db = this.directMessagesRepos.get(channelAddress).db
-    console.log(`STORAGE: sendDirectMessage db is ${db.address.root}`)
-    console.log(`STORAGE: sendDirectMessage db is ${db.address.path}`)
+    log(`STORAGE: sendDirectMessage db is ${db.address.root}`)
+    log(`STORAGE: sendDirectMessage db is ${db.address.path}`)
     await db.add(message)
   }
 
@@ -426,16 +419,16 @@ export class Storage {
     console.log('STORAGE: getAvailableUsers entered')
     await this.directMessagesUsers.load({ fetchEntryTimeout: 2000 })
     const payload = this.directMessagesUsers.all
-    console.log(`STORAGE: getAvailableUsers ${payload}`)
+    log(`STORAGE: getAvailableUsers ${payload}`)
     this.io.emit(EventTypesResponse.RESPONSE_GET_AVAILABLE_USERS, payload)
-    console.log('emitted')
+    log('emitted')
   }
 
   public async getPrivateConversations(): Promise<void> {
     console.log('STORAGE: getPrivateConversations enetered')
     await this.messageThreads.load({ fetchEntryTimeout: 2000 })
     const payload = this.messageThreads.all
-    console.log('STORAGE: getPrivateConversations payload payload')
+    log('STORAGE: getPrivateConversations payload payload')
     this.io.emit(EventTypesResponse.RESPONSE_GET_PRIVATE_CONVERSATIONS, payload)
   }
 }
