@@ -88,18 +88,18 @@ export class Storage {
     })
 
     this.orbitdb = await OrbitDB.createInstance(this.ipfs, { directory: orbitDbDir })
-    console.log('1/6')
+    log('1/6')
     await this.createDbForChannels()
-    console.log('2/6')
+    log('2/6')
     await this.createDbForUsers()
-    console.log('3/6')
+    log('3/6')
     await this.createDbForMessageThreads()
-    console.log('4/6')
+    log('4/6')
     await this.initAllChannels()
-    console.log('5/6')
+    log('5/6')
     await this.initAllConversations()
-    console.log('6/6')
-    console.log('STORAGE: Finished init')
+    log('6/6')
+    log('STORAGE: Finished init')
   }
 
   public async loadInitChannels() {
