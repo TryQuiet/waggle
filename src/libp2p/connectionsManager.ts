@@ -162,11 +162,11 @@ export class ConnectionsManager {
     })
     this.libp2p.on('peer:discovery', (peer: PeerId) => {
       console.count(`Discovered ${peer.toB58String()}`)
-      this.removeInactivePeer(peer)
+      // this.removeInactivePeer(peer)
     })
     this.libp2p.connectionManager.on('peer:disconnect', connection => {
       log('Disconnected from', connection.remotePeer.toB58String())
-      this.removeInactivePeer(connection.remotePeer)
+      // this.removeInactivePeer(connection.remotePeer)
     })
 
     return {
@@ -314,7 +314,7 @@ export class ConnectionsManager {
             enabled: true,
             list: bootstrapMultiaddrsList // provide array of multiaddrs
           },
-          autoDial: false
+          autoDial: true
         },
         relay: {
           enabled: true,

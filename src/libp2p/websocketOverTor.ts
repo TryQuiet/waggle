@@ -24,6 +24,8 @@ class Discovery extends EventEmitter {
   start() {}
 }
 
+const addresses = new Set()
+
 class WebsocketsOverTor extends WebSockets {
   _websocketOpts: any
   _upgrader: any
@@ -39,6 +41,7 @@ class WebsocketsOverTor extends WebSockets {
 
   async dial(ma, options: any = {}) {
     log('dialing %s', ma)
+    console.trace()
     let conn
     let socket
     let maConn
@@ -69,6 +72,7 @@ class WebsocketsOverTor extends WebSockets {
     if (options.signal && options.signal.aborted) {
       throw new AbortError()
     }
+    addresses.add(ma)
     const cOpts = ma.toOptions()
     log('dialing %s:%s', cOpts.host, cOpts.port)
     const myUri = `${toUri(ma)}/?remoteAddress=${encodeURIComponent(this.localAddress)}`
@@ -77,6 +81,10 @@ class WebsocketsOverTor extends WebSockets {
       await rawSocket.connected()
 
       log('connected %s', ma)
+      addresses.delete(ma)
+      log('------------------------')
+      log('Addresses', addresses)
+      log('>> ------------------ <<')
       return rawSocket
     }
 
@@ -100,6 +108,10 @@ class WebsocketsOverTor extends WebSockets {
     }
 
     log('connected %s', ma)
+    addresses.delete(ma)
+    log('------------------------')
+    log('Addresses', addresses)
+    log('=> ------------------ <=')
     return rawSocket
   }
 
