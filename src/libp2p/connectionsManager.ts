@@ -288,6 +288,10 @@ export class ConnectionsManager {
     await this.storage.subscribeForDirectMessageThread(address)
   }
 
+  public subscribeForAllConversations = async (conversations: string[]) :Promise<void> => {
+    await this.storage.subscribeForAllConversations(conversations)
+  }
+
   private readonly createBootstrapNode = async ({
     peerId,
     listenAddrs,
