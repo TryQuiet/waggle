@@ -71,41 +71,40 @@ export class Storage {
   private publicChannelsEventsAttached: boolean = false
 
   public async init(libp2p: any, peerID: PeerId): Promise<void> {
-    // console.log('STORAGE: Entered init')
-    // const ipfsRepoPath = path.join(this.zbayDir, 'ZbayChannels')
-    // const orbitDbDir = path.join(this.zbayDir, 'OrbitDB')
-    // createPaths([ipfsRepoPath, orbitDbDir])
-    this.ipfs = await IPFS.create()
-    await this.ipfs.stop()
+    console.log('STORAGE: Entered init')
+    const ipfsRepoPath = path.join(this.zbayDir, 'ZbayChannels')
+    const orbitDbDir = path.join(this.zbayDir, 'OrbitDB')
+    createPaths([ipfsRepoPath, orbitDbDir])
 
-    // this.ipfs = await IPFS.create({
-    //   libp2p: () => libp2p,
-    //   preload: { enabled: false },
-    //   repo: 'sdfgdfg' + Math.random(),
-    //   EXPERIMENTAL: {
-    //     ipnsPubsub: true
-    //   },
-    //   privateKey: peerID.toJSON().privKey
-    // })
+    this.ipfs = await IPFS.create({
+      libp2p: () => libp2p,
+      preload: { enabled: false },
+      repo: ipfsRepoPath,
+      EXPERIMENTAL: {
+        ipnsPubsub: true
+      },
+      privateKey: peerID.toJSON().privKey
+    })
 
-    //this.orbitdb = await OrbitDB.createInstance(this.ipfs, { directory: orbitDbDir })
-    // console.log('1/6')
-    // await this.createDbForChannels()
-    // console.log('2/6')
-    // await this.createDbForUsers()
-    // console.log('3/6')
-    // await this.createDbForMessageThreads()
-    // console.log('4/6')
-    // await this.initAllChannels()
-    // console.log('5/6')
-    // await this.initAllConversations()
-    // console.log('6/6')
+
+    this.orbitdb = await OrbitDB.createInstance(this.ipfs, { directory: orbitDbDir })
+    console.log('1/6')
+    await this.createDbForChannels()
+    console.log('2/6')
+    await this.createDbForUsers()
+    console.log('3/6')
+    await this.createDbForMessageThreads()
+    console.log('4/6')
+    await this.initAllChannels()
+    console.log('5/6')
+    await this.initAllConversations()
+    console.log('6/6')
      console.log('STORAGE: Finished init')
   }
 
   public async kill() {
     console.log('closing orbitdb')
-    //await this.orbitdb.stop()
+    await this.orbitdb.stop()
     console.log('after closing orbitdb')
   
 //console.log(this.ipfs.isOnline())

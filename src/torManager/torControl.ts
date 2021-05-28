@@ -46,8 +46,6 @@ class TorControl {
       }
 
       this.connection = net.connect(params)
-      console.log(this.connection)
-
       this.connection.once('error', function (err: any) {
         console.log('error connecting')
         self.connection = null
@@ -76,7 +74,7 @@ class TorControl {
           return cb(new Error('Authentication failed with message: ' + data))
         })
       }
-console.log('before authentication')
+      console.log('before authentication')
       this.connection.write('AUTHENTICATE "' + (params.password || opts.password) + '"\r\n') // Chapter 3.5
       return this
     }
@@ -118,7 +116,7 @@ console.log('before authentication')
   private readonly sendCommand: any = async (
     command: string,
     keepConnection: boolean
-  ): Promise<{ code: number, messages: string[] }> => {
+  ): Promise<{ code: number; messages: string[] }> => {
     return await new Promise((resolve, reject) => {
       var self = this
       var tryDisconnect = function (callback: any) {
@@ -161,29 +159,29 @@ console.log('before authentication')
     })
   }
 
-  public async addOnion(request: string): Promise<{ code: number, messages: string[] }> {
+  public async addOnion(request: string): Promise<{ code: number; messages: string[] }> {
     return this.sendCommand('ADD_ONION ' + request)
   }
 
-  public async delOnion(request: string): Promise<{ code: number, messages: string[] }> {
+  public async delOnion(request: string): Promise<{ code: number; messages: string[] }> {
     return this.sendCommand('DEL_ONION ' + request)
   }
 
-  public async signal(signal: string): Promise<{ code: number, messages: string[] }> {
+  public async signal(signal: string): Promise<{ code: number; messages: string[] }> {
     console.log('received signal')
     return this.sendCommand('SIGNAL ' + signal)
   }
 
-  public async signalReload(): Promise<{ code: number, messages: string[] }> {
+  public async signalReload(): Promise<{ code: number; messages: string[] }> {
     return await this.signal('RELOAD')
   }
 
-  public async command(command: string): Promise<{code: number, messages: string[]}> {
+  public async command(command: string): Promise<{ code: number; messages: string[] }> {
     console.log('received command')
     return this.sendCommand(command)
   }
 
-  public async setConf(request: string): Promise<{ code: number, messages: string[] }> {
+  public async setConf(request: string): Promise<{ code: number; messages: string[] }> {
     return this.sendCommand('SETCONF ' + request)
   }
 }

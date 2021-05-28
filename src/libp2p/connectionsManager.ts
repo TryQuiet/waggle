@@ -90,7 +90,7 @@ export class ConnectionsManager {
   }
 
   private readonly createAgent = () => {
-    this.socksProxyAgent = new SocksProxyAgent({ port: this.agentPort, host: this.agentHost })
+    this.socksProxyAgent = new SocksProxyAgent({ port: 12345, host: this.agentHost })
   }
 
   private readonly getPeerId = async (): Promise<PeerId> => {
@@ -138,7 +138,7 @@ export class ConnectionsManager {
     }
     this.createAgent()
 
-    const listenAddrs = [`/dns4/${this.host}/tcp/${this.port}/ws`]
+    const listenAddrs = [`/dns4/${this.host}/tcp/1111/ws`]
     this.localAddress = `${listenAddrs}/p2p/${this.peerId.toB58String()}`
     console.log('local address:', this.localAddress)
 
@@ -186,7 +186,9 @@ export class ConnectionsManager {
   }
 
   public stopLibp2p = async () => {
+
     await this.libp2p.stop()
+    
   }
 
   public subscribeForTopic = async (channelData: IChannelInfo) => {
@@ -308,7 +310,7 @@ export class ConnectionsManager {
         peerDiscovery: {
           [Bootstrap.tag]: {
             enabled: true,
-            list: bootstrapMultiaddrsList // provide array of multiaddrs
+            list: bootstrapMultiaddrsList, // provide array of multiaddrs,
           }
         },
         relay: {

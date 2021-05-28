@@ -1,4 +1,3 @@
-import { sleep } from '../sleep'
 import { DataServer } from './DataServer'
 
 test('start and stop data server', async () => {

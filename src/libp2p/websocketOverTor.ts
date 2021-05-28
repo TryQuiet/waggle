@@ -20,7 +20,7 @@ class Discovery extends EventEmitter {
     super()
     this.tag = 'channel_18'
   }
-
+  stop() {}
   start() {}
 }
 
@@ -155,6 +155,7 @@ class WebsocketsOverTor extends WebSockets {
     }
 
     listener.listen = ma => {
+      log(`listening on on on on on on ${ma}`)
       listeningMultiaddr = ma
 
       return server.listen(ma.toOptions())
@@ -174,7 +175,8 @@ class WebsocketsOverTor extends WebSockets {
       // we need to capture from the passed multiaddr
       if (listeningMultiaddr.toString().indexOf('ip4') !== -1) {
         let m = listeningMultiaddr.decapsulate('tcp')
-        m = m.encapsulate(`/tcp/' + ${address.port as string} + '/ws`)
+        log(`adddddressss ports is ${address.port}`)
+        m = m.encapsulate(`/tcp/' + '7777' + '/ws`)
         if (listeningMultiaddr.getPeerId()) {
           m = m.encapsulate('/p2p/' + ipfsId)
         }

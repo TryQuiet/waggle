@@ -34,7 +34,7 @@ export class Tor {
     this.controlPort = controlPort.toString()
   }
 
-  public init = async () => {
+  public init = async (): Promise<void> => {
     return new Promise((resolve, reject) => {
       if (this.process) {
         throw new Error('Tor already initialized')
@@ -73,10 +73,6 @@ export class Tor {
   public async setSocksPort(port: number): Promise<void> {
     await this.torControl.setConf(`SocksPort="${port}"`)
   }
-
-  // public async setHttpTunnelPort(port: number): Promise<void> {
-  //   await this.torControl.setConf(`HTTPTunnelPort="${port}"`)
-  // }
 
   private spawnTor =(resolve) => {
     this.process = child_process.spawn(
