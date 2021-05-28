@@ -3,8 +3,11 @@ import * as fs from 'fs'
 import path from 'path'
 import { TorControl } from './torControl'
 import { ZBAY_DIR_PATH } from '../constants'
-import { sleep } from './../sleep'
-import { dir } from 'console'
+import debug from 'debug'
+const log = Object.assign(debug('waggle:tor'), {
+  error: debug('waggle:tor:err')
+})
+
 interface IService {
   virtPort: number
   address: string
@@ -90,7 +93,7 @@ export class Tor {
       this.options
     )
     this.process.stdout.on('data', data => {
-      console.log(data.toString())
+      log(data.toString())
       const regexp = /Bootstrapped 100%/
       const bootstrapped = data.toString('utf8').match(/Bootstrapped (\d+)/)
       if (regexp.test(data.toString())) resolve()
@@ -154,7 +157,6 @@ export class Tor {
         reject(new Error('Process is not initalized.'))
       }
       this.process?.on('close', () => {
-        console.log('before closing tor')
         resolve()
       })
       this.process?.kill()

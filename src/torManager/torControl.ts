@@ -2,6 +2,10 @@ import { runInThisContext } from 'vm'
 
 var net = require('net')
 var EventEmitter = require('events').EventEmitter
+import debug from 'debug'
+const log = Object.assign(debug('waggle:tor'), {
+  error: debug('waggle:tor:err')
+})
 
 interface IOpts {
   port?: number
@@ -47,7 +51,7 @@ class TorControl {
 
       this.connection = net.connect(params)
       this.connection.once('error', function (err: any) {
-        console.log('error connecting')
+        log.error('error connecting')
         self.connection = null
         if (cb) {
           cb(new Error('Error connecting to control port: ' + err))
@@ -56,11 +60,11 @@ class TorControl {
 
       // piping events
       this.connection.on('data', (data: any) => {
-        console.log(`data is ${data}`)
+        log(`data is ${data}`)
         self.eventEmitter.emit('data', data)
       })
       this.connection.on('end', () => {
-        console.log('connection ended')
+        log('connection ended')
         self.connection = null
         self.eventEmitter.emit('end')
       })
@@ -126,10 +130,10 @@ class TorControl {
         return self.disconnect(callback)
       }
       return this.connect(null, function (err: any, connection: any) {
-        console.log('entered this.connect')
+        log('entered this.connect')
         if (err) {
-          console.log('reveived error inside this.connect')
-          console.log(err)
+          log.error('reveived error inside this.connect')
+          log.error(err)
           return reject(err)
         }
         connection.once('data', function (data: any) {
@@ -137,7 +141,7 @@ class TorControl {
             const messages = []
             let arr = []
             data = data.toString()
-            console.log('dataaa', data)
+            log('dataaa', data)
             if (/250/.test(data)) {
               arr = data.split(/\r?\n/)
               for (let i = 0; i < arr.length; i += 1) {
@@ -167,8 +171,7 @@ class TorControl {
     return this.sendCommand('DEL_ONION ' + request)
   }
 
-  public async signal(signal: string): Promise<{ code: number; messages: string[] }> {
-    console.log('received signal')
+  public async signal(signal: string): Promise<{ code: number, messages: string[] }> {
     return this.sendCommand('SIGNAL ' + signal)
   }
 
