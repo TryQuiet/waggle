@@ -1,4 +1,3 @@
-import Libp2p from 'libp2p'
 import { SocksProxyAgent } from 'socks-proxy-agent'
 import Mplex from 'libp2p-mplex'
 import { NOISE } from 'libp2p-noise'
@@ -17,8 +16,9 @@ import path from 'path'
 import { IChannelInfo } from '../storage/storage'
 import fetch from 'node-fetch';
 import debug from 'debug'
-const log = Object.assign(debug('waggle:libp2p'), {
-  error: debug('waggle:libp2p:err')
+import CustomLibp2p from './customLibp2p'
+const log = Object.assign(debug('waggle:conn'), {
+  error: debug('waggle:conn:err')
 })
 
 interface IOptions {
@@ -56,7 +56,7 @@ export class ConnectionsManager {
   agentHost: string
   agentPort: number
   socksProxyAgent: any
-  libp2p: null | Libp2p
+  libp2p: null | CustomLibp2p
   localAddress: string | null
   storage: Storage
   options: IOptions
@@ -161,12 +161,10 @@ export class ConnectionsManager {
       log('Connected to', connection.remotePeer.toB58String())
     })
     this.libp2p.on('peer:discovery', (peer: PeerId) => {
-      console.count(`Discovered ${peer.toB58String()}`)
-      // this.removeInactivePeer(peer)
+      log(`Discovered ${peer.toB58String()}`)
     })
     this.libp2p.connectionManager.on('peer:disconnect', connection => {
       log('Disconnected from', connection.remotePeer.toB58String())
-      // this.removeInactivePeer(connection.remotePeer)
     })
 
     return {
@@ -196,19 +194,6 @@ export class ConnectionsManager {
     await this.libp2p.dial(target, {
       localAddr: this.localAddress,
       remoteAddr: new Multiaddr(target)
-    })
-  }
-
-  private removeInactivePeer = (peer: PeerId) => {    
-    this.libp2p.dial(peer).then((value) => {
-      if (value === undefined) {
-        const removed = this.libp2p.peerStore.delete(peer)
-        if (removed) {
-          console.count(`Removed peer ${peer.toB58String()}`)
-        }
-      } else {
-        console.count(`Dialed peer ${peer.toB58String()}`)
-      }
     })
   }
 
@@ -298,8 +283,8 @@ export class ConnectionsManager {
     agent,
     localAddr,
     bootstrapMultiaddrsList
-  }): Promise<Libp2p> => {
-    return Libp2p.create({
+  }): Promise<CustomLibp2p> => {
+    return new CustomLibp2p({
       peerId,
       addresses: {
         listen: listenAddrs
