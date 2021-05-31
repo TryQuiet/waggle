@@ -60,7 +60,7 @@ class TorControl {
 
       // piping events
       this.connection.on('data', (data: any) => {
-        log(`data is ${data}`)
+        log(`connection on data data data data is ${data}`)
         self.eventEmitter.emit('data', data)
       })
       this.connection.on('end', () => {

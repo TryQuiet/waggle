@@ -42,7 +42,7 @@ export interface IChannelInfo {
   owner: string
   timestamp: number
   address: string
-  keys: { ivk?: string, sk?: string }
+  keys: { ivk?: string; sk?: string }
 }
 
 export interface ChannelInfoResponse {
@@ -91,7 +91,6 @@ export class Storage {
       privateKey: peerID.toJSON().privKey
     })
 
-
     this.orbitdb = await OrbitDB.createInstance(this.ipfs, { directory: orbitDbDir })
     log('1/6')
     await this.createDbForChannels()
@@ -104,21 +103,12 @@ export class Storage {
     log('5/6')
     await this.initAllConversations()
     console.log('6/6')
-     console.log('STORAGE: Finished init')
+    console.log('STORAGE: Finished init')
   }
 
-  public async kill() {
-    console.log('closing orbitdb')
+  public async stopOrbitDb() {
     await this.orbitdb.stop()
-    console.log('after closing orbitdb')
-  
-//console.log(this.ipfs.isOnline())
-await this.ipfs.stop()
-
-//delete this.ipfs
-
-//console.log(this.ipfs.isOnline())
-    console.log('after closing ipfs')
+    await this.ipfs.stop()
   }
 
   public async loadInitChannels() {
@@ -140,7 +130,7 @@ await this.ipfs.stop()
     })
 
     this.channels.events.on('replicated', () => {
-    log('REPLICATED: CHANNELS')
+      log('REPLICATED: CHANNELS')
     })
     await this.channels.load({ fetchEntryTimeout: 15000 })
     log('ALL CHANNELS COUNT:', Object.keys(this.channels.all).length)
@@ -180,6 +170,7 @@ await this.ipfs.stop()
       // eslint-disable-next-line
       async () => {
         await this.directMessagesUsers.load({ fetchEntryTimeout: 2000 })
+        //await this.directMessagesUsers.close()
         const payload = this.directMessagesUsers.all
         this.io.emit(EventTypesResponse.RESPONSE_GET_AVAILABLE_USERS, payload)
         console.log('REPLICATED USERS')

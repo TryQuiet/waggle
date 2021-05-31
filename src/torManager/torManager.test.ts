@@ -1,5 +1,5 @@
 /* eslint import/first: 0 */
-import { Tor } from './index'
+import { Tor } from './torManager'
 import { ZBAY_DIR_PATH } from '../constants'
 
 jest.setTimeout(30_000)
@@ -8,8 +8,10 @@ test('start and close tor', async () => {
   const torPath = `${process.cwd()}/tor/tor`
   const libPath = `${process.cwd()}/tor`
   const tor = new Tor({
+    appDataPath: ZBAY_DIR_PATH,
     torPath: torPath,
     controlPort: 9999,
+    socksPort: 9876,
     options: {
       env: {
         LD_LIBRARY_PATH: libPath,
@@ -26,6 +28,8 @@ test('start tor, do not kill tor process and start again', async () => {
   const torPath = `${process.cwd()}/tor/tor`
   const libPath = `${process.cwd()}/tor`
   const tor = new Tor({
+    appDataPath: ZBAY_DIR_PATH,
+    socksPort: 9876,
     torPath: torPath,
     controlPort: 9999,
     options: {
@@ -40,6 +44,8 @@ test('start tor, do not kill tor process and start again', async () => {
   await tor.init()
 
   const torSecondInstance = new Tor({
+    appDataPath: ZBAY_DIR_PATH,
+    socksPort: 9876,
     torPath: torPath,
     controlPort: 9999,
     options: {
@@ -58,6 +64,8 @@ test('spawn new hidden service', async () => {
   const torPath = `${process.cwd()}/tor/tor`
   const libPath = `${process.cwd()}/tor`
   const tor = new Tor({
+    appDataPath: ZBAY_DIR_PATH,
+    socksPort: 9876,
     torPath: torPath,
     controlPort: 9999,
     options: {
@@ -69,7 +77,7 @@ test('spawn new hidden service', async () => {
     }
   })
   await tor.init()
-  const hiddenService = await tor.addNewService(4343, 4343)
+  const hiddenService = await tor.createNewHiddenService(4343, 4343)
   expect(hiddenService.onionAddress).toHaveLength(56)
   await tor.kill()
 })
@@ -78,6 +86,8 @@ test('spawn hidden service using private key', async () => {
   const torPath = `${process.cwd()}/tor/tor`
   const libPath = `${process.cwd()}/tor`
   const tor = new Tor({
+    appDataPath: ZBAY_DIR_PATH,
+    socksPort: 9876,
     torPath: torPath,
     controlPort: 9999,
     options: {
@@ -89,7 +99,7 @@ test('spawn hidden service using private key', async () => {
     }
   })
   await tor.init()
-  const hiddenServiceOnionAddress = await tor.addOnion({
+  const hiddenServiceOnionAddress = await tor.spawnHiddenService({
     virtPort: 4343,
     targetPort: 4343,
     privKey:

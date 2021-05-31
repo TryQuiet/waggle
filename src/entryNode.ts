@@ -18,6 +18,7 @@ const main = async () => {
     torPath,
     appDataPath: ZBAY_DIR_PATH,
     controlPort: 9051,
+    socksPort: 9151,
     options: {
       env: {
         LD_LIBRARY_PATH: pathDevLib,
@@ -32,7 +33,7 @@ const main = async () => {
   try {
     service1 = await tor.getServiceAddress(7788)
   } catch (e) {
-    service1 = await (await tor.addNewService(7788, 7788)).onionAddress
+    service1 = await (await tor.createNewHiddenService(7788, 7788)).onionAddress
   }
 
   console.log(service1)
