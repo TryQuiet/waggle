@@ -20,6 +20,7 @@ class Discovery extends EventEmitter {
     super()
     this.tag = 'channel_18'
   }
+
   stop() {}
   start() {}
 }
@@ -86,7 +87,8 @@ class WebsocketsOverTor extends WebSockets {
 
     // Allow abort via signal during connect
     let onAbort
-    const abort = new Promise((_resolve, reject) => {
+    // eslint-disable-next-line
+    const abort = new Promise((resolve, reject) => {
       onAbort = () => {
         reject(new AbortError())
         rawSocket.close()
@@ -155,7 +157,7 @@ class WebsocketsOverTor extends WebSockets {
     }
 
     listener.listen = ma => {
-      log(`listening on on on on on on ${ma}`)
+      log(`listening on on on on on on ${ma as string}`)
       listeningMultiaddr = ma
 
       return server.listen(ma.toOptions())
@@ -175,8 +177,8 @@ class WebsocketsOverTor extends WebSockets {
       // we need to capture from the passed multiaddr
       if (listeningMultiaddr.toString().indexOf('ip4') !== -1) {
         let m = listeningMultiaddr.decapsulate('tcp')
-        log(`adddddressss ports is ${address.port}`)
-        m = m.encapsulate(`/tcp/' + '7777' + '/ws`)
+        log(`adddddressss ports is ${address.port as string}`)
+        m = m.encapsulate('/tcp/\' + \'7777\' + \'/ws')
         if (listeningMultiaddr.getPeerId()) {
           m = m.encapsulate('/p2p/' + ipfsId)
         }

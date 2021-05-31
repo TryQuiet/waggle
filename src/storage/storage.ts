@@ -42,7 +42,7 @@ export interface IChannelInfo {
   owner: string
   timestamp: number
   address: string
-  keys: { ivk?: string; sk?: string }
+  keys: { ivk?: string, sk?: string }
 }
 
 export interface ChannelInfoResponse {
@@ -76,7 +76,6 @@ export class Storage {
   private publicChannelsEventsAttached: boolean = false
 
   public async init(libp2p: any, peerID: PeerId): Promise<void> {
-    log('STORAGE: Entered init')
     const ipfsRepoPath = path.join(this.zbayDir, 'ZbayChannels')
     const orbitDbDir = path.join(this.zbayDir, 'OrbitDB')
     createPaths([ipfsRepoPath, orbitDbDir])
@@ -102,8 +101,7 @@ export class Storage {
     await this.initAllChannels()
     log('5/6')
     await this.initAllConversations()
-    console.log('6/6')
-    console.log('STORAGE: Finished init')
+    log('6/6')
   }
 
   public async stopOrbitDb() {
@@ -170,7 +168,7 @@ export class Storage {
       // eslint-disable-next-line
       async () => {
         await this.directMessagesUsers.load({ fetchEntryTimeout: 2000 })
-        //await this.directMessagesUsers.close()
+        // await this.directMessagesUsers.close()
         const payload = this.directMessagesUsers.all
         this.io.emit(EventTypesResponse.RESPONSE_GET_AVAILABLE_USERS, payload)
         console.log('REPLICATED USERS')
@@ -375,7 +373,7 @@ export class Storage {
     } else {
       db = await this.createDirectMessageThread(channelAddress)
       if (!db) {
-        console.log(`Can't subscribe to direct messages thread ${channelAddress}`)
+        console.log(`Can't subscribe to direct messages thread ${channelAddress as string}`)
         return
       }
       repo = this.directMessagesRepos.get(channelAddress)
@@ -441,7 +439,6 @@ export class Storage {
     log('STORAGE: getAvailableUsers entered')
     await this.directMessagesUsers.load({ fetchEntryTimeout: 2000 })
     const payload = this.directMessagesUsers.all
-    log(`STORAGE: getAvailableUsers ${payload}`)
     this.io.emit(EventTypesResponse.RESPONSE_GET_AVAILABLE_USERS, payload)
     log('emitted')
   }

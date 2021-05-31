@@ -4,7 +4,7 @@ import path from 'path'
 import { TorControl } from './TorControl'
 import { ZBAY_DIR_PATH } from '../constants'
 import debug from 'debug'
-import crypto from  'crypto'
+import crypto from 'crypto'
 const log = Object.assign(debug('waggle:tor'), {
   error: debug('waggle:tor:err')
 })
@@ -44,15 +44,16 @@ export class Tor {
   }
 
   public init = async (): Promise<void> => {
-    return new Promise((resolve, reject) => {
+    return await new Promise((resolve): void => {
       if (this.process) {
         throw new Error('Tor already initialized')
       }
       this.generateHashedPassword()
-      this.torControl = new TorControl({port: this.controlPort, host: 'localhost', password: this.torPassword})
-
-      console.log('initing tor')
-
+      this.torControl = new TorControl({
+        port: this.controlPort,
+        host: 'localhost',
+        password: this.torPassword
+      })
       const dirPath = this.appDataPath || ZBAY_DIR_PATH
 
       if (!fs.existsSync(dirPath)) {
@@ -68,8 +69,11 @@ export class Tor {
         oldTorPid = Number(file.toString())
       }
 
-      if (oldTorPid) {
-        child_process.exec(`ps -p ${oldTorPid} -o comm=`, (err, stdout, stderr) => {
+      if (oldTorPid && process.platform !== 'win32') {
+        child_process.exec(`ps -p ${oldTorPid as string} -o comm=`, (err, stdout, _stderr) => {
+          if (err) {
+            log(err)
+          }
           if (stdout.trim() === 'tor') {
             process.kill(oldTorPid, 'SIGTERM')
           } else {
@@ -83,7 +87,7 @@ export class Tor {
     })
   }
 
-  private spawnTor =(resolve) => {
+  private readonly spawnTor = resolve => {
     this.process = child_process.spawn(
       this.torPath,
       [
@@ -96,12 +100,12 @@ export class Tor {
         '--DataDirectory',
         this.torDataDirectory,
         '--HashedControlPassword',
-        this.torHashedPassword.trim(),
+        this.torHashedPassword.trim()
       ],
       this.options
     )
     this.process.stdout.on('data', data => {
-      console.log(data.toString())
+      log(data.toString())
       const regexp = /Bootstrapped 100%/
       if (regexp.test(data.toString())) resolve()
     })
@@ -130,7 +134,7 @@ export class Tor {
   public async createNewHiddenService(
     virtPort: number,
     targetPort: number
-  ): Promise<{ onionAddress: string; privateKey: string }> {
+  ): Promise<{ onionAddress: string, privateKey: string }> {
     const status = await this.torControl.sendCommand(
       `ADD_ONION NEW:BEST Flags=Detach Port=${virtPort},127.0.0.1:${targetPort}`
     )
@@ -147,12 +151,12 @@ export class Tor {
     }
   }
 
-public generateHashedPassword = () => {
-  const password = crypto.randomBytes(16).toString('hex')
-  const hashedPassword = child_process.execSync(`${this.torPath} --hash-password ${password}`)
-  this.torPassword = password
-  this.torHashedPassword = hashedPassword.toString()
-}
+  public generateHashedPassword = () => {
+    const password = crypto.randomBytes(16).toString('hex')
+    const hashedPassword = child_process.execSync(`${this.torPath} --hash-password ${password}`)
+    this.torPassword = password
+    this.torHashedPassword = hashedPassword.toString()
+  }
 
   public getServiceAddress = (port: number): string => {
     if (this.services.get(port).address) {

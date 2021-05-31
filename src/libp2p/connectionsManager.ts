@@ -15,7 +15,7 @@ import { ZBAY_DIR_PATH } from '../constants'
 import fs from 'fs'
 import path from 'path'
 import { IChannelInfo } from '../storage/storage'
-import fetch from 'node-fetch';
+import fetch from 'node-fetch'
 import debug from 'debug'
 const log = Object.assign(debug('waggle:libp2p'), {
   error: debug('waggle:libp2p:err')
@@ -143,7 +143,7 @@ export class ConnectionsManager {
     this.createAgent()
 
     const listenAddrs = [`/dns4/${this.host}/tcp/1111/ws`]
-    this.localAddress = `${listenAddrs}/p2p/${this.peerId.toB58String()}`
+    this.localAddress = `${listenAddrs[0]}/p2p/${this.peerId.toB58String()}`
     log('local address:', this.localAddress)
 
     // TODO: Uncomment when we're ready to use tracker (so e.g when it runs on aws):
@@ -181,8 +181,6 @@ export class ConnectionsManager {
       log('Disconnected from', connection.remotePeer.toB58String())
     })
 
-    
-
     return {
       address: this.localAddress,
       peerId: this.peerId.toB58String()
@@ -190,9 +188,7 @@ export class ConnectionsManager {
   }
 
   public stopLibp2p = async () => {
-
     await this.libp2p.stop()
-    
   }
 
   public subscribeForTopic = async (channelData: IChannelInfo) => {
@@ -201,11 +197,10 @@ export class ConnectionsManager {
 
   public initStorage = async () => {
     await this.storage.init(this.libp2p, this.peerId)
-    console.log('finishe init stoargasrgasdfg')
   }
 
   public closeStorage = async () => {
-    await this.storage.kill()
+    await this.storage.stopOrbitDb()
   }
 
   public updateChannels = async () => {
@@ -317,7 +312,7 @@ export class ConnectionsManager {
         peerDiscovery: {
           [Bootstrap.tag]: {
             enabled: true,
-            list: bootstrapMultiaddrsList, // provide array of multiaddrs,
+            list: bootstrapMultiaddrsList // provide array of multiaddrs,
           }
         },
         relay: {

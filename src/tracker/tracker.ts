@@ -38,8 +38,9 @@ export class Tracker {
       fs.mkdirSync(ZBAY_DIR_PATH)
     }
     const tor = new Tor({
-      torPath,
       appDataPath: ZBAY_DIR_PATH,
+      socksPort: 9152,
+      torPath,
       controlPort: this._controlPort,
       options: {
         env: {
@@ -51,7 +52,7 @@ export class Tracker {
     })
 
     await tor.init()
-    return await tor.addOnion({
+    return await tor.spawnHiddenService({
       virtPort: this._port,
       targetPort: this._port,
       privKey: this._privKey
@@ -77,6 +78,7 @@ export class Tracker {
     const now = (new Date()).getTime()
     for (const address of Object.keys(this._peers)) {
       if (now > this._peers[address]) {
+        // eslint-disable-next-line
         delete this._peers[address]
       }
     }

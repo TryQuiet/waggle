@@ -1,17 +1,19 @@
 /* eslint import/first: 0 */
 import { Tor } from './torManager'
 import { ZBAY_DIR_PATH } from '../constants'
+import {getPorts } from '../utils'
 
 jest.setTimeout(30_000)
 
 test('start and close tor', async () => {
+  const ports = await getPorts()
   const torPath = `${process.cwd()}/tor/tor`
   const libPath = `${process.cwd()}/tor`
   const tor = new Tor({
     appDataPath: ZBAY_DIR_PATH,
     torPath: torPath,
-    controlPort: 9999,
-    socksPort: 9876,
+    controlPort: ports.controlPort,
+    socksPort: ports.socksPort,
     options: {
       env: {
         LD_LIBRARY_PATH: libPath,
@@ -26,12 +28,13 @@ test('start and close tor', async () => {
 
 test('start tor, do not kill tor process and start again', async () => {
   const torPath = `${process.cwd()}/tor/tor`
+  const ports = await getPorts()
   const libPath = `${process.cwd()}/tor`
   const tor = new Tor({
     appDataPath: ZBAY_DIR_PATH,
-    socksPort: 9876,
+    socksPort: ports.socksPort,
     torPath: torPath,
-    controlPort: 9999,
+    controlPort: ports.controlPort,
     options: {
       env: {
         LD_LIBRARY_PATH: libPath,
@@ -45,9 +48,9 @@ test('start tor, do not kill tor process and start again', async () => {
 
   const torSecondInstance = new Tor({
     appDataPath: ZBAY_DIR_PATH,
-    socksPort: 9876,
+    socksPort: ports.socksPort,
     torPath: torPath,
-    controlPort: 9999,
+    controlPort: ports.controlPort,
     options: {
       env: {
         LD_LIBRARY_PATH: libPath,
@@ -62,12 +65,13 @@ test('start tor, do not kill tor process and start again', async () => {
 
 test('spawn new hidden service', async () => {
   const torPath = `${process.cwd()}/tor/tor`
+  const ports = await getPorts()
   const libPath = `${process.cwd()}/tor`
   const tor = new Tor({
     appDataPath: ZBAY_DIR_PATH,
-    socksPort: 9876,
+    socksPort: ports.socksPort,
     torPath: torPath,
-    controlPort: 9999,
+    controlPort: ports.controlPort,
     options: {
       env: {
         LD_LIBRARY_PATH: libPath,
@@ -84,12 +88,14 @@ test('spawn new hidden service', async () => {
 
 test('spawn hidden service using private key', async () => {
   const torPath = `${process.cwd()}/tor/tor`
+  
   const libPath = `${process.cwd()}/tor`
+  const ports = await getPorts()
   const tor = new Tor({
     appDataPath: ZBAY_DIR_PATH,
-    socksPort: 9876,
+    socksPort: ports.socksPort,
     torPath: torPath,
-    controlPort: 9999,
+    controlPort: ports.controlPort,
     options: {
       env: {
         LD_LIBRARY_PATH: libPath,

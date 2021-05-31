@@ -19,8 +19,8 @@ export class DataServer {
     this.io = socketio(this.server)
   }
 
-  public listen = (): Promise<void> => {
-    return new Promise((resolve, reject) => {
+  public listen = async (): Promise<void> => {
+    return await new Promise((resolve) => {
       this.server.listen(this.PORT, () => {
         console.debug(`Server running on port ${this.PORT}`)
         resolve()
@@ -28,8 +28,8 @@ export class DataServer {
     })
   }
 
-  public close = (): Promise<void> => {
-    return new Promise((resolve, reject) => {
+  public close = async (): Promise<void> => {
+    return await new Promise((resolve) => {
       this.server.close()
       resolve()
     })

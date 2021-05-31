@@ -18,13 +18,16 @@ export const getPorts = async (): Promise<{
   socksPort: number
   libp2pHiddenService: number
   controlPort: number
+  dataServer: number
 }> => {
   const [controlPort] = await fp(9151)
   const [socksPort] = await fp(9052)
   const [libp2pHiddenService] = await fp(7788)
+  const [dataServer] = await fp(4677)
   return {
     socksPort,
     libp2pHiddenService,
-    controlPort
+    controlPort,
+    dataServer
   }
 }

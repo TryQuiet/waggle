@@ -1,4 +1,3 @@
-import { rejects, throws } from 'assert'
 import net from 'net'
 
 interface IOpts {
@@ -7,10 +6,6 @@ interface IOpts {
   password: string
 }
 
-interface ITorResponse {
-  code: number
-  messages: string[]
-}
 interface IParams {
   port: number
   host: string
@@ -31,20 +26,19 @@ export class TorControl {
   private async connect(): Promise<void> {
     return await new Promise((resolve, reject) => {
       if (this.connection) {
-        reject('Connection already established')
+        reject(new Error('TOR: Connection already established'))
       }
 
       this.connection = net.connect(this.params)
 
       this.connection.once('error', err => {
-        reject(`TOR: Connection via tor control failed: ${err}`)
+        reject(new Error(`TOR: Connection via tor control failed: ${err.message}`))
       })
       this.connection.once('data', (data: any) => {
-        console.log(`${data.toString()}`)
         if (/250 OK/.test(data.toString())) {
           resolve()
         } else {
-          reject(`Connection error: ${data.toString()}`)
+          reject(new Error(`TOR: Control port error: ${data.toString() as string}`))
         }
       })
       this.connection.write('AUTHENTICATE "' + this.password + '"\r\n')
@@ -60,6 +54,7 @@ export class TorControl {
     const connectionTimeout = setTimeout(() => {
       reject('TOR: Send command timeout')
     }, 5000)
+    // eslint-disable-next-line
     this.connection.on('data', async data => {
       await this.disconnect()
       const dataArray = data.toString().split(/\r?\n/)
@@ -74,8 +69,9 @@ export class TorControl {
     this.connection.write(command + '\r\n')
   }
 
-  public async sendCommand(command: string): Promise<{ code: number; messages: string[] }> {
-    return new Promise((resolve, reject) => {
+  public async sendCommand(command: string): Promise<{ code: number, messages: string[] }> {
+    return await new Promise((resolve, reject) => {
+      // eslint-disable-next-line
       this._sendCommand(command, resolve, reject)
     })
   }
