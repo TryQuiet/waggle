@@ -1,7 +1,7 @@
 /* eslint import/first: 0 */
 import { Tor } from './torManager'
 import { ZBAY_DIR_PATH } from '../constants'
-import {getPorts } from '../utils'
+import { getPorts } from '../utils'
 
 jest.setTimeout(30_000)
 
@@ -88,7 +88,7 @@ test('spawn new hidden service', async () => {
 
 test('spawn hidden service using private key', async () => {
   const torPath = `${process.cwd()}/tor/tor`
-  
+
   const libPath = `${process.cwd()}/tor`
   const ports = await getPorts()
   const tor = new Tor({

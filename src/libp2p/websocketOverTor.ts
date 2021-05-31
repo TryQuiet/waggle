@@ -157,7 +157,6 @@ class WebsocketsOverTor extends WebSockets {
     }
 
     listener.listen = ma => {
-      log(`listening on on on on on on ${ma as string}`)
       listeningMultiaddr = ma
 
       return server.listen(ma.toOptions())
@@ -177,8 +176,7 @@ class WebsocketsOverTor extends WebSockets {
       // we need to capture from the passed multiaddr
       if (listeningMultiaddr.toString().indexOf('ip4') !== -1) {
         let m = listeningMultiaddr.decapsulate('tcp')
-        log(`adddddressss ports is ${address.port as string}`)
-        m = m.encapsulate('/tcp/\' + \'7777\' + \'/ws')
+        m = m.encapsulate('/tcp/' + address.port + '/ws')
         if (listeningMultiaddr.getPeerId()) {
           m = m.encapsulate('/p2p/' + ipfsId)
         }

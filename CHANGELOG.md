@@ -1,7 +1,26 @@
 # Changelog
 
+## [1.1.9] - 2021-05-31
 
-## [1.1.1] - WIP
+### Added
+
+- Test for tor, connections manager, and dataserver
+- Secured tor control port with hashed password
+- Linter
+- method to close 
+
+### Changed
+
+- Refactored tor control port and tor manager.
+- Added stop method for storage
+- Added stop method for libp2p
+- Added stop method for dataServer
+
+### Fixed
+
+- added stop method for PeerDiscovery
+
+## [1.1.1] - 2021-05-25
 
 ### Added
 - Use `debug` for logs

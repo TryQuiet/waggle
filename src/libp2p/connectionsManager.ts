@@ -142,7 +142,7 @@ export class ConnectionsManager {
     }
     this.createAgent()
 
-    const listenAddrs = [`/dns4/${this.host}/tcp/1111/ws`]
+    const listenAddrs = [`/dns4/${this.host}/tcp/${this.port}/ws`]
     this.localAddress = `${listenAddrs[0]}/p2p/${this.peerId.toB58String()}`
     log('local address:', this.localAddress)
 
