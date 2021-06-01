@@ -14,25 +14,27 @@ import { ZBAY_DIR_PATH } from '../constants'
 import fs from 'fs'
 import path from 'path'
 import { IChannelInfo } from '../storage/storage'
-import fetch from 'node-fetch';
+import fetch from 'node-fetch'
 import debug from 'debug'
-import CustomLibp2p from './customLibp2p'
+import CustomLibp2p, { Libp2pType } from './customLibp2p'
 const log = Object.assign(debug('waggle:conn'), {
   error: debug('waggle:conn:err')
 })
 
-interface IOptions {
-  env?: {
-    appDataPath: string
-  },
-  bootstrapMultiaddrs?: Array<string>
+class IOptions {
+  env: {
+    appDataPath?: string
+  } = {}
+  bootstrapMultiaddrs: Array<string> = []
+  createPaths: boolean = true
 }
+
 interface IConstructor {
   host: string
   port: number
   agentPort: number
   agentHost: string
-  options?: IOptions
+  options?: Partial<IOptions>
   io: any
 }
 interface IBasicMessage {
@@ -58,6 +60,7 @@ export class ConnectionsManager {
   socksProxyAgent: any
   libp2p: null | CustomLibp2p
   localAddress: string | null
+  listenAddrs: string[]
   storage: Storage
   options: IOptions
   zbayDir: string
@@ -73,11 +76,15 @@ export class ConnectionsManager {
     this.agentPort = agentPort
     this.agentHost = agentHost
     this.localAddress = null
-    this.options = options
+    this.options = {
+      ...new IOptions(),
+      ...options
+    }
     this.zbayDir = options?.env?.appDataPath || ZBAY_DIR_PATH
-    this.storage = new Storage(this.zbayDir, this.io)
+    this.storage = new Storage(this.zbayDir, this.io, {...options})
     this.peerId = null
-    this.bootstrapMultiaddrs = options?.bootstrapMultiaddrs || this.defaultBootstrapMultiaddrs()
+    this.bootstrapMultiaddrs = options.bootstrapMultiaddrs || this.defaultBootstrapMultiaddrs()
+    this.listenAddrs = [`/dns4/${this.host}/tcp/${this.port}/ws`]
     this.trackerApi = fetchAbsolute(fetch)('http://okmlac2qjgo2577dkyhpisceua2phwxhdybw4pssortdop6ddycntsyd.onion:7788')
 
     process.on('unhandledRejection', error => {
@@ -104,7 +111,9 @@ export class ConnectionsManager {
     let peerId
     const peerIdKeyPath = path.join(this.zbayDir, 'peerIdKey')
     if (!fs.existsSync(peerIdKeyPath)) {
-      createPaths([this.zbayDir])
+      if (this.options.createPaths) {
+        createPaths([this.zbayDir])
+      }
       peerId = await PeerId.create()
       fs.writeFileSync(peerIdKeyPath, peerId.toJSON().privKey)
     } else {
@@ -138,39 +147,41 @@ export class ConnectionsManager {
   }
 
   public initializeNode = async (staticPeerId?: PeerId): Promise<ILibp2pStatus> => {
+    console.log('local address:', this.localAddress)
+    console.log('bootstrapMultiaddrs:', this.bootstrapMultiaddrs)
+
     if (!staticPeerId) {
       this.peerId = await this.getPeerId()
     } else {
       this.peerId = staticPeerId
     }
     this.createAgent()
-
-    const listenAddrs = [`/dns4/${this.host}/tcp/${this.port}/ws`]
-    this.localAddress = `${listenAddrs}/p2p/${this.peerId.toB58String()}`
-    console.log('local address:', this.localAddress)
-    console.log('bootstrapMultiaddrs:', this.bootstrapMultiaddrs)
-
-    this.libp2p = await this.createBootstrapNode({
-      peerId: this.peerId,
-      listenAddrs,
-      agent: this.socksProxyAgent,
-      localAddr: this.localAddress,
-      bootstrapMultiaddrsList: this.bootstrapMultiaddrs
-    })
-    this.libp2p.connectionManager.on('peer:connect', async connection => {
-      log('Connected to', connection.remotePeer.toB58String())
-    })
-    this.libp2p.on('peer:discovery', (peer: PeerId) => {
-      log(`Discovered ${peer.toB58String()}`)
-    })
-    this.libp2p.connectionManager.on('peer:disconnect', connection => {
-      log('Disconnected from', connection.remotePeer.toB58String())
-    })
-
+    this.localAddress = `${this.listenAddrs}/p2p/${this.peerId.toB58String()}`
+    this.libp2p = await this.initLibp2p()
     return {
       address: this.localAddress,
       peerId: this.peerId.toB58String()
     }
+  }
+
+  protected initLibp2p = async (): Promise<Libp2pType> => {
+    const libp2p = await this.createBootstrapNode({
+      peerId: this.peerId,
+      listenAddrs: this.listenAddrs,
+      agent: this.socksProxyAgent,
+      localAddr: this.localAddress,
+      bootstrapMultiaddrsList: this.bootstrapMultiaddrs
+    })
+    libp2p.connectionManager.on('peer:connect', async connection => {
+      log('Connected to', connection.remotePeer.toB58String())
+    })
+    libp2p.on('peer:discovery', (peer: PeerId) => {
+      log(`Discovered ${peer.toB58String()}`)
+    })
+    libp2p.connectionManager.on('peer:disconnect', connection => {
+      log('Disconnected from', connection.remotePeer.toB58String())
+    })
+    return libp2p
   }
 
   public subscribeForTopic = async (channelData: IChannelInfo) => {
@@ -219,10 +230,6 @@ export class ConnectionsManager {
       channelId: channelAddress
     }
     await this.storage.sendMessage(channelAddress, messageToSend)
-  }
-
-  public initializeData = async () => {
-    await this.storage.loadInitChannels()
   }
 
   // DMs
@@ -283,7 +290,7 @@ export class ConnectionsManager {
     agent,
     localAddr,
     bootstrapMultiaddrsList
-  }): Promise<CustomLibp2p> => {
+  }): Promise<Libp2pType> => {
     return new CustomLibp2p({
       peerId,
       addresses: {
