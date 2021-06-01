@@ -9,9 +9,7 @@ import PeerId from 'peer-id'
 import { message as socketMessage, directMessage as socketDirectMessage, directMessage } from '../socket/events/message'
 import { loadAllMessages, loadAllDirectMessages } from '../socket/events/allMessages'
 import { EventTypesResponse } from '../socket/constantsReponse'
-import fs from 'fs'
 import { loadAllPublicChannels } from '../socket/events/channels'
-
 import debug from 'debug'
 import { Libp2p } from 'libp2p-gossipsub/src/interfaces'
 const log = Object.assign(debug('waggle:db'), {
@@ -73,7 +71,9 @@ export class Storage {
   public publicChannelsRepos: Map<String, IRepo> = new Map()
   public directMessagesRepos: Map<String, IRepo> = new Map()
   private publicChannelsEventsAttached: boolean = false
-  public options: StorageOptions 
+  public options: StorageOptions
+  public orbitDbDir: string
+  public ipfsRepoPath: string
 
   constructor(zbayDir: string, io: any, options?: Partial<StorageOptions>) {
     this.zbayDir = zbayDir
@@ -94,7 +94,7 @@ export class Storage {
     
     this.ipfs = await this.initIPFS(libp2p, peerID)
 
-    this.orbitdb = await OrbitDB.createInstance(this.ipfs, { directory: this.defaultOrbitDbDir })
+    this.orbitdb = await OrbitDB.createInstance(this.ipfs, { directory: this.orbitDbDir })
     log('1/6')
     await this.createDbForChannels()
     log('2/6')
