@@ -6,22 +6,20 @@ import { getPorts } from '../utils'
 import PeerId from 'peer-id'
 import path from 'path'
 import os from 'os'
-import tmp from 'tmp'
 import fs from 'fs'
-import { createMinConnectionManager } from '../testUtils'
+import { createMinConnectionManager, createTmpDir, TmpDir, tmpZbayDirPath } from '../testUtils'
 const utils = require('../utils')
-tmp.setGracefulCleanup()
 jest.setTimeout(150_000)
 
-let tmpDir;
-let tmpappDataPath;
-let tmpPeerIdPath;
+let tmpDir: TmpDir;
+let tmpAppDataPath: string;
+let tmpPeerIdPath: string;
 
 beforeEach(() => {
   jest.clearAllMocks()
-  tmpDir = tmp.dirSync({ mode: 0o750, prefix: 'zbayTestTmp_' , unsafeCleanup: true})
-  tmpappDataPath = path.join(tmpDir.name, Config.ZBAY_DIR)
-  tmpPeerIdPath = path.join(tmpappDataPath, Config.PEER_ID_FILENAME)
+  tmpDir = createTmpDir()
+  tmpAppDataPath = tmpZbayDirPath(tmpDir.name)
+  tmpPeerIdPath = path.join(tmpAppDataPath, Config.PEER_ID_FILENAME)
 })
 
 afterEach(() => {
@@ -37,7 +35,7 @@ test('start and close connectionsManager', async () => {
   const tor = new Tor({
     socksPort: ports.socksPort,
     torPath,
-    appDataPath: tmpappDataPath,
+    appDataPath: tmpAppDataPath,
     controlPort: 9051,
     options: {
       env: {
@@ -58,7 +56,7 @@ test('start and close connectionsManager', async () => {
     io: dataServer.io,
     options: {
       env: {
-        appDataPath: tmpappDataPath
+        appDataPath: tmpAppDataPath
       }
     }
   })
@@ -74,7 +72,7 @@ test('start and close connectionsManager', async () => {
 test('Create new peerId and save its key to a file', async () => {
   const connectionsManager = createMinConnectionManager({
     env: {
-      appDataPath: tmpappDataPath
+      appDataPath: tmpAppDataPath
     }
   })
   expect(fs.existsSync(tmpPeerIdPath)).toBe(false)
@@ -84,12 +82,12 @@ test('Create new peerId and save its key to a file', async () => {
 })
 
 test('Read peer from a file', async () => {
-  fs.mkdirSync(tmpappDataPath)
+  fs.mkdirSync(tmpAppDataPath)
   const peerId = await PeerId.create()
   fs.writeFileSync(tmpPeerIdPath, peerId.toJSON().privKey)
   const connectionsManager = createMinConnectionManager({
     env: {
-      appDataPath: tmpappDataPath
+      appDataPath: tmpAppDataPath
     }
   })
   jest.spyOn(connectionsManager, 'initLibp2p').mockImplementation(() => {return null})
@@ -100,7 +98,7 @@ test('Read peer from a file', async () => {
 test('Paths should be created by default', async () => {
   const connectionsManager = createMinConnectionManager({
     env: {
-      appDataPath: tmpappDataPath
+      appDataPath: tmpAppDataPath
     }
   })
   const createPathsSpy = jest.spyOn(utils, 'createPaths')
@@ -111,10 +109,10 @@ test('Paths should be created by default', async () => {
 })
 
 test('Do not try to create paths if createPaths option is set to false', async () => {
-  fs.mkdirSync(tmpappDataPath) // Assuming app data path exists
+  fs.mkdirSync(tmpAppDataPath) // Assuming app data path exists
   const connectionsManager = createMinConnectionManager({
     env: {
-      appDataPath: tmpappDataPath
+      appDataPath: tmpAppDataPath
     },
     createPaths: false
   })

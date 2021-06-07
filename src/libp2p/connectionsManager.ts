@@ -165,7 +165,6 @@ export class ConnectionsManager {
   }
 
   public initLibp2p = async (): Promise<Libp2pType> => {
-    console.log('RUNNNING INIT LIBP2P')
     const libp2p = await this.createBootstrapNode({
       peerId: this.peerId,
       listenAddrs: [this.listenAddrs],
