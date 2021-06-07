@@ -79,9 +79,9 @@ class Node {
   async spawnTor (): Promise<Tor> {
     const tor = new Tor({
       torPath: this.torPath,
-      appDataPath: ZBAY_DIR_PATH,
-      controlPort: 9051,
-      socksPort: 9151,
+      appDataPath: this.torAppDataPath,
+      controlPort: this.torControlPort,
+      socksPort: this.socksProxyPort,
       options: {
         env: {
           LD_LIBRARY_PATH: this.pathDevLib,
