@@ -1,7 +1,45 @@
 # Changelog
 
+## [2.0.1] - 2021-06-07
 
-## [1.1.1] - WIP
+### Changed
+
+- Removed resolveJsonModule from tsconfig and changed a way we import json module, there is trap in 'resolveJsonModule' flag that causes npm publish/pack work in unexpected way.
+
+## [2.0.0] - 2021-06-07
+
+### Added
+
+- Test for tor, connections manager, and dataserver
+- Secured tor control port with hashed password
+- Linter
+- method to close 
+
+### Changed
+
+- Refactored tor control port and tor manager.
+- Changed torManager API addNewService -> createNewHiddenService and addOnion -> spawnHiddenService
+- Added stop method for storage
+- Added stop method for libp2p
+- Added stop method for dataServer
+
+### Fixed
+
+- added stop method for PeerDiscovery
+
+## [1.1.10] - 2021-06-01
+
+### Added
+- Remove undialable peers from the peer store (use custom Libp2p)
+- docker-compose - run entrynode with a few peers connecting to it (for testing purposes)
+
+### Changed
+- Refactor entrynode
+
+### Fixed
+- WebsocketOverTor - don't swallow errors when dialing
+
+## [1.1.1] - 2021-05-20
 
 ### Added
 - Use `debug` for logs

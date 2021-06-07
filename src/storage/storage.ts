@@ -6,7 +6,10 @@ import OrbitDB from 'orbit-db'
 import KeyValueStore from 'orbit-db-kvstore'
 import EventStore from 'orbit-db-eventstore'
 import PeerId from 'peer-id'
-import { message as socketMessage, directMessage as socketDirectMessage, directMessage } from '../socket/events/message'
+import {
+  message as socketMessage,
+  directMessage as socketDirectMessage
+} from '../socket/events/message'
 import { loadAllMessages, loadAllDirectMessages } from '../socket/events/allMessages'
 import { EventTypesResponse } from '../socket/constantsReponse'
 import fs from 'fs'
@@ -106,7 +109,11 @@ export class Storage {
     log('5/6')
     await this.initAllConversations()
     log('6/6')
-    log('STORAGE: Finished init')
+  }
+
+  public async stopOrbitDb() {
+    await this.orbitdb.stop()
+    await this.ipfs.stop()
   }
 
   protected async initIPFS(libp2p: Libp2p, peerID: PeerId): Promise<IPFS.IPFS>{
@@ -130,7 +137,7 @@ export class Storage {
     })
 
     this.channels.events.on('replicated', () => {
-    log('REPLICATED: CHANNELS')
+      log('REPLICATED: CHANNELS')
     })
     await this.channels.load({ fetchEntryTimeout: 15000 })
     log('ALL CHANNELS COUNT:', Object.keys(this.channels.all).length)
@@ -144,12 +151,16 @@ export class Storage {
         write: ['*']
       }
     })
-    this.messageThreads.events.on('replicated', async () => {
-      await this.messageThreads.load({ fetchEntryTimeout: 2000 })
-      const payload = this.messageThreads.all
-      this.io.emit(EventTypesResponse.RESPONSE_GET_PRIVATE_CONVERSATIONS, payload)
-      this.initAllConversations()
-    })
+    this.messageThreads.events.on(
+      'replicated',
+      // eslint-disable-next-line
+      async () => {
+        await this.messageThreads.load({ fetchEntryTimeout: 2000 })
+        const payload = this.messageThreads.all
+        this.io.emit(EventTypesResponse.RESPONSE_GET_PRIVATE_CONVERSATIONS, payload)
+        await this.initAllConversations()
+      }
+    )
     await this.messageThreads.load({ fetchEntryTimeout: 2000 })
     log('ALL MESSAGE THREADS COUNT:', Object.keys(this.messageThreads.all).length)
   }
@@ -161,38 +172,46 @@ export class Storage {
       }
     })
 
-    this.directMessagesUsers.events.on('replicated', async () => {
-      await this.directMessagesUsers.load({ fetchEntryTimeout: 2000 })
-      const payload = this.directMessagesUsers.all
-      this.io.emit(EventTypesResponse.RESPONSE_GET_AVAILABLE_USERS, payload)
-      log('REPLICATED USERS')
-    })
+    this.directMessagesUsers.events.on(
+      'replicated',
+      // eslint-disable-next-line
+      async () => {
+        await this.directMessagesUsers.load({ fetchEntryTimeout: 2000 })
+        // await this.directMessagesUsers.close()
+        const payload = this.directMessagesUsers.all
+        this.io.emit(EventTypesResponse.RESPONSE_GET_AVAILABLE_USERS, payload)
+        log('REPLICATED USERS')
+      }
+    )
     try {
       await this.directMessagesUsers.load({ fetchEntryTimeout: 2000 })
     } catch (err) {
       log.error(err)
     }
     log('ALL USERS COUNT:', Object.keys(this.directMessagesUsers.all).length)
-    // console.log('ALL USERS COUNT:', Object.keys(this.directMessagesUsers.all))
   }
 
   async initAllChannels() {
     console.time('initAllChannels')
-    await Promise.all(Object.values(this.channels.all).map(async channel => {
-      if (!this.publicChannelsRepos.has(channel.address)) {
-        await this.createChannel(channel.address, channel)
-      }
-    }))
+    await Promise.all(
+      Object.values(this.channels.all).map(async channel => {
+        if (!this.publicChannelsRepos.has(channel.address)) {
+          await this.createChannel(channel.address, channel)
+        }
+      })
+    )
     console.timeEnd('initAllChannels')
   }
 
   async initAllConversations() {
     console.time('initAllConversations')
-    await Promise.all(Object.keys(this.messageThreads.all).map(async conversation => {
-      if (!this.directMessagesRepos.has(conversation)) {
-        await this.createDirectMessageThread(conversation)
-      }
-    }))
+    await Promise.all(
+      Object.keys(this.messageThreads.all).map(async conversation => {
+        if (!this.directMessagesRepos.has(conversation)) {
+          await this.createDirectMessageThread(conversation)
+        }
+      })
+    )
     console.timeEnd('initAllConversations')
   }
 
@@ -245,7 +264,10 @@ export class Storage {
     loadAllMessages(this.io, this.getAllChannelMessages(db), channelAddress)
   }
 
-  public async subscribeForChannel(channelAddress: string, channelInfo?: IChannelInfo): Promise<void> {
+  public async subscribeForChannel(
+    channelAddress: string,
+    channelInfo?: IChannelInfo
+  ): Promise<void> {
     let db: EventStore<IMessage>
     let repo = this.publicChannelsRepos.get(channelAddress)
 
@@ -254,7 +276,7 @@ export class Storage {
     } else {
       db = await this.createChannel(channelAddress, channelInfo)
       if (!db) {
-        console.log(`Can't subscribe to channel ${channelAddress}`)
+        log(`Can't subscribe to channel ${channelAddress}`)
         return
       }
       repo = this.publicChannelsRepos.get(channelAddress)
@@ -291,7 +313,7 @@ export class Storage {
     channelData?: IChannelInfo
   ): Promise<EventStore<IMessage>> {
     if (!channelAddress) {
-      console.log('No channel address, can\'t create channel')
+      log("No channel address, can't create channel")
       return
     }
     log('BEFORE CREATING NEW ZBAY CHANNEL')
@@ -323,7 +345,6 @@ export class Storage {
     await this.directMessagesUsers.load({ fetchEntryTimeout: 2000 })
     const payload = this.directMessagesUsers.all
     this.io.emit(EventTypesResponse.RESPONSE_GET_AVAILABLE_USERS, payload)
-
   }
 
   public async initializeConversation(address: string, encryptedPhrase: string): Promise<void> {
@@ -338,14 +359,16 @@ export class Storage {
 
     this.directMessagesRepos.set(address, { db, eventsAttached: false })
     await this.messageThreads.put(address, encryptedPhrase)
-    this.subscribeForDirectMessageThread(address)
+    await this.subscribeForDirectMessageThread(address)
   }
 
   public async subscribeForAllConversations(conversations) {
     console.time('subscribeForAllConversations')
-    await Promise.all(conversations.map(async channel => {
+    await Promise.all(
+      conversations.map(async channel => {
         await this.subscribeForDirectMessageThread(channel)
-    }))
+      })
+    )
     console.timeEnd('subscribeForAllConversations')
   }
 
@@ -358,7 +381,7 @@ export class Storage {
     } else {
       db = await this.createDirectMessageThread(channelAddress)
       if (!db) {
-        console.log(`Can't subscribe to direct messages thread ${channelAddress}`)
+        log(`Can't subscribe to direct messages thread ${channelAddress as string}`)
         return
       }
       repo = this.directMessagesRepos.get(channelAddress)
@@ -384,11 +407,9 @@ export class Storage {
     }
   }
 
-  private async createDirectMessageThread(
-    channelAddress: string
-  ): Promise<EventStore<IMessage>> {
+  private async createDirectMessageThread(channelAddress: string): Promise<EventStore<IMessage>> {
     if (!channelAddress) {
-      console.log('No channel address, can\'t create channel')
+      log("No channel address, can't create channel")
       return
     }
 
@@ -411,8 +432,6 @@ export class Storage {
     return db
   }
 
-
-
   public async sendDirectMessage(channelAddress: string, message) {
     await this.subscribeForDirectMessageThread(channelAddress) // Is it necessary? Yes it is atm
     log('STORAGE: sendDirectMessage entered')
@@ -428,7 +447,6 @@ export class Storage {
     log('STORAGE: getAvailableUsers entered')
     await this.directMessagesUsers.load({ fetchEntryTimeout: 2000 })
     const payload = this.directMessagesUsers.all
-    log(`STORAGE: getAvailableUsers ${payload}`)
     this.io.emit(EventTypesResponse.RESPONSE_GET_AVAILABLE_USERS, payload)
     log('emitted')
   }

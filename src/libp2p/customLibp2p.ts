@@ -3,8 +3,8 @@ import PeerId from 'peer-id'
 import debug from 'debug'
 
 const log = Object.assign(debug('waggle:libp2p'), {
-    error: debug('waggle:libp2p:err')
-  })
+  error: debug('waggle:libp2p:err')
+})
 
 export interface Libp2pType extends CustomLibp2p, Libp2p {}
 
@@ -15,14 +15,14 @@ export default class CustomLibp2p extends Libp2p {
     super(_options)
   }
 
-/**
+  /**
  * Will dial to the given `peerId` if the current number of
  * connected peers is less than the configured `ConnectionManager`
  * minConnections.
- * 
+ *
  * Delete peer from PeerBook if dial fails.
  * TODO: to be removed when proper cleanup strategy is implemented in libp2p js (https://github.com/libp2p/js-libp2p/issues/639)
- * 
+ *
  *
  * @private
  * @param {PeerId} peerId
@@ -42,7 +42,6 @@ export default class CustomLibp2p extends Libp2p {
             log(`Couldn't dial peer. Deleting peer ${peerId.toB58String()} from the peer store`)
             this.peerStore.delete(peerId)
           }
-          
         }
       }
     }
