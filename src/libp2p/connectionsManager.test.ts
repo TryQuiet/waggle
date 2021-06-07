@@ -19,9 +19,13 @@ let tmpPeerIdPath;
 
 beforeEach(() => {
   jest.clearAllMocks()
-  tmpDir = tmp.dirSync({ mode: 0o750, prefix: 'myTmpDir_' })
+  tmpDir = tmp.dirSync({ mode: 0o750, prefix: 'zbayTestTmp_' , unsafeCleanup: true})
   tmpappDataPath = path.join(tmpDir.name, Config.ZBAY_DIR)
   tmpPeerIdPath = path.join(tmpappDataPath, Config.PEER_ID_FILENAME)
+})
+
+afterEach(() => {
+  tmpDir.removeCallback()
 })
 
 test('start and close connectionsManager', async () => {
