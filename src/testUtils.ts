@@ -1,6 +1,7 @@
 import { ZBAY_DIR_PATH } from './constants'
 import { getPorts } from './utils'
 import { Tor } from './torManager'
+import { ConnectionsManager } from './libp2p/connectionsManager'
 
 export const spawnTorProcess = async (): Promise<Tor> => {
   const ports = await getPorts()
@@ -20,4 +21,17 @@ export const spawnTorProcess = async (): Promise<Tor> => {
     }
   })
   return tor
+}
+
+export const createMinConnectionManager = (options = {}): ConnectionsManager => {
+  return new ConnectionsManager({
+    port: 1111,
+    host: `abcd.onion`,
+    agentHost: 'localhost',
+    agentPort: 2222,
+    io: null,
+    options: {
+      ...options
+    }
+  })
 }

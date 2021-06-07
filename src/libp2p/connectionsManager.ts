@@ -10,7 +10,7 @@ import Bootstrap from 'libp2p-bootstrap'
 import multihashing from 'multihashing-async'
 import { Storage } from '../storage'
 import { createPaths, fetchAbsolute } from '../utils'
-import { ZBAY_DIR_PATH } from '../constants'
+import { Config, ZBAY_DIR_PATH } from '../constants'
 import fs from 'fs'
 import path from 'path'
 import { IChannelInfo } from '../storage/storage'
@@ -107,9 +107,9 @@ export class ConnectionsManager {
     ]
   }
 
-  private readonly getPeerId = async (): Promise<PeerId> => {
+  protected readonly getPeerId = async (): Promise<PeerId> => {
     let peerId
-    const peerIdKeyPath = path.join(this.zbayDir, 'peerIdKey')
+    const peerIdKeyPath = path.join(this.zbayDir, Config.PEER_ID_FILENAME)
     if (!fs.existsSync(peerIdKeyPath)) {
       if (this.options.createPaths) {
         createPaths([this.zbayDir])
@@ -164,7 +164,8 @@ export class ConnectionsManager {
     }
   }
 
-  protected initLibp2p = async (): Promise<Libp2pType> => {
+  public initLibp2p = async (): Promise<Libp2pType> => {
+    console.log('RUNNNING INIT LIBP2P')
     const libp2p = await this.createBootstrapNode({
       peerId: this.peerId,
       listenAddrs: [this.listenAddrs],
