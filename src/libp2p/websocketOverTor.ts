@@ -156,7 +156,7 @@ class WebsocketsOverTor extends WebSockets {
       return server.close()
     }
 
-    listener.listen = ma => {
+    listener.listen = (ma: multiaddr) => {
       listeningMultiaddr = ma
 
       return server.listen(ma.toOptions())
@@ -199,15 +199,6 @@ class WebsocketsOverTor extends WebSockets {
     }
     return listener
   }
-
-  // createListener(options = {}, handler) {
-  //   if (typeof options === 'function') {
-  //     handler = options
-  //     options = {}
-  //   }
-
-  //   return this.prepareListener({ handler, upgrader: this._upgrader }, options)
-  // }
 }
 
 export default withIs(WebsocketsOverTor, {

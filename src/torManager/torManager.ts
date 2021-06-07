@@ -37,7 +37,6 @@ export class Tor {
     this.torPath = torPath
     this.options = options
     this.services = new Map()
-    this.torControl = new TorControl({ port: controlPort, host: 'localhost', password: 'dupa' })
     this.appDataPath = appDataPath
     this.controlPort = controlPort
     this.socksPort = socksPort.toString()
@@ -134,7 +133,7 @@ export class Tor {
   public async createNewHiddenService(
     virtPort: number,
     targetPort: number
-  ): Promise<{ onionAddress: string, privateKey: string }> {
+  ): Promise<{ onionAddress: string; privateKey: string }> {
     const status = await this.torControl.sendCommand(
       `ADD_ONION NEW:BEST Flags=Detach Port=${virtPort},127.0.0.1:${targetPort}`
     )
@@ -168,10 +167,13 @@ export class Tor {
   public kill = async (): Promise<void> =>
     await new Promise((resolve, reject) => {
       if (this.process === null) {
-        reject(new Error('Process is not initalized.'))
+        reject(new Error('TOR: Process is not initalized.'))
       }
       this.process?.on('close', () => {
         resolve()
+      })
+      this.process?.on('error', () => {
+        reject(new Error('TOR: Something went wrong with killing tor process'))
       })
       this.process?.kill()
     })

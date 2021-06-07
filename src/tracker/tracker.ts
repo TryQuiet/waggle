@@ -19,15 +19,17 @@ export class Tracker {
   private _peers: IPeer
   private readonly _port: number
   private readonly _controlPort: number
+  private readonly _socksPort: number
   private readonly _privKey: string
   private readonly _peerExpirationTime: number
 
-  constructor(hiddenServicePrivKey: string, port?: number, controlPort?: number, peerExpirationTime?: number) {
+  constructor(hiddenServicePrivKey: string, port?: number, controlPort?: number, socksPort?: number, peerExpirationTime?: number) {
     this._app = express()
     this._peers = {}
     this._privKey = hiddenServicePrivKey
     this._port = port || 7788
     this._controlPort = controlPort || 9051
+    this._socksPort = socksPort || 9152
     this._peerExpirationTime = peerExpirationTime || 2 * 60 * 60 * 1000
   }
 
@@ -39,7 +41,7 @@ export class Tracker {
     }
     const tor = new Tor({
       appDataPath: ZBAY_DIR_PATH,
-      socksPort: 9152,
+      socksPort: this._socksPort,
       torPath,
       controlPort: this._controlPort,
       options: {

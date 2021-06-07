@@ -94,7 +94,7 @@ export class ConnectionsManager {
   }
 
   private readonly createAgent = () => {
-    this.socksProxyAgent = new SocksProxyAgent({ port: 12345, host: this.agentHost })
+    this.socksProxyAgent = new SocksProxyAgent({ port: this.agentPort, host: this.agentHost })
   }
 
   private readonly getPeerId = async (): Promise<PeerId> => {

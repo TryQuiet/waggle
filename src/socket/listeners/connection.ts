@@ -1,6 +1,6 @@
 import { EventTypesServer } from '../constants'
 import { ConnectionsManager } from '../../libp2p/connectionsManager'
-import { IChannelInfo } from '../../storage/storage'
+import { IChannelInfo, IMessage } from '../../storage/storage'
 
 export const connections = (io, connectionsManager: ConnectionsManager) => {
   io.on(EventTypesServer.CONNECTION, socket => {
@@ -10,7 +10,7 @@ export const connections = (io, connectionsManager: ConnectionsManager) => {
     })
     socket.on(
       EventTypesServer.SEND_MESSAGE,
-      async ({ channelAddress, message }: { channelAddress: string, message: any }) => {
+      async ({ channelAddress, message }: { channelAddress: string, message: IMessage }) => {
         await connectionsManager.sendMessage(channelAddress, message)
       }
     )

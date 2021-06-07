@@ -12,6 +12,7 @@
 ### Changed
 
 - Refactored tor control port and tor manager.
+- Changed torManager API addNewService -> createNewHiddenService and addOnion -> spawnHiddenService
 - Added stop method for storage
 - Added stop method for libp2p
 - Added stop method for dataServer
