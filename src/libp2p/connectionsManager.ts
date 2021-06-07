@@ -60,7 +60,7 @@ export class ConnectionsManager {
   socksProxyAgent: any
   libp2p: null | CustomLibp2p
   localAddress: string | null
-  listenAddrs: string[]
+  listenAddrs: string
   storage: Storage
   options: IOptions
   zbayDir: string
@@ -84,7 +84,7 @@ export class ConnectionsManager {
     this.storage = new Storage(this.zbayDir, this.io, {...options})
     this.peerId = null
     this.bootstrapMultiaddrs = options.bootstrapMultiaddrs || this.defaultBootstrapMultiaddrs()
-    this.listenAddrs = [`/dns4/${this.host}/tcp/${this.port}/ws`]
+    this.listenAddrs = `/dns4/${this.host}/tcp/${this.port}/ws`
     this.trackerApi = fetchAbsolute(fetch)('http://okmlac2qjgo2577dkyhpisceua2phwxhdybw4pssortdop6ddycntsyd.onion:7788')
 
     process.on('unhandledRejection', error => {
@@ -147,8 +147,8 @@ export class ConnectionsManager {
   // }
 
   public initializeNode = async (staticPeerId?: PeerId): Promise<ILibp2pStatus> => {
-    console.log('local address:', this.localAddress)
-    console.log('bootstrapMultiaddrs:', this.bootstrapMultiaddrs)
+    log('local address:', this.localAddress)
+    log('bootstrapMultiaddrs:', this.bootstrapMultiaddrs)
 
     if (!staticPeerId) {
       this.peerId = await this.getPeerId()
@@ -167,7 +167,7 @@ export class ConnectionsManager {
   protected initLibp2p = async (): Promise<Libp2pType> => {
     const libp2p = await this.createBootstrapNode({
       peerId: this.peerId,
-      listenAddrs: this.listenAddrs,
+      listenAddrs: [this.listenAddrs],
       agent: this.socksProxyAgent,
       localAddr: this.localAddress,
       bootstrapMultiaddrsList: this.bootstrapMultiaddrs
