@@ -171,7 +171,7 @@ export class Storage {
         // await this.directMessagesUsers.close()
         const payload = this.directMessagesUsers.all
         this.io.emit(EventTypesResponse.RESPONSE_GET_AVAILABLE_USERS, payload)
-        console.log('REPLICATED USERS')
+        log('REPLICATED USERS')
       }
     )
     try {
@@ -180,7 +180,6 @@ export class Storage {
       log.error(err)
     }
     log('ALL USERS COUNT:', Object.keys(this.directMessagesUsers.all).length)
-    log('ALL USERS COUNT:', Object.keys(this.directMessagesUsers.all))
   }
 
   async initAllChannels() {
@@ -268,7 +267,7 @@ export class Storage {
     } else {
       db = await this.createChannel(channelAddress, channelInfo)
       if (!db) {
-        console.log(`Can't subscribe to channel ${channelAddress}`)
+        log(`Can't subscribe to channel ${channelAddress}`)
         return
       }
       repo = this.publicChannelsRepos.get(channelAddress)
@@ -305,7 +304,7 @@ export class Storage {
     channelData?: IChannelInfo
   ): Promise<EventStore<IMessage>> {
     if (!channelAddress) {
-      console.log("No channel address, can't create channel")
+      log("No channel address, can't create channel")
       return
     }
     log('BEFORE CREATING NEW ZBAY CHANNEL')
@@ -373,7 +372,7 @@ export class Storage {
     } else {
       db = await this.createDirectMessageThread(channelAddress)
       if (!db) {
-        console.log(`Can't subscribe to direct messages thread ${channelAddress as string}`)
+        log(`Can't subscribe to direct messages thread ${channelAddress as string}`)
         return
       }
       repo = this.directMessagesRepos.get(channelAddress)
@@ -401,7 +400,7 @@ export class Storage {
 
   private async createDirectMessageThread(channelAddress: string): Promise<EventStore<IMessage>> {
     if (!channelAddress) {
-      console.log("No channel address, can't create channel")
+      log("No channel address, can't create channel")
       return
     }
 

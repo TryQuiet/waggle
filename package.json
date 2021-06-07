@@ -11,7 +11,7 @@
     "version": "git add -A src",
     "postversion": "git push && git push --tags",
     "lint": "eslint ./src/**/*.{ts,tsx,js,jsx}",
-    "test": "DEBUG=ipfs* jest --runInBand"
+    "test": "DEBUG=ipfs* jest ./src/**/* --runInBand"
   },
   "files": [
     "lib/**/*"

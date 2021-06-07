@@ -2,7 +2,7 @@
 import { Tor } from './torManager'
 import { ZBAY_DIR_PATH } from '../constants'
 import { getPorts } from '../utils'
-import {spawnTorProcess} from '..//testUtils'
+import { spawnTorProcess } from '..//testUtils'
 
 jest.setTimeout(30_000)
 

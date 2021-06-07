@@ -23,6 +23,7 @@ class Discovery extends EventEmitter {
 
   stop() {}
   start() {}
+  end() {}
 }
 
 class WebsocketsOverTor extends WebSockets {
@@ -50,15 +51,15 @@ class WebsocketsOverTor extends WebSockets {
         localAddr: this.localAddress
       })
     } catch (e) {
-      log('error connecting to %s. Details: %s', ma, e.message)
-      return
+      log.error('error connecting to %s. Details: %s', ma, e.message)
+      throw e
     }
     try {
       maConn = toConnection(socket, { remoteAddr: ma, signal: options.signal })
       log('new outbound connection %s', maConn.remoteAddr)
     } catch (e) {
-      log('error creating new outbound connection %s. Details: %s', ma, e.message)
-      return
+      log.error('error creating new outbound connection %s. Details: %s', ma, e.message)
+      throw e
     }
 
     try {
@@ -66,7 +67,8 @@ class WebsocketsOverTor extends WebSockets {
       log('outbound connection %s upgraded', maConn.remoteAddr)
       return conn
     } catch (e) {
-      log('error upgrading outbound connection %s. Details: %s', maConn.remoteAddr, e.message)
+      log.error('error upgrading outbound connection %s. Details: %s', maConn.remoteAddr, e.message)
+      throw e
     }
   }
 
@@ -116,6 +118,7 @@ class WebsocketsOverTor extends WebSockets {
     }
     const server = createServer(options, async (stream, request) => {
       let maConn, conn
+      // eslint-disable-next-line
       const query = url.parse(request.url, true).query
       log('query', query.remoteAddress)
       try {
@@ -128,7 +131,6 @@ class WebsocketsOverTor extends WebSockets {
         log('new inbound connection %s', maConn.remoteAddr)
         conn = await upgrader.upgradeInbound(maConn)
       } catch (err) {
-        console.log('error', err)
         log.error('inbound connection failed to upgrade', err)
         return maConn?.close()
       }
@@ -176,6 +178,7 @@ class WebsocketsOverTor extends WebSockets {
       // we need to capture from the passed multiaddr
       if (listeningMultiaddr.toString().indexOf('ip4') !== -1) {
         let m = listeningMultiaddr.decapsulate('tcp')
+        // eslint-disable-next-line
         m = m.encapsulate('/tcp/' + address.port + '/ws')
         if (listeningMultiaddr.getPeerId()) {
           m = m.encapsulate('/p2p/' + ipfsId)
