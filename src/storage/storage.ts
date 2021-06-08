@@ -10,12 +10,13 @@ import {
   message as socketMessage,
   directMessage as socketDirectMessage
 } from '../socket/events/message'
-import { loadAllMessages, loadAllDirectMessages } from '../socket/events/allMessages'
+import { loadAllMessages, loadAllDirectMessages, sendIdsToZbay } from '../socket/events/allMessages'
 import { EventTypesResponse } from '../socket/constantsReponse'
 import fs from 'fs'
 import { loadAllPublicChannels } from '../socket/events/channels'
 
 import debug from 'debug'
+import { filter } from 'streaming-iterables'
 const log = Object.assign(debug('waggle:db'), {
   error: debug('waggle:db:err')
 })
@@ -280,17 +281,37 @@ export class Storage {
         log(entry.payload.value)
         socketMessage(this.io, { message: entry.payload.value, channelAddress })
       })
-      db.events.on('replicated', () => {
-        log('Message replicated')
-        loadAllMessages(this.io, this.getAllChannelMessages(db), channelAddress)
+      // db.events.on('replicated', () => {
+      //   log('Message replicated')
+      //   loadAllMessages(this.io, this.getAllChannelMessages(db), channelAddress)
+      // })
+      db.events.on('replicate.progress', (address, hash, entry, progress, have) => {
+        console.log(entry.payload.value)
+        sendIdsToZbay(this.io, [entry.payload.value.id], channelAddress)
       })
       db.events.on('ready', () => {
-        loadAllMessages(this.io, this.getAllChannelMessages(db), channelAddress)
+        const ids = this.getAllChannelMessages(db).map(msg => msg.id)
+        sendIdsToZbay(this.io, ids, channelAddress)
+        // loadAllMessages(this.io, this.getAllChannelMessages(db), channelAddress)
       })
       repo.eventsAttached = true
-      loadAllMessages(this.io, this.getAllChannelMessages(db), channelAddress)
+      const ids = this.getAllChannelMessages(db).map(msg => msg.id)
+      sendIdsToZbay(this.io, ids, channelAddress)
+      //loadAllMessages(this.io, this.getAllChannelMessages(db), channelAddress)
       log('Subscription to channel ready', channelAddress)
     }
+  }
+
+  public async askForMessages(channelAddress: string, ids: string[]){
+    console.time('askForIds')
+    let repo = this.publicChannelsRepos.get(channelAddress)
+    const messages = this.getAllChannelMessages(repo.db)
+    const filteredMessages = []
+    for (id in ids) {
+      filteredMessages.push(messages.filter(i => i.id === id))
+    }
+    loadAllMessages(this.io, filteredMessages, channelAddress)
+    console.timeEnd('askForIds')
   }
 
   public async sendMessage(channelAddress: string, message: IMessage) {

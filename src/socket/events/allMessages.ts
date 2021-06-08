@@ -1,3 +1,4 @@
+import { Socket } from 'dgram'
 import { IMessage } from '../../storage/storage'
 import { EventTypesResponse } from '../constantsReponse'
 
@@ -8,6 +9,16 @@ export const loadAllMessages = (socket: any, messages: IMessage[], channelAddres
   socket.emit(EventTypesResponse.RESPONSE_FETCH_ALL_MESSAGES, {
     channelAddress,
     messages
+  })
+}
+
+export const sendIdsToZbay = (socket: any, ids: string[], channelAddress: string) => {
+  if (ids.length === 0) {
+    return
+  }
+  socket.emit(EventTypesResponse.SEND_IDS, {
+    channelAddress,
+    ids
   })
 }
 

@@ -193,6 +193,10 @@ export class ConnectionsManager {
     await this.storage.updateChannels()
   }
 
+  public askForMessages = async (channelAddress: string, ids: string[]) => {
+    await this.storage.askForMessages(channelAddress, ids)
+  }
+
   public loadAllMessages = (channelAddress: string) => {
     this.storage.loadAllChannelMessages(channelAddress)
   }
