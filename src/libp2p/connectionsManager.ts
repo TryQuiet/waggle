@@ -21,7 +21,7 @@ const log = Object.assign(debug('waggle:conn'), {
   error: debug('waggle:conn:err')
 })
 
-class IOptions {
+class ConnectionsManagerOptions {
   env: {
     appDataPath?: string
   } = {}
@@ -34,7 +34,7 @@ interface IConstructor {
   port: number
   agentPort: number
   agentHost: string
-  options?: Partial<IOptions>
+  options?: Partial<ConnectionsManagerOptions>
   io: any
 }
 interface IBasicMessage {
@@ -62,7 +62,7 @@ export class ConnectionsManager {
   localAddress: string | null
   listenAddrs: string
   storage: Storage
-  options: IOptions
+  options: ConnectionsManagerOptions
   zbayDir: string
   io: any
   peerId: PeerId
@@ -77,7 +77,7 @@ export class ConnectionsManager {
     this.agentHost = agentHost
     this.localAddress = null
     this.options = {
-      ...new IOptions(),
+      ...new ConnectionsManagerOptions(),
       ...options
     }
     this.zbayDir = options?.env?.appDataPath || ZBAY_DIR_PATH
@@ -165,7 +165,7 @@ export class ConnectionsManager {
   }
 
   public initLibp2p = async (): Promise<Libp2pType> => {
-    const libp2p = await this.createBootstrapNode({
+    const libp2p = await ConnectionsManager.createBootstrapNode({
       peerId: this.peerId,
       listenAddrs: [this.listenAddrs],
       agent: this.socksProxyAgent,
@@ -281,13 +281,29 @@ export class ConnectionsManager {
     await this.storage.subscribeForAllConversations(conversations)
   }
 
-  private readonly createBootstrapNode = async ({
+  public static readonly createBootstrapNode = ({
     peerId,
     listenAddrs,
     agent,
     localAddr,
     bootstrapMultiaddrsList
-  }): Promise<Libp2pType> => {
+  }): Libp2pType => {
+    return ConnectionsManager.defaultLibp2pNode({
+      peerId,
+      listenAddrs,
+      agent,
+      localAddr,
+      bootstrapMultiaddrsList
+    })
+  }
+
+  private static readonly defaultLibp2pNode = ({
+    peerId,
+    listenAddrs,
+    agent,
+    localAddr,
+    bootstrapMultiaddrsList
+  }): Libp2pType => {
     return new CustomLibp2p({
       peerId,
       addresses: {

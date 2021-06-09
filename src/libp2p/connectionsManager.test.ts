@@ -8,31 +8,43 @@ import path from 'path'
 import os from 'os'
 import fs from 'fs'
 import { createMinConnectionManager, createTmpDir, TmpDir, tmpZbayDirPath } from '../testUtils'
-const utils = require('../utils')
+import * as utils from '../utils'
 jest.setTimeout(150_000)
 
 let tmpDir: TmpDir;
 let tmpAppDataPath: string;
 let tmpPeerIdPath: string;
+let connectionsManager: ConnectionsManager
+let dataServer: DataServer
+let tor: Tor
 
 beforeEach(() => {
   jest.clearAllMocks()
   tmpDir = createTmpDir()
   tmpAppDataPath = tmpZbayDirPath(tmpDir.name)
   tmpPeerIdPath = path.join(tmpAppDataPath, Config.PEER_ID_FILENAME)
+  connectionsManager = null
+  dataServer = null
+  tor = null
 })
 
-afterEach(() => {
+afterEach(async () => {
   tmpDir.removeCallback()
+  if (connectionsManager) {
+    await connectionsManager.closeStorage()
+    await connectionsManager.stopLibp2p()
+  }
+  dataServer && await dataServer.close()
+  tor && await tor.kill()
 })
 
 test('start and close connectionsManager', async () => {
   const ports = await getPorts()
   const torPath = `${process.cwd()}/tor/tor`
   const pathDevLib = path.join.apply(null, [process.cwd(), 'tor'])
-  const dataServer = new DataServer(ports.dataServer)
+  dataServer = new DataServer(ports.dataServer)
   await dataServer.listen()
-  const tor = new Tor({
+  tor = new Tor({
     socksPort: ports.socksPort,
     torPath,
     appDataPath: tmpAppDataPath,
@@ -47,8 +59,8 @@ test('start and close connectionsManager', async () => {
   })
   await tor.init()
   const service1 = await tor.createNewHiddenService(9799, 9799)
-
-  const connectionsManager = new ConnectionsManager({
+  
+  connectionsManager = new ConnectionsManager({
     port: ports.libp2pHiddenService,
     host: `${service1.onionAddress}.onion`,
     agentHost: 'localhost',
@@ -63,10 +75,6 @@ test('start and close connectionsManager', async () => {
 
   await connectionsManager.initializeNode()
   await connectionsManager.initStorage()
-  await connectionsManager.closeStorage()
-  await connectionsManager.stopLibp2p()
-  await dataServer.close()
-  await tor.kill()
 })
 
 test('Create new peerId and save its key to a file', async () => {
@@ -95,7 +103,7 @@ test('Read peer from a file', async () => {
   expect(result.peerId).toBe(peerId.toB58String())
 })
 
-test('Paths should be created by default', async () => {
+test('Zbay path should be created by default', async () => {
   const connectionsManager = createMinConnectionManager({
     env: {
       appDataPath: tmpAppDataPath
@@ -121,4 +129,15 @@ test('Do not try to create paths if createPaths option is set to false', async (
   await connectionsManager.initializeNode()
   expect(libp2pMock).toHaveBeenCalled()
   expect(createPathsSpy).not.toHaveBeenCalled()
+})
+
+test('Pass options to Storage', () => {
+  const connectionsManager = createMinConnectionManager({
+    env: {
+      appDataPath: tmpAppDataPath
+    },
+    createPaths: false
+  })
+  expect(connectionsManager.storage.options.createPaths).toBe(false)
+  expect(connectionsManager.zbayDir).toBe(tmpAppDataPath)
 })

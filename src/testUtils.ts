@@ -1,9 +1,12 @@
 import tmp from 'tmp'
-import { Config, ZBAY_DIR_PATH } from './constants'
+import { SocksProxyAgent } from 'socks-proxy-agent';
+import { Config } from './constants'
 import { getPorts } from './utils'
 import { Tor } from './torManager'
 import { ConnectionsManager } from './libp2p/connectionsManager'
 import path from 'path'
+import PeerId from 'peer-id';
+import { Libp2pType } from './libp2p/customLibp2p';
 tmp.setGracefulCleanup()
 
 export interface TmpDir {
@@ -41,6 +44,16 @@ export const createMinConnectionManager = (options = {}): ConnectionsManager => 
     options: {
       ...options
     }
+  })
+}
+
+export const createLibp2p = (peerId: PeerId = null): Libp2pType => {
+  return ConnectionsManager.createBootstrapNode({
+    peerId, 
+    listenAddrs: ['/dns4/localhost/tcp/1111/ws'], 
+    bootstrapMultiaddrsList: ['/dns4/abcd.onion/tcp/1111/ws/p2p/12345abcdf'], 
+    agent: new SocksProxyAgent({ port: 1234, host: 'localhost' }), 
+    localAddr: `/dns4/localhost/tcp/1111/ws/p2p/${peerId.toB58String()}`
   })
 }
 

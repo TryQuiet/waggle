@@ -15,6 +15,7 @@ import { EventTypesResponse } from '../socket/constantsReponse'
 import { loadAllPublicChannels } from '../socket/events/channels'
 import debug from 'debug'
 import { Libp2p } from 'libp2p-gossipsub/src/interfaces'
+import { Config } from '../constants'
 const log = Object.assign(debug('waggle:db'), {
   error: debug('waggle:db:err')
 })
@@ -81,20 +82,22 @@ export class Storage {
   constructor(zbayDir: string, io: any, options?: Partial<StorageOptions>) {
     this.zbayDir = zbayDir
     this.io = io
-    this.options = options
-    this.orbitDbDir = path.join(this.zbayDir, 'OrbitDB')
-    this.ipfsRepoPath = path.join(this.zbayDir, 'ZbayChannels')
+    this.options = {
+      ...new StorageOptions(),
+      ...options
+    }
+    this.orbitDbDir = path.join(this.zbayDir, Config.ORBIT_DB_DIR)
+    this.ipfsRepoPath = path.join(this.zbayDir, Config.IPFS_REPO_PATH)
   }
 
   public async init(libp2p: any, peerID: PeerId): Promise<void> {
     log('STORAGE: Entered init')
-    if (this.options.createPaths) {
+    if (this.options?.createPaths) {
       createPaths([
         this.ipfsRepoPath, 
         this.orbitDbDir
       ])
     }
-    
     this.ipfs = await this.initIPFS(libp2p, peerID)
 
     this.orbitdb = await OrbitDB.createInstance(this.ipfs, { directory: this.orbitDbDir })
@@ -111,16 +114,28 @@ export class Storage {
     log('6/6')
   }
 
+  private async __stopOrbitDb() {
+    if (this.orbitdb) {
+      await this.orbitdb.stop()
+    }
+  }
+
+  private async __stopIPFS() {
+    if (this.ipfs) {
+      await this.ipfs.stop()
+    }
+  }
+
   public async stopOrbitDb() {
-    await this.orbitdb.stop()
-    await this.ipfs.stop()
+    await this.__stopOrbitDb()
+    await this.__stopIPFS()
   }
 
   protected async initIPFS(libp2p: Libp2p, peerID: PeerId): Promise<IPFS.IPFS>{
     return await IPFS.create({
       libp2p: () => libp2p,
       preload: { enabled: false },
-      repo: this.IPFSRepoPath,
+      repo: this.ipfsRepoPath,
       EXPERIMENTAL: {
         ipnsPubsub: true
       },
