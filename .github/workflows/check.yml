@@ -10,6 +10,8 @@ jobs:
   check:
     runs-on: ubuntu-18.04
     steps:
+      - name: List files
+        run: ls -al
       - uses: actions/checkout@v1.0.0
       - uses: actions/setup-node@master
         with:

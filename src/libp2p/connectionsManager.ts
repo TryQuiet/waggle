@@ -148,9 +148,6 @@ export class ConnectionsManager {
   // }
 
   public initializeNode = async (staticPeerId?: PeerId): Promise<ILibp2pStatus> => {
-    log('local address:', this.localAddress)
-    log('bootstrapMultiaddrs:', this.bootstrapMultiaddrs)
-
     if (!staticPeerId) {
       this.peerId = await this.getPeerId()
     } else {
@@ -158,6 +155,8 @@ export class ConnectionsManager {
     }
     this.createAgent()
     this.localAddress = `${this.listenAddrs}/p2p/${this.peerId.toB58String()}`
+    log('local address:', this.localAddress)
+    log('bootstrapMultiaddrs:', this.bootstrapMultiaddrs)
     this.libp2p = await this.initLibp2p()
     return {
       address: this.localAddress,

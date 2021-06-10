@@ -40,6 +40,7 @@ afterEach(async () => {
 })
 
 test('start and close connectionsManager', async () => {
+  console.log(`CWD: ${process.cwd()}`)
   const ports = await getPorts()
   const torPath = `${process.cwd()}/tor/tor`
   const pathDevLib = path.join.apply(null, [process.cwd(), 'tor'])
