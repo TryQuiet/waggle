@@ -1,0 +1,21 @@
+name: check
+
+on:
+  [pull_request]
+  push:
+    branches: [ $default-branch ]
+
+jobs:
+  check:
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v1.0.0
+      - uses: actions/setup-node@master
+        with:
+          node-version: "12"
+      - name: install dependencies
+        run: npm ci
+      - name: lint
+        run: npm run lint
+      - name: run tests
+        run: npm run test
