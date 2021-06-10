@@ -152,7 +152,6 @@ export class Tor {
 
   public generateHashedPassword = () => {
     const password = crypto.randomBytes(16).toString('hex')
-    console.log(fs.existsSync(this.torPath), ' <---- exists')
     const hashedPassword = child_process.execSync(`${this.torPath} --hash-password ${password}`)
     this.torPassword = password
     this.torHashedPassword = hashedPassword.toString()

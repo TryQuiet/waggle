@@ -7,19 +7,25 @@ jest.setTimeout(30_000)
 
 let tmpDir: TmpDir
 let tmpAppDataPath: string
+let tor: Tor
+let torSecondInstance: Tor
 
 beforeEach(() => {
   jest.clearAllMocks()
   tmpDir = createTmpDir()
   tmpAppDataPath = tmpZbayDirPath(tmpDir.name)
+  tor = null
+  torSecondInstance = null
 })
 
-afterEach(() => {
+afterEach(async () => {
   tmpDir.removeCallback()
+  tor && await tor.kill()
+  torSecondInstance && await torSecondInstance.kill()
 })
 
 test('start and close tor', async () => {
-  const tor = await spawnTorProcess(tmpAppDataPath)
+  tor = await spawnTorProcess(tmpAppDataPath)
   await tor.init()
   await tor.kill()
 })
@@ -28,7 +34,7 @@ test('start tor, do not kill tor process and start again', async () => {
   const torPath = `${process.cwd()}/tor/tor`
   const ports = await getPorts()
   const libPath = `${process.cwd()}/tor`
-  const tor = new Tor({
+  tor = new Tor({
     appDataPath: tmpAppDataPath,
     socksPort: ports.socksPort,
     torPath: torPath,
@@ -44,7 +50,7 @@ test('start tor, do not kill tor process and start again', async () => {
 
   await tor.init()
 
-  const torSecondInstance = new Tor({
+  torSecondInstance = new Tor({
     appDataPath: tmpAppDataPath,
     socksPort: ports.socksPort,
     torPath: torPath,
@@ -62,15 +68,14 @@ test('start tor, do not kill tor process and start again', async () => {
 })
 
 test('spawn new hidden service', async () => {
-  const tor = await spawnTorProcess(tmpAppDataPath)
+  tor = await spawnTorProcess(tmpAppDataPath)
   await tor.init()
   const hiddenService = await tor.createNewHiddenService(4343, 4343)
   expect(hiddenService.onionAddress).toHaveLength(56)
-  await tor.kill()
 })
 
 test('spawn hidden service using private key', async () => {
-  const tor = await spawnTorProcess(tmpAppDataPath)
+  tor = await spawnTorProcess(tmpAppDataPath)
   await tor.init()
   const hiddenServiceOnionAddress = await tor.spawnHiddenService({
     virtPort: 4343,
@@ -79,5 +84,4 @@ test('spawn hidden service using private key', async () => {
       'ED25519-V3:uCr5t3EcOCwig4cu7pWY6996whV+evrRlI0iIIsjV3uCz4rx46sB3CPq8lXEWhjGl2jlyreomORirKcz9mmcdQ=='
   })
   expect(hiddenServiceOnionAddress).toBe('u2rg2direy34dj77375h2fbhsc2tvxj752h4tlso64mjnlevcv54oaad')
-  await tor.kill()
 })
