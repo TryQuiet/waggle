@@ -1,7 +1,8 @@
 name: check
 
 on:
-  [pull_request]
+  pull_request:
+    branches: ['*']
   push:
     branches: [ $default-branch ]
 
