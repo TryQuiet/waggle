@@ -62,7 +62,6 @@ interface IPublicKey {
 }
 type IMessageThread = string
 
-
 export class Storage {
   public zbayDir: string
   public io: any
@@ -94,7 +93,7 @@ export class Storage {
     log('STORAGE: Entered init')
     if (this.options?.createPaths) {
       createPaths([
-        this.ipfsRepoPath, 
+        this.ipfsRepoPath,
         this.orbitDbDir
       ])
     }
@@ -131,7 +130,7 @@ export class Storage {
     await this.__stopIPFS()
   }
 
-  protected async initIPFS(libp2p: Libp2p, peerID: PeerId): Promise<IPFS.IPFS>{
+  protected async initIPFS(libp2p: Libp2p, peerID: PeerId): Promise<IPFS.IPFS> {
     return await IPFS.create({
       libp2p: () => libp2p,
       preload: { enabled: false },

@@ -1,15 +1,15 @@
 import fs from 'fs'
-import path from 'path';
-import PeerId from "peer-id";
-import { Config } from '../constants';
-import { createLibp2p, createTmpDir, TmpDir, tmpZbayDirPath } from "../testUtils";
-import { Storage } from "./storage"
+import path from 'path'
+import PeerId from 'peer-id'
+import { Config } from '../constants'
+import { createLibp2p, createTmpDir, TmpDir, tmpZbayDirPath } from '../testUtils'
+import { Storage } from './storage'
 import * as utils from '../utils'
 
-let tmpDir: TmpDir;
-let tmpAppDataPath: string;
-let tmpOrbitDbDir: string;
-let tmpIpfsPath: string;
+let tmpDir: TmpDir
+let tmpAppDataPath: string
+let tmpOrbitDbDir: string
+let tmpIpfsPath: string
 let storage: Storage
 
 beforeEach(() => {
@@ -43,7 +43,7 @@ test('Storage paths should not be created if createPaths is set to false', async
   // Note: paths are being created by IPFS and OrbitDb
   expect(fs.existsSync(tmpOrbitDbDir)).toBe(false)
   expect(fs.existsSync(tmpIpfsPath)).toBe(false)
-  storage = new Storage(tmpAppDataPath, null, {createPaths: false})
+  storage = new Storage(tmpAppDataPath, null, { createPaths: false })
   const peerId = await PeerId.create()
   const libp2p = createLibp2p(peerId)
   const createPathsSpy = jest.spyOn(utils, 'createPaths')

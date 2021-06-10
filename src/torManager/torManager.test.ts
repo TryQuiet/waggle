@@ -5,7 +5,7 @@ import { createTmpDir, spawnTorProcess, TmpDir, tmpZbayDirPath } from '../testUt
 
 jest.setTimeout(30_000)
 
-let tmpDir: TmpDir;
+let tmpDir: TmpDir
 let tmpAppDataPath: string
 
 beforeEach(() => {

@@ -12,9 +12,9 @@ import { createMinConnectionManager, createTmpDir, TmpDir, tmpZbayDirPath } from
 import * as utils from '../utils'
 jest.setTimeout(150_000)
 
-let tmpDir: TmpDir;
-let tmpAppDataPath: string;
-let tmpPeerIdPath: string;
+let tmpDir: TmpDir
+let tmpAppDataPath: string
+let tmpPeerIdPath: string
 let connectionsManager: ConnectionsManager
 let dataServer: DataServer
 let tor: Tor
@@ -61,7 +61,7 @@ test('start and close connectionsManager', async () => {
   })
   await tor.init()
   const service1 = await tor.createNewHiddenService(9799, 9799)
-  
+
   connectionsManager = new ConnectionsManager({
     port: ports.libp2pHiddenService,
     host: `${service1.onionAddress}.onion`,
@@ -86,7 +86,7 @@ test('Create new peerId and save its key to a file', async () => {
     }
   })
   expect(fs.existsSync(tmpPeerIdPath)).toBe(false)
-  jest.spyOn(connectionsManager, 'initLibp2p').mockImplementation(() => {return null})
+  jest.spyOn(connectionsManager, 'initLibp2p').mockImplementation(() => { return null })
   await connectionsManager.initializeNode()
   expect(fs.existsSync(tmpPeerIdPath)).toBe(true)
 })
@@ -100,7 +100,7 @@ test('Read peer from a file', async () => {
       appDataPath: tmpAppDataPath
     }
   })
-  jest.spyOn(connectionsManager, 'initLibp2p').mockImplementation(() => {return null})
+  jest.spyOn(connectionsManager, 'initLibp2p').mockImplementation(() => { return null })
   const result = await connectionsManager.initializeNode()
   expect(result.peerId).toBe(peerId.toB58String())
 })
@@ -112,7 +112,7 @@ test('Zbay path should be created by default', async () => {
     }
   })
   const createPathsSpy = jest.spyOn(utils, 'createPaths')
-  const libp2pMock = jest.spyOn(connectionsManager, 'initLibp2p').mockImplementation(() => {return null})
+  const libp2pMock = jest.spyOn(connectionsManager, 'initLibp2p').mockImplementation(() => { return null })
   await connectionsManager.initializeNode()
   expect(libp2pMock).toHaveBeenCalled()
   expect(createPathsSpy).toHaveBeenCalled()
@@ -127,7 +127,7 @@ test('Do not try to create paths if createPaths option is set to false', async (
     createPaths: false
   })
   const createPathsSpy = jest.spyOn(utils, 'createPaths')
-  const libp2pMock = jest.spyOn(connectionsManager, 'initLibp2p').mockImplementation(() => {return null})
+  const libp2pMock = jest.spyOn(connectionsManager, 'initLibp2p').mockImplementation(() => { return null })
   await connectionsManager.initializeNode()
   expect(libp2pMock).toHaveBeenCalled()
   expect(createPathsSpy).not.toHaveBeenCalled()

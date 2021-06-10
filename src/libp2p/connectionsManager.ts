@@ -25,7 +25,8 @@ class ConnectionsManagerOptions {
   env: {
     appDataPath?: string
   } = {}
-  bootstrapMultiaddrs: Array<string> = []
+
+  bootstrapMultiaddrs: string[] = []
   createPaths: boolean = true
 }
 
@@ -81,7 +82,7 @@ export class ConnectionsManager {
       ...options
     }
     this.zbayDir = options?.env?.appDataPath || ZBAY_DIR_PATH
-    this.storage = new Storage(this.zbayDir, this.io, {...options})
+    this.storage = new Storage(this.zbayDir, this.io, { ...options })
     this.peerId = null
     this.bootstrapMultiaddrs = options.bootstrapMultiaddrs || this.defaultBootstrapMultiaddrs()
     this.listenAddrs = `/dns4/${this.host}/tcp/${this.port}/ws`
