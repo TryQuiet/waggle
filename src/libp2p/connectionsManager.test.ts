@@ -39,11 +39,27 @@ afterEach(async () => {
   tor && await tor.kill()
 })
 
+const listAllFiles = (dir: string) => {
+  fs.readdir(dir, (err, files) => {
+    if (err) {
+      throw err
+    }
+    // files object contains all files names
+    // log them on console
+    files.forEach((file: string) => {
+      console.log(`${file} in ${dir}`)
+    })
+  })
+}
+
 test('start and close connectionsManager', async () => {
   console.log(`CWD: ${process.cwd()}`)
+  listAllFiles(process.cwd())
+  listAllFiles(`${process.cwd()}/tor`)
   const ports = await getPorts()
   const torPath = `${process.cwd()}/tor/tor`
   const pathDevLib = path.join.apply(null, [process.cwd(), 'tor'])
+  console.log(`pathDevLib: ${pathDevLib as string}`)
   dataServer = new DataServer(ports.dataServer)
   await dataServer.listen()
   const [controlPort] = await fp(9051)
