@@ -10,14 +10,13 @@ import fs from 'fs'
 import fp from 'find-free-port'
 import { createMinConnectionManager, createTmpDir, TmpDir, tmpZbayDirPath } from '../testUtils'
 import * as utils from '../utils'
-jest.setTimeout(150_000)
+jest.setTimeout(30_000)
 
 let tmpDir: TmpDir
 let tmpAppDataPath: string
 let tmpPeerIdPath: string
 let connectionsManager: ConnectionsManager
 let dataServer: DataServer
-let tor: Tor
 
 beforeEach(() => {
   jest.clearAllMocks()
@@ -26,7 +25,6 @@ beforeEach(() => {
   tmpPeerIdPath = path.join(tmpAppDataPath, Config.PEER_ID_FILENAME)
   connectionsManager = null
   dataServer = null
-  tor = null
 })
 
 afterEach(async () => {
@@ -36,7 +34,6 @@ afterEach(async () => {
     await connectionsManager.stopLibp2p()
   }
   dataServer && await dataServer.close()
-  tor && await tor.kill()
 })
 
 test('start and close connectionsManager', async () => {
@@ -46,7 +43,7 @@ test('start and close connectionsManager', async () => {
   dataServer = new DataServer(ports.dataServer)
   await dataServer.listen()
   const [controlPort] = await fp(9051)
-  tor = new Tor({
+  const tor = new Tor({
     socksPort: ports.socksPort,
     torPath,
     appDataPath: tmpAppDataPath,
@@ -77,6 +74,7 @@ test('start and close connectionsManager', async () => {
   })
   await connectionsManager.initializeNode()
   await connectionsManager.initStorage()
+  await tor.kill()
 })
 
 test('Create new peerId and save its key to a file', async () => {

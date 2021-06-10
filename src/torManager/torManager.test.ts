@@ -8,24 +8,21 @@ jest.setTimeout(30_000)
 let tmpDir: TmpDir
 let tmpAppDataPath: string
 let tor: Tor
-let torSecondInstance: Tor
 
 beforeEach(() => {
   jest.clearAllMocks()
   tmpDir = createTmpDir()
   tmpAppDataPath = tmpZbayDirPath(tmpDir.name)
   tor = null
-  torSecondInstance = null
 })
 
 afterEach(async () => {
   tmpDir.removeCallback()
   tor && await tor.kill()
-  torSecondInstance && await torSecondInstance.kill()
 })
 
 test('start and close tor', async () => {
-  tor = await spawnTorProcess(tmpAppDataPath)
+  const tor = await spawnTorProcess(tmpAppDataPath)
   await tor.init()
   await tor.kill()
 })
@@ -34,7 +31,7 @@ test('start tor, do not kill tor process and start again', async () => {
   const torPath = `${process.cwd()}/tor/tor`
   const ports = await getPorts()
   const libPath = `${process.cwd()}/tor`
-  tor = new Tor({
+  const tor = new Tor({
     appDataPath: tmpAppDataPath,
     socksPort: ports.socksPort,
     torPath: torPath,
@@ -50,7 +47,7 @@ test('start tor, do not kill tor process and start again', async () => {
 
   await tor.init()
 
-  torSecondInstance = new Tor({
+  const torSecondInstance = new Tor({
     appDataPath: tmpAppDataPath,
     socksPort: ports.socksPort,
     torPath: torPath,
