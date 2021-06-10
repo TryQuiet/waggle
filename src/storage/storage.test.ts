@@ -32,21 +32,21 @@ test('Create storage paths by default', async () => {
   storage = new Storage(tmpAppDataPath, null)
   const peerId = await PeerId.create()
   const libp2p = createLibp2p(peerId)
+  const createPathsSpy = jest.spyOn(utils, 'createPaths')
   await storage.init(libp2p, peerId)
-  const createPathsSpy = jest.spyOn(utils, 'createPaths') // TODO; why it's not passing even though createpaths is being called
-  expect(createPathsSpy).toBeCalled()
+  expect(createPathsSpy).toHaveBeenCalled()
   expect(fs.existsSync(tmpOrbitDbDir)).toBe(true)
   expect(fs.existsSync(tmpIpfsPath)).toBe(true)
 })
 
-test('storage paths should not be created if createPaths is set to false', async () => {
+test('Storage paths should not be created if createPaths is set to false', async () => {
   // Note: paths are being created by IPFS and OrbitDb
   expect(fs.existsSync(tmpOrbitDbDir)).toBe(false)
   expect(fs.existsSync(tmpIpfsPath)).toBe(false)
   storage = new Storage(tmpAppDataPath, null, {createPaths: false})
   const peerId = await PeerId.create()
   const libp2p = createLibp2p(peerId)
-  await storage.init(libp2p, peerId)
   const createPathsSpy = jest.spyOn(utils, 'createPaths')
-  expect(createPathsSpy).not.toBeCalled()  
+  await storage.init(libp2p, peerId)
+  expect(createPathsSpy).not.toHaveBeenCalled()
 })

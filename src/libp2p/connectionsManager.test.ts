@@ -7,6 +7,7 @@ import PeerId from 'peer-id'
 import path from 'path'
 import os from 'os'
 import fs from 'fs'
+import fp from 'find-free-port'
 import { createMinConnectionManager, createTmpDir, TmpDir, tmpZbayDirPath } from '../testUtils'
 import * as utils from '../utils'
 jest.setTimeout(150_000)
@@ -44,11 +45,12 @@ test('start and close connectionsManager', async () => {
   const pathDevLib = path.join.apply(null, [process.cwd(), 'tor'])
   dataServer = new DataServer(ports.dataServer)
   await dataServer.listen()
+  const [controlPort] = await fp(9051)
   tor = new Tor({
     socksPort: ports.socksPort,
     torPath,
     appDataPath: tmpAppDataPath,
-    controlPort: 9051,
+    controlPort: controlPort,
     options: {
       env: {
         LD_LIBRARY_PATH: pathDevLib,
@@ -69,10 +71,10 @@ test('start and close connectionsManager', async () => {
     options: {
       env: {
         appDataPath: tmpAppDataPath
-      }
+      },
+      bootstrapMultiaddrs: ['/dns4/abcd.onion/tcp/1111/ws/p2p/abcd1234']
     }
   })
-
   await connectionsManager.initializeNode()
   await connectionsManager.initStorage()
 })
