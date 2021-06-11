@@ -155,6 +155,7 @@ export class Storage {
 
     this.certificates.events.on('replicated', () => {
       log('REPLICATED: Certificates')
+      loadCertificates(this.getAllEventLogEntries(this.certificates))
     })
     this.certificates.events.on('write', (_address, entry) => {
       log('Saved cerrificate locally')
