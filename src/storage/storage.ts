@@ -288,7 +288,7 @@ export class Storage {
     loadAllPublicChannels(this.io, this.getChannelsResponse())
   }
 
-  private getAllEventLogEntries(db: EventStore<any>): any[] {  // TODO: fix typing
+  private getAllEventLogEntries(db: EventStore<any>): any[] { // TODO: fix typing
     // TODO: move to e.g custom Store
     return db
       .iterator({ limit: -1 })
