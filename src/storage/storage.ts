@@ -155,12 +155,12 @@ export class Storage {
 
     this.certificates.events.on('replicated', () => {
       log('REPLICATED: Certificates')
-      loadCertificates(this.getAllEventLogEntries(this.certificates))
+      loadCertificates(this.io, this.getAllEventLogEntries(this.certificates))
     })
     this.certificates.events.on('write', (_address, entry) => {
       log('Saved cerrificate locally')
       log(entry.payload.value)
-      loadCertificates(this.getAllEventLogEntries(this.certificates))
+      loadCertificates(this.io, this.getAllEventLogEntries(this.certificates))
     })
 
     await this.certificates.load({ fetchEntryTimeout: 15000 })
