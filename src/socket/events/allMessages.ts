@@ -1,4 +1,4 @@
-import { IMessage } from '../../storage/storage'
+import { IMessage } from '../../common/types'
 import { EventTypesResponse } from '../constantsReponse'
 
 export const loadAllMessages = (socket: any, messages: IMessage[], channelAddress: string) => {
@@ -11,7 +11,7 @@ export const loadAllMessages = (socket: any, messages: IMessage[], channelAddres
   })
 }
 
-export const loadAllDirectMessages = (socket, messages, channelAddress) => {
+export const loadAllDirectMessages = (socket: any, messages: IMessage[], channelAddress: string) => {
   if (messages.length === 0) {
     return
   }

@@ -16,52 +16,11 @@ import { loadAllPublicChannels } from '../socket/events/channels'
 import { Libp2p } from 'libp2p-gossipsub/src/interfaces'
 import { Config } from '../constants'
 import { loadCertificates } from '../socket/events/certificates'
+import { IRepo, StorageOptions, IChannelInfo, IMessage } from '../common/types'
 import debug from 'debug'
 const log = Object.assign(debug('waggle:db'), {
   error: debug('waggle:db:err')
 })
-
-export interface IMessage {
-  id: string
-  type: number
-  typeIndicator: number
-  message: string
-  createdAt: number
-  r: number
-  channelId: string
-  signature: string
-}
-
-interface IRepo {
-  db: EventStore<IMessage>
-  eventsAttached: boolean
-}
-
-export interface IChannelInfo {
-  name: string
-  description: string
-  owner: string
-  timestamp: number
-  address: string
-  keys: { ivk?: string, sk?: string }
-}
-
-export interface ChannelInfoResponse {
-  [name: string]: IChannelInfo
-}
-
-class StorageOptions {
-  createPaths: boolean = true
-}
-
-interface IZbayChannel extends IChannelInfo {
-  orbitAddress: string
-}
-
-interface IPublicKey {
-  halfKey: string
-}
-type IMessageThread = string
 
 export class Storage {
   public zbayDir: string
