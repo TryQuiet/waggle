@@ -373,7 +373,7 @@ export class Storage {
     console.timeEnd('subscribeForAllConversations')
   }
 
-  public async subscribeForDirectMessageThread(channelAddress) {
+  public async subscribeForDirectMessageThread(channelAddress: string) {
     let db: EventStore<IMessage>
     let repo = this.directMessagesRepos.get(channelAddress)
 
@@ -433,7 +433,7 @@ export class Storage {
     return db
   }
 
-  public async sendDirectMessage(channelAddress: string, message) {
+  public async sendDirectMessage(channelAddress: string, message: IMessage) {
     await this.subscribeForDirectMessageThread(channelAddress) // Is it necessary? Yes it is atm
     log('STORAGE: sendDirectMessage entered')
     log(`STORAGE: sendDirectMessage channelAddress is ${channelAddress}`)
@@ -462,6 +462,10 @@ export class Storage {
 
   public async saveCertificate(certificate: string) {
     log('Saving certificate')
+    if (!certificate) {
+      log('No certificate')
+      return
+    }
     // TODO: validate before saving
     await this.certificates.add(certificate)
   }
