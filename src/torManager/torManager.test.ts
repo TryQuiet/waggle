@@ -1,7 +1,7 @@
 /* eslint import/first: 0 */
 import { Tor } from './torManager'
 import { getPorts } from '../utils'
-import { createTmpDir, spawnTorProcess, TmpDir, tmpZbayDirPath } from '../testUtils'
+import { createTmpDir, spawnTorProcess, TmpDir, tmpZbayDirPath, torBinForPlatform } from '../testUtils'
 
 jest.setTimeout(30_000)
 
@@ -25,7 +25,7 @@ test('start and close tor', async () => {
 })
 
 test('start tor, do not kill tor process and start again', async () => {
-  const torPath = `${process.cwd()}/tor/tor`
+  const torPath = torBinForPlatform()
   const ports = await getPorts()
   const libPath = `${process.cwd()}/tor`
   const tor = new Tor({

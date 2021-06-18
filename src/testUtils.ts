@@ -16,7 +16,7 @@ export interface TmpDir {
 
 export const spawnTorProcess = async (zbayDirPath: string): Promise<Tor> => {
   const ports = await getPorts()
-  const torPath = `${process.cwd()}/tor/tor`
+  const torPath = torBinForPlatform()
   const libPath = `${process.cwd()}/tor`
   const tor = new Tor({
     appDataPath: zbayDirPath,
@@ -63,4 +63,9 @@ export const createTmpDir = (): TmpDir => {
 
 export const tmpZbayDirPath = (name: string): string => {
   return path.join(name, Config.ZBAY_DIR)
+}
+
+export const torBinForPlatform = (): string => {
+  const ext = process.platform === 'win32' ? '.exe' : ''
+  return path.join(process.cwd(), 'tor', process.platform, 'tor'.concat(ext))
 }
