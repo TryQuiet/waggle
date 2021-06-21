@@ -69,6 +69,7 @@ export class Storage {
 
   private ipfs: IPFS.IPFS
   private orbitdb: OrbitDB
+  
   private channels: KeyValueStore<IZbayChannel>
   private directMessagesUsers: KeyValueStore<IPublicKey>
   private messageThreads: KeyValueStore<IMessageThread>
