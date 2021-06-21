@@ -337,11 +337,11 @@ export class Storage {
         sendIdsToZbay(this.io, [entry.payload.value.id], channelAddress)
       })
       db.events.on('ready', () => {
-        const ids = this.getAllChannelMessages(db).map(msg => msg.id)
+        const ids = this.getAllEventLogEntries(db).map(msg => msg.id)
         sendIdsToZbay(this.io, ids, channelAddress)
       })
       repo.eventsAttached = true
-      const ids = this.getAllChannelMessages(db).map(msg => msg.id)
+      const ids = this.getAllEventLogEntries(db).map(msg => msg.id)
       sendIdsToZbay(this.io, ids, channelAddress)
     }
   }
@@ -349,7 +349,7 @@ export class Storage {
   public async askForMessages(channelAddress: string, ids: string[]){
     console.time('askForIds')
     let repo = this.publicChannelsRepos.get(channelAddress)
-    const messages = this.getAllChannelMessages(repo.db)
+    const messages = this.getAllEventLogEntries(repo.db)
     const filteredMessages = []
     for (id in ids) {
       filteredMessages.push(messages.filter(i => i.id === id))

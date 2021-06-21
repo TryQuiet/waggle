@@ -104,7 +104,7 @@ export class ConnectionsManager {
 
   private readonly defaultBootstrapMultiaddrs = () => {
     return [
-      '/dns4/2lmfmbj4ql56d55lmv7cdrhdlhls62xa4p6lzy6kymxuzjlny3vnwyqd.onion/tcp/7788/ws/p2p/Qmak8HeMad8X1HGBmz2QmHfiidvGnhu6w6ugMKtx8TFc85'
+      '/dns4/2lmfmbj4ql56d55lmv7cdrhdlhls62xa4p6lzy6kymxuzjlny3vnwyqd.onion/tcp/7788/ws/p2p/QmWUdYnn2Dnz4EPPDqsTKHATaH6RHCAciVKJ2mQKVYKdNj'
     ]
   }
 
