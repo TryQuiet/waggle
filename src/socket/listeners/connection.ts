@@ -56,7 +56,6 @@ export const connections = (io, connectionsManager: ConnectionsManager) => {
     socket.on(
       EventTypesServer.ASK_FOR_MESSAGES,
       async ({ channelAddress, ids }: { channelAddress: string; ids: string[] }) => {
-        console.log('ZBAY IS ASKING FOR MESSAGES')
         await connectionsManager.askForMessages(channelAddress, ids)
       }
     )

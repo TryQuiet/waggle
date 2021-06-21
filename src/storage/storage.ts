@@ -8,16 +8,14 @@ import EventStore from 'orbit-db-eventstore'
 import PeerId from 'peer-id'
 import {
   message as socketMessage,
-  directMessage as socketDirectMessage
-} from '../socket/events/message'
-import { loadAllMessages, loadAllDirectMessages, sendIdsToZbay } from '../socket/events/allMessages'
+  directMessage as socketDirectMessage,loadAllMessages, loadAllDirectMessages, sendIdsToZbay
+} from '../socket/events/messages'
 import { EventTypesResponse } from '../socket/constantsReponse'
 import { loadAllPublicChannels } from '../socket/events/channels'
 import { Libp2p } from 'libp2p-gossipsub/src/interfaces'
 import { Config } from '../constants'
 import { loadCertificates } from '../socket/events/certificates'
 import debug from 'debug'
-import { filter } from 'streaming-iterables'
 const log = Object.assign(debug('waggle:db'), {
   error: debug('waggle:db:err')
 })
@@ -70,7 +68,6 @@ export class Storage {
   public peerId: PeerId
   private ipfs: IPFS.IPFS
   private orbitdb: OrbitDB
-  
   private channels: KeyValueStore<IZbayChannel>
   private directMessagesUsers: KeyValueStore<IPublicKey>
   private messageThreads: KeyValueStore<IMessageThread>
@@ -347,7 +344,6 @@ export class Storage {
   }
 
   public async askForMessages(channelAddress: string, ids: string[]){
-    console.time('askForIds')
     let repo = this.publicChannelsRepos.get(channelAddress)
     const messages = this.getAllEventLogEntries(repo.db)
     const filteredMessages = []
@@ -355,7 +351,6 @@ export class Storage {
       filteredMessages.push(messages.filter(i => i.id === id))
     }
     loadAllMessages(this.io, filteredMessages, channelAddress)
-    console.timeEnd('askForIds')
   }
 
   public async sendMessage(channelAddress: string, message: IMessage) {
