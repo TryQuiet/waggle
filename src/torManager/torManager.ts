@@ -34,7 +34,7 @@ export class Tor {
   torPassword: string
   torHashedPassword: string
   constructor({ torPath, options, appDataPath, controlPort, socksPort }: IConstructor) {
-    this.torPath = torPath
+    this.torPath = path.normalize(torPath)
     this.options = options
     this.services = new Map()
     this.appDataPath = appDataPath
@@ -71,7 +71,7 @@ export class Tor {
       if (oldTorPid && process.platform !== 'win32') {
         child_process.exec(`ps -p ${oldTorPid as string} -o comm=`, (err, stdout, _stderr) => {
           if (err) {
-            log(err)
+            log.error(err)
           }
           if (stdout.trim() === 'tor') {
             process.kill(oldTorPid, 'SIGTERM')
@@ -152,7 +152,7 @@ export class Tor {
 
   public generateHashedPassword = () => {
     const password = crypto.randomBytes(16).toString('hex')
-    const hashedPassword = child_process.execSync(`${this.torPath} --hash-password ${password}`)
+    const hashedPassword = child_process.execSync(`${this.torPath} --quiet --hash-password ${password}`)
     this.torPassword = password
     this.torHashedPassword = hashedPassword.toString()
   }

@@ -12,9 +12,10 @@ import {
 } from '../socket/events/message'
 import { loadAllMessages, loadAllDirectMessages, sendIdsToZbay } from '../socket/events/allMessages'
 import { EventTypesResponse } from '../socket/constantsReponse'
-import fs from 'fs'
 import { loadAllPublicChannels } from '../socket/events/channels'
-
+import { Libp2p } from 'libp2p-gossipsub/src/interfaces'
+import { Config } from '../constants'
+import { loadCertificates } from '../socket/events/certificates'
 import debug from 'debug'
 import { filter } from 'streaming-iterables'
 const log = Object.assign(debug('waggle:db'), {
@@ -50,6 +51,10 @@ export interface ChannelInfoResponse {
   [name: string]: IChannelInfo
 }
 
+class StorageOptions {
+  createPaths: boolean = true
+}
+
 interface IZbayChannel extends IChannelInfo {
   orbitAddress: string
 }
@@ -60,42 +65,49 @@ interface IPublicKey {
 type IMessageThread = string
 
 export class Storage {
-  zbayDir: string
-  io: any
-  constructor(zbayDir: string, io: any) {
-    this.zbayDir = zbayDir
-    this.io = io
-  }
-
+  public zbayDir: string
+  public io: any
+  public peerId: PeerId
   private ipfs: IPFS.IPFS
   private orbitdb: OrbitDB
   
   private channels: KeyValueStore<IZbayChannel>
   private directMessagesUsers: KeyValueStore<IPublicKey>
   private messageThreads: KeyValueStore<IMessageThread>
+  private certificates: EventStore<string>
   public publicChannelsRepos: Map<String, IRepo> = new Map()
   public directMessagesRepos: Map<String, IRepo> = new Map()
   private publicChannelsEventsAttached: boolean = false
+  public options: StorageOptions
+  public orbitDbDir: string
+  public ipfsRepoPath: string
+
+  constructor(zbayDir: string, io: any, options?: Partial<StorageOptions>) {
+    this.zbayDir = zbayDir
+    this.io = io
+    this.options = {
+      ...new StorageOptions(),
+      ...options
+    }
+    this.orbitDbDir = path.join(this.zbayDir, Config.ORBIT_DB_DIR)
+    this.ipfsRepoPath = path.join(this.zbayDir, Config.IPFS_REPO_PATH)
+  }
 
   public async init(libp2p: any, peerID: PeerId): Promise<void> {
-    const ipfsRepoPath = path.join(this.zbayDir, 'ZbayChannels')
-    const orbitDbDir = path.join(this.zbayDir, 'OrbitDB')
-    createPaths([ipfsRepoPath, orbitDbDir])
+    log('STORAGE: Entered init')
+    if (this.options?.createPaths) {
+      createPaths([
+        this.ipfsRepoPath,
+        this.orbitDbDir
+      ])
+    }
+    this.ipfs = await this.initIPFS(libp2p, peerID)
 
-    this.ipfs = await IPFS.create({
-      libp2p: () => libp2p,
-      preload: { enabled: false },
-      repo: ipfsRepoPath,
-      EXPERIMENTAL: {
-        ipnsPubsub: true
-      },
-      privateKey: peerID.toJSON().privKey
-    })
-
-    this.orbitdb = await OrbitDB.createInstance(this.ipfs, { directory: orbitDbDir })
+    this.orbitdb = await OrbitDB.createInstance(this.ipfs, { directory: this.orbitDbDir })
     log('1/6')
     await this.createDbForChannels()
     log('2/6')
+    await this.createDbForCertificates()
     await this.createDbForUsers()
     log('3/6')
     await this.createDbForMessageThreads()
@@ -106,19 +118,58 @@ export class Storage {
     log('6/6')
   }
 
-  public async stopOrbitDb() {
-    await this.orbitdb.stop()
-    await this.ipfs.stop()
+  private async __stopOrbitDb() {
+    if (this.orbitdb) {
+      await this.orbitdb.stop()
+    }
   }
 
-  public async loadInitChannels() {
-    // Temp, only for entrynode
-    const initChannels: ChannelInfoResponse = JSON.parse(
-      fs.readFileSync('initialPublicChannels.json').toString()
-    )
-    for (const channel of Object.values(initChannels)) {
-      await this.createChannel(channel.address, channel)
+  private async __stopIPFS() {
+    if (this.ipfs) {
+      await this.ipfs.stop()
     }
+  }
+
+  public async stopOrbitDb() {
+    await this.__stopOrbitDb()
+    await this.__stopIPFS()
+  }
+
+  protected async initIPFS(libp2p: Libp2p, peerID: PeerId): Promise<IPFS.IPFS> {
+    return await IPFS.create({
+      libp2p: () => libp2p,
+      preload: { enabled: false },
+      repo: this.ipfsRepoPath,
+      EXPERIMENTAL: {
+        ipnsPubsub: true
+      },
+      privateKey: peerID.toJSON().privKey
+    })
+  }
+
+  public async createDbForCertificates() {
+    log('createDbForCertificates init')
+    this.certificates = await this.orbitdb.log<string>('zbay-certificates', {
+      accessController: {
+        write: ['*']
+      }
+    })
+
+    this.certificates.events.on('replicated', () => {
+      log('REPLICATED: Certificates')
+      loadCertificates(this.io, this.getAllEventLogEntries(this.certificates))
+    })
+    this.certificates.events.on('write', (_address, entry) => {
+      log('Saved cerrificate locally')
+      log(entry.payload.value)
+      loadCertificates(this.io, this.getAllEventLogEntries(this.certificates))
+    })
+
+    await this.certificates.load({ fetchEntryTimeout: 15000 })
+    const allCertificates = this.getAllEventLogEntries(this.certificates)
+    log('ALL Certificates COUNT:', allCertificates.length)
+    log('ALL Certificates:', allCertificates)
+    log('STORAGE: Finished createDbForCertificates')
   }
 
   private async createDbForChannels() {
@@ -240,7 +291,7 @@ export class Storage {
     loadAllPublicChannels(this.io, this.getChannelsResponse())
   }
 
-  private getAllChannelMessages(db: EventStore<IMessage>): IMessage[] {
+  private getAllEventLogEntries(db: EventStore<any>): any[] { // TODO: fix typing
     // TODO: move to e.g custom Store
     return db
       .iterator({ limit: -1 })
@@ -254,7 +305,7 @@ export class Storage {
       return
     }
     const db: EventStore<IMessage> = this.publicChannelsRepos.get(channelAddress).db
-    loadAllMessages(this.io, this.getAllChannelMessages(db), channelAddress)
+    loadAllMessages(this.io, this.getAllEventLogEntries(db), channelAddress)
   }
 
   public async subscribeForChannel(
@@ -282,24 +333,16 @@ export class Storage {
         log(entry.payload.value)
         socketMessage(this.io, { message: entry.payload.value, channelAddress })
       })
-      // db.events.on('replicated', () => {
-      //   log('Message replicated')
-      //   loadAllMessages(this.io, this.getAllChannelMessages(db), channelAddress)
-      // })
       db.events.on('replicate.progress', (address, hash, entry, progress, have) => {
-        console.log(entry.payload.value)
         sendIdsToZbay(this.io, [entry.payload.value.id], channelAddress)
       })
       db.events.on('ready', () => {
         const ids = this.getAllChannelMessages(db).map(msg => msg.id)
         sendIdsToZbay(this.io, ids, channelAddress)
-        // loadAllMessages(this.io, this.getAllChannelMessages(db), channelAddress)
       })
       repo.eventsAttached = true
       const ids = this.getAllChannelMessages(db).map(msg => msg.id)
       sendIdsToZbay(this.io, ids, channelAddress)
-      //loadAllMessages(this.io, this.getAllChannelMessages(db), channelAddress)
-      log('Subscription to channel ready', channelAddress)
     }
   }
 
@@ -402,20 +445,20 @@ export class Storage {
 
     if (repo && !repo.eventsAttached) {
       log('Subscribing to direct messages thread ', channelAddress)
-      loadAllDirectMessages(this.io, this.getAllChannelMessages(db), channelAddress)
+      loadAllDirectMessages(this.io, this.getAllEventLogEntries(db), channelAddress)
       db.events.on('write', (_address, entry) => {
         log('Writing')
         socketDirectMessage(this.io, { message: entry.payload.value, channelAddress })
       })
       db.events.on('replicated', () => {
         log('Message replicated')
-        loadAllDirectMessages(this.io, this.getAllChannelMessages(db), channelAddress)
+        loadAllDirectMessages(this.io, this.getAllEventLogEntries(db), channelAddress)
       })
       db.events.on('ready', () => {
         log('DIRECT Messages thread ready')
       })
       repo.eventsAttached = true
-      loadAllMessages(this.io, this.getAllChannelMessages(db), channelAddress)
+      loadAllMessages(this.io, this.getAllEventLogEntries(db), channelAddress)
       log('Subscription to channel ready', channelAddress)
     }
   }
@@ -470,5 +513,11 @@ export class Storage {
     const payload = this.messageThreads.all
     log('STORAGE: getPrivateConversations payload payload')
     this.io.emit(EventTypesResponse.RESPONSE_GET_PRIVATE_CONVERSATIONS, payload)
+  }
+
+  public async saveCertificate(certificate: string) {
+    log('Saving certificate')
+    // TODO: validate before saving
+    await this.certificates.add(certificate)
   }
 }

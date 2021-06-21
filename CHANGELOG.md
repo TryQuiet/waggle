@@ -1,5 +1,23 @@
 # Changelog
 
+## [2.0.4] - 2021-06-15
+
+### Fixed
+
+- Hashing tor password for windows
+
+## [2.0.3] - 2021-06-14
+
+### Added
+
+- Optional `createPaths` to options in both ConnectionManager and Storage. Default = true. When set to false waggle will not try to create any dirs
+  and will just assume they exist.
+- Database for certificates and 'add certificate' websocket event. Send all certificates on write and replication orbitdb events
+
+### Fixed
+
+- Now tests use temporary dir for app data
+
 ## [2.0.1] - 2021-06-07
 
 ### Changed
