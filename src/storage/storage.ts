@@ -8,7 +8,10 @@ import EventStore from 'orbit-db-eventstore'
 import PeerId from 'peer-id'
 import {
   message as socketMessage,
-  directMessage as socketDirectMessage,loadAllMessages, loadAllDirectMessages, sendIdsToZbay
+  directMessage as socketDirectMessage,
+  loadAllMessages,
+  loadAllDirectMessages,
+  sendIdsToZbay
 } from '../socket/events/messages'
 import { EventTypesResponse } from '../socket/constantsReponse'
 import { loadAllPublicChannels } from '../socket/events/channels'
@@ -42,7 +45,7 @@ export interface IChannelInfo {
   owner: string
   timestamp: number
   address: string
-  keys: { ivk?: string, sk?: string }
+  keys: { ivk?: string; sk?: string }
 }
 
 export interface ChannelInfoResponse {
@@ -66,6 +69,7 @@ export class Storage {
   public zbayDir: string
   public io: any
   public peerId: PeerId
+  private isWaggleMobileMode: boolean
   private ipfs: IPFS.IPFS
   private orbitdb: OrbitDB
   private channels: KeyValueStore<IZbayChannel>
@@ -79,9 +83,15 @@ export class Storage {
   public orbitDbDir: string
   public ipfsRepoPath: string
 
-  constructor(zbayDir: string, io: any, options?: Partial<StorageOptions>) {
+  constructor(
+    zbayDir: string,
+    io: any,
+    options?: Partial<StorageOptions>,
+    isWaggleMobileMode?: boolean
+  ) {
     this.zbayDir = zbayDir
     this.io = io
+    this.isWaggleMobileMode = isWaggleMobileMode || true
     this.options = {
       ...new StorageOptions(),
       ...options
@@ -93,10 +103,7 @@ export class Storage {
   public async init(libp2p: any, peerID: PeerId): Promise<void> {
     log('STORAGE: Entered init')
     if (this.options?.createPaths) {
-      createPaths([
-        this.ipfsRepoPath,
-        this.orbitDbDir
-      ])
+      createPaths([this.ipfsRepoPath, this.orbitDbDir])
     }
     this.ipfs = await this.initIPFS(libp2p, peerID)
 
@@ -171,11 +178,23 @@ export class Storage {
 
   private async createDbForChannels() {
     log('createDbForChannels init')
-    this.channels = await this.orbitdb.keyvalue<IZbayChannel>('zbay-public-channels', {
+    this.channels = await this.orbitdb.keyvalue<IZbayChannel>('public-channels', {
       accessController: {
         write: ['*']
       }
     })
+
+    // this.channels.put('zbay', {
+    //   address: 'zs10zkaj29rcev9qd5xeuzck4ly5q64kzf6m6h9nfajwcvm8m2vnjmvtqgr0mzfjywswwkwke68t00',
+    //   name: 'zbay',
+    //   description: 'zbay marketplace channel',
+    //   owner: '030fdc016427a6e41ca8dccaf0c09cfbf002e5916a13ee16f5fe7240d0dfe50ede',
+    //   keys: {
+    //     ivk:
+    //       'zxviews1qvzslllpqcqqpq8z3uyzunfm57xqlpysl5es4nm7eve5y4kkm6p7rhh6xdr27kxsql4dkk0qcad6cm7hxzclq4kzd8ukandz9p8edyw75jvqlxenvwa6ydzlqzch4wt3kdf2vma9gg25qjgc7fxn7pth0qf68ljww6qe379p4xun4za7mgk2qgzkpxlj9wu4ukyta8rfk348v78wn4zrhx2889d3mkj9yhmr0ua95jwv4ln8pyjv0ps5mw78kvadwl6ajxyn6dp2ahgvaau3x'
+    //   },
+    //   timestamp: 1587009699
+    // })
 
     this.channels.events.on('replicated', () => {
       log('REPLICATED: CHANNELS')
@@ -187,7 +206,7 @@ export class Storage {
   }
 
   private async createDbForMessageThreads() {
-    this.messageThreads = await this.orbitdb.keyvalue<IMessageThread>('message-threads', {
+    this.messageThreads = await this.orbitdb.keyvalue<IMessageThread>('msg-threads', {
       accessController: {
         write: ['*']
       }
@@ -207,7 +226,7 @@ export class Storage {
   }
 
   private async createDbForUsers() {
-    this.directMessagesUsers = await this.orbitdb.keyvalue<IPublicKey>('direct-messages', {
+    this.directMessagesUsers = await this.orbitdb.keyvalue<IPublicKey>('dms', {
       accessController: {
         write: ['*']
       }
@@ -288,7 +307,8 @@ export class Storage {
     loadAllPublicChannels(this.io, this.getChannelsResponse())
   }
 
-  private getAllEventLogEntries(db: EventStore<any>): any[] { // TODO: fix typing
+  private getAllEventLogEntries(db: EventStore<any>): any[] {
+    // TODO: fix typing
     // TODO: move to e.g custom Store
     return db
       .iterator({ limit: -1 })
@@ -325,25 +345,42 @@ export class Storage {
 
     if (repo && !repo.eventsAttached) {
       log('Subscribing to channel ', channelAddress)
-      db.events.on('write', (_address, entry) => {
-        log('Writing to messages db')
-        log(entry.payload.value)
-        socketMessage(this.io, { message: entry.payload.value, channelAddress })
-      })
-      db.events.on('replicate.progress', (address, hash, entry, progress, have) => {
-        sendIdsToZbay(this.io, [entry.payload.value.id], channelAddress)
-      })
-      db.events.on('ready', () => {
+      if (!this.isWaggleMobileMode) {
+        console.log(`subscribing for channel for desktop mode`)
+        db.events.on('write', (_address, entry) => {
+          log('Writing to messages db')
+          log(entry.payload.value)
+          socketMessage(this.io, { message: entry.payload.value, channelAddress })
+        })
+        db.events.on('replicate.progress', (address, hash, entry, progress, have) => {
+          sendIdsToZbay(this.io, [entry.payload.value.id], channelAddress)
+        })
+        db.events.on('ready', () => {
+          const ids = this.getAllEventLogEntries(db).map(msg => msg.id)
+          sendIdsToZbay(this.io, ids, channelAddress)
+        })
+        repo.eventsAttached = true
         const ids = this.getAllEventLogEntries(db).map(msg => msg.id)
         sendIdsToZbay(this.io, ids, channelAddress)
-      })
-      repo.eventsAttached = true
-      const ids = this.getAllEventLogEntries(db).map(msg => msg.id)
-      sendIdsToZbay(this.io, ids, channelAddress)
+      } else {
+        console.log(`subscribing for channel for mobile mode`)
+        db.events.on('write', (_address, entry) => {
+          log('Writing to messages db')
+          log(entry.payload.value)
+          socketMessage(this.io, { message: entry.payload.value, channelAddress })
+        })
+        db.events.on('replicated', () => {
+          log('Message replicated')
+          loadAllMessages(this.io, this.getAllEventLogEntries(db), channelAddress)
+        })
+        repo.eventsAttached = true
+        loadAllMessages(this.io, this.getAllEventLogEntries(db), channelAddress)
+        log('Subscription to channel ready', channelAddress)
+      }
     }
   }
 
-  public async askForMessages(channelAddress: string, ids: string[]){
+  public async askForMessages(channelAddress: string, ids: string[]) {
     let repo = this.publicChannelsRepos.get(channelAddress)
     const messages = this.getAllEventLogEntries(repo.db)
     const filteredMessages = []
@@ -369,7 +406,7 @@ export class Storage {
     }
     log('BEFORE CREATING NEW ZBAY CHANNEL')
     const db: EventStore<IMessage> = await this.orbitdb.log<IMessage>(
-      `zbay.channels.${channelAddress}`,
+      `channels.${channelAddress}`,
       {
         accessController: {
           write: ['*']
@@ -399,14 +436,11 @@ export class Storage {
   }
 
   public async initializeConversation(address: string, encryptedPhrase: string): Promise<void> {
-    const db: EventStore<IMessage> = await this.orbitdb.log<IMessage>(
-      `direct.messages.${address}`,
-      {
-        accessController: {
-          write: ['*']
-        }
+    const db: EventStore<IMessage> = await this.orbitdb.log<IMessage>(`dms.${address}`, {
+      accessController: {
+        write: ['*']
       }
-    )
+    })
 
     this.directMessagesRepos.set(address, { db, eventsAttached: false })
     await this.messageThreads.put(address, encryptedPhrase)
@@ -443,7 +477,8 @@ export class Storage {
       loadAllDirectMessages(this.io, this.getAllEventLogEntries(db), channelAddress)
       db.events.on('write', (_address, entry) => {
         log('Writing')
-        socketDirectMessage(this.io, { message: entry.payload.value, channelAddress })
+        loadAllDirectMessages(this.io, this.getAllEventLogEntries(db), channelAddress)
+        //socketDirectMessage(this.io, { message: entry.payload.value, channelAddress })
       })
       db.events.on('replicated', () => {
         log('Message replicated')
