@@ -13,11 +13,11 @@ import { loadAllMessages, loadAllDirectMessages } from '../socket/events/allMess
 import { EventTypesResponse } from '../socket/constantsReponse'
 import { loadAllPublicChannels } from '../socket/events/channels'
 import { Libp2p } from 'libp2p-gossipsub/src/interfaces'
-import { Config } from '../constants'
+import { Config, dataFromRootPems } from '../constants'
 import { loadCertificates } from '../socket/events/certificates'
 import { IRepo, StorageOptions, IChannelInfo, IMessage, ChannelInfoResponse, IZbayChannel, IPublicKey, IMessageThread } from '../common/types'
+import { verifyUserCert } from '@zbayapp/identity'
 import debug from 'debug'
-// import { verifyUserCert } from '../../../identity/lib'
 const log = Object.assign(debug('waggle:db'), {
   error: debug('waggle:db:err')
 })
@@ -77,12 +77,14 @@ export class Storage {
 
   private async __stopOrbitDb() {
     if (this.orbitdb) {
+      log('Stopping OrbitDB')
       await this.orbitdb.stop()
     }
   }
 
   private async __stopIPFS() {
     if (this.ipfs) {
+      log('Stopping IPFS')
       await this.ipfs.stop()
     }
   }
@@ -470,26 +472,27 @@ export class Storage {
 
   public async getPrivateConversations(): Promise<void> {
     log('STORAGE: getPrivateConversations enetered')
-    // @ts-ignore - OrbitDB's type declaration of `load` lacks 'options'
+    // @ts-ignore - OrbitDB's type declaration of `load` arguments lacks 'options'
     await this.messageThreads.load({ fetchEntryTimeout: 2000 })
     const payload = this.messageThreads.all
     log('STORAGE: getPrivateConversations payload payload')
     this.io.emit(EventTypesResponse.RESPONSE_GET_PRIVATE_CONVERSATIONS, payload)
   }
 
-  public async saveCertificate(certificate: string) {
+  public async saveCertificate(certificate: string): Promise<boolean> {
     log('About to save certificate...')
     if (!certificate) {
       log('Certificate is either null or undefined, not saving to db')
-      return
+      return false
     }
-    // const verification = await verifyUserCert('', certificate)
-    // if (verification.resultCode !== 0) {
-    //   log('Certificate is not valid')
-    //   log(verification.resultMessage)
-    //   return
-    // }
+    const verification = await verifyUserCert(dataFromRootPems.certificate, certificate)    
+    if (verification.resultCode !== 0) {
+      log.error('Certificate is not valid')
+      log.error(verification.resultMessage)
+      return false
+    }
     log('Saving certificate...')
     await this.certificates.add(certificate)
+    return true
   }
 }

@@ -46,6 +46,7 @@
     "@types/express": "^4.17.9",
     "@types/node": "^14.14.6",
     "@types/socket.io": "^2.1.12",
+    "@zbayapp/identity": "^1.0.2",
     "abortable-iterator": "^3.0.0",
     "async-mutex": "^0.2.6",
     "cors": "^2.8.5",
