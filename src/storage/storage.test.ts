@@ -5,7 +5,7 @@ import { Config, dataFromRootPems } from '../constants'
 import { createLibp2p, createTmpDir, TmpDir, tmpZbayDirPath } from '../testUtils'
 import { Storage } from './storage'
 import * as utils from '../utils'
-import { createUserCsr,  createUserCert } from '@zbayapp/identity'
+import { createUserCsr, createUserCert } from '@zbayapp/identity'
 import * as certEvents from '../socket/events/certificates'
 jest.setTimeout(30_000)
 
@@ -46,7 +46,7 @@ describe('Storage', () => {
     expect(fs.existsSync(tmpOrbitDbDir)).toBe(true)
     expect(fs.existsSync(tmpIpfsPath)).toBe(true)
   })
-  
+
   it('should not create paths if createPaths is set to false', async () => {
     // Note: paths are being created by IPFS and OrbitDb
     expect(fs.existsSync(tmpOrbitDbDir)).toBe(false)
@@ -108,7 +108,3 @@ describe('Certificate', () => {
     }
   })
 })
-
-
-
-

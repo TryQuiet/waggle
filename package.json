@@ -10,7 +10,7 @@
     "build": "tsc",
     "version": "git add -A src",
     "postversion": "git push && git push --tags",
-    "lint": "eslint ./src/**/*.{ts,tsx,js,jsx}",
+    "lint": "eslint --ext .jsx,.js,.ts,.tsx ./src/",
     "test": "DEBUG=ipfs:*,waggle:* jest ./src/**/* --runInBand",
     "test-ci": "DEBUG=ipfs:*,waggle:* jest ./src/**/* --runInBand --collectCoverage --colors --ci --verbose"
   },

@@ -1,4 +1,4 @@
-import EventStore from "orbit-db-eventstore"
+import EventStore from 'orbit-db-eventstore'
 
 export interface IMessage {
   id: string
@@ -40,7 +40,6 @@ export interface IPublicKey {
   halfKey: string
 }
 export type IMessageThread = string
-
 
 export class ConnectionsManagerOptions {
   env: {
