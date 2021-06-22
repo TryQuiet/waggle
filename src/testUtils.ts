@@ -14,6 +14,8 @@ export interface TmpDir {
   removeCallback: () => {}
 }
 
+export const testBootstrapMultiaddrs = ['/dns4/abcd.onion/tcp/1111/ws/p2p/QmfLUJcDSLVYnNqSPSRK4mKG8MGw51m9K2v59k3yq1C8s4']
+
 export const spawnTorProcess = async (zbayDirPath: string): Promise<Tor> => {
   const ports = await getPorts()
   const torPath = torBinForPlatform()
@@ -42,6 +44,7 @@ export const createMinConnectionManager = (options = {}): ConnectionsManager => 
     agentPort: 2222,
     io: null,
     options: {
+      bootstrapMultiaddrs: testBootstrapMultiaddrs,
       ...options
     }
   })
@@ -51,7 +54,7 @@ export const createLibp2p = (peerId: PeerId = null): Libp2pType => {
   return ConnectionsManager.createBootstrapNode({
     peerId,
     listenAddrs: ['/dns4/localhost/tcp/1111/ws'],
-    bootstrapMultiaddrsList: ['/dns4/abcd.onion/tcp/1111/ws/p2p/12345abcdf'],
+    bootstrapMultiaddrsList: testBootstrapMultiaddrs,
     agent: new SocksProxyAgent({ port: 1234, host: 'localhost' }),
     localAddr: `/dns4/localhost/tcp/1111/ws/p2p/${peerId.toB58String()}`
   })

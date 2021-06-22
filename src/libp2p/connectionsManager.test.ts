@@ -8,7 +8,7 @@ import path from 'path'
 import os from 'os'
 import fs from 'fs'
 import fp from 'find-free-port'
-import { createMinConnectionManager, createTmpDir, TmpDir, tmpZbayDirPath, torBinForPlatform } from '../testUtils'
+import { createMinConnectionManager, createTmpDir, testBootstrapMultiaddrs, TmpDir, tmpZbayDirPath, torBinForPlatform } from '../testUtils'
 import * as utils from '../utils'
 jest.setTimeout(30_000)
 
@@ -69,7 +69,7 @@ test('start and close connectionsManager', async () => {
       env: {
         appDataPath: tmpAppDataPath
       },
-      bootstrapMultiaddrs: ['/dns4/abcd.onion/tcp/1111/ws/p2p/abcd1234']
+      bootstrapMultiaddrs: testBootstrapMultiaddrs
     }
   })
   await connectionsManager.initializeNode()
