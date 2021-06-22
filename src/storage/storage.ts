@@ -45,7 +45,7 @@ export interface IChannelInfo {
   owner: string
   timestamp: number
   address: string
-  keys: { ivk?: string; sk?: string }
+  keys: { ivk?: string, sk?: string }
 }
 
 export interface ChannelInfoResponse {
@@ -69,7 +69,7 @@ export class Storage {
   public zbayDir: string
   public io: any
   public peerId: PeerId
-  private isWaggleMobileMode: boolean
+  private readonly isWaggleMobileMode: boolean
   private ipfs: IPFS.IPFS
   private orbitdb: OrbitDB
   private channels: KeyValueStore<IZbayChannel>
@@ -183,18 +183,6 @@ export class Storage {
         write: ['*']
       }
     })
-
-    // this.channels.put('zbay', {
-    //   address: 'zs10zkaj29rcev9qd5xeuzck4ly5q64kzf6m6h9nfajwcvm8m2vnjmvtqgr0mzfjywswwkwke68t00',
-    //   name: 'zbay',
-    //   description: 'zbay marketplace channel',
-    //   owner: '030fdc016427a6e41ca8dccaf0c09cfbf002e5916a13ee16f5fe7240d0dfe50ede',
-    //   keys: {
-    //     ivk:
-    //       'zxviews1qvzslllpqcqqpq8z3uyzunfm57xqlpysl5es4nm7eve5y4kkm6p7rhh6xdr27kxsql4dkk0qcad6cm7hxzclq4kzd8ukandz9p8edyw75jvqlxenvwa6ydzlqzch4wt3kdf2vma9gg25qjgc7fxn7pth0qf68ljww6qe379p4xun4za7mgk2qgzkpxlj9wu4ukyta8rfk348v78wn4zrhx2889d3mkj9yhmr0ua95jwv4ln8pyjv0ps5mw78kvadwl6ajxyn6dp2ahgvaau3x'
-    //   },
-    //   timestamp: 1587009699
-    // })
 
     this.channels.events.on('replicated', () => {
       log('REPLICATED: CHANNELS')
@@ -346,7 +334,7 @@ export class Storage {
     if (repo && !repo.eventsAttached) {
       log('Subscribing to channel ', channelAddress)
       if (!this.isWaggleMobileMode) {
-        console.log(`subscribing for channel for desktop mode`)
+        console.log('subscribing for channel for desktop mode')
         db.events.on('write', (_address, entry) => {
           log('Writing to messages db')
           log(entry.payload.value)
@@ -363,7 +351,7 @@ export class Storage {
         const ids = this.getAllEventLogEntries(db).map(msg => msg.id)
         sendIdsToZbay(this.io, ids, channelAddress)
       } else {
-        console.log(`subscribing for channel for mobile mode`)
+        console.log('subscribing for channel for mobile mode')
         db.events.on('write', (_address, entry) => {
           log('Writing to messages db')
           log(entry.payload.value)
@@ -381,9 +369,10 @@ export class Storage {
   }
 
   public async askForMessages(channelAddress: string, ids: string[]) {
-    let repo = this.publicChannelsRepos.get(channelAddress)
+    const repo = this.publicChannelsRepos.get(channelAddress)
     const messages = this.getAllEventLogEntries(repo.db)
     const filteredMessages = []
+    // eslint-disable-next-line
     for (id in ids) {
       filteredMessages.push(messages.filter(i => i.id === id))
     }
@@ -478,7 +467,6 @@ export class Storage {
       db.events.on('write', (_address, entry) => {
         log('Writing')
         loadAllDirectMessages(this.io, this.getAllEventLogEntries(db), channelAddress)
-        //socketDirectMessage(this.io, { message: entry.payload.value, channelAddress })
       })
       db.events.on('replicated', () => {
         log('Message replicated')

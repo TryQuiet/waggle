@@ -36,7 +36,7 @@ interface IConstructor {
   agentPort: number
   agentHost: string
   options?: Partial<ConnectionsManagerOptions>
-  io: any,
+  io: any
   isWaggleMobileMode?: boolean
 }
 interface IBasicMessage {
