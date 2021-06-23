@@ -86,7 +86,7 @@ export class Storage {
   constructor(
     zbayDir: string,
     io: any,
-    options?: Partial<StorageOptions>,
+    options?: Partial<StorageOptions>
   ) {
     this.zbayDir = zbayDir
     this.io = io
