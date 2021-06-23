@@ -8,7 +8,7 @@ import path from 'path'
 import os from 'os'
 import fs from 'fs'
 import fp from 'find-free-port'
-import { createMinConnectionManager, createTmpDir, testBootstrapMultiaddrs, TmpDir, tmpZbayDirPath, torBinForPlatform } from '../testUtils'
+import { createMinConnectionManager, createTmpDir, testBootstrapMultiaddrs, TmpDir, tmpZbayDirPath, torBinForPlatform, torDirForPlatform } from '../testUtils'
 import * as utils from '../utils'
 jest.setTimeout(30_000)
 
@@ -39,7 +39,6 @@ afterEach(async () => {
 test('start and close connectionsManager', async () => {
   const ports = await getPorts()
   const torPath = torBinForPlatform()
-  const pathDevLib = path.join.apply(null, [process.cwd(), 'tor'])
   dataServer = new DataServer(ports.dataServer)
   await dataServer.listen()
   const [controlPort] = await fp(9051)
@@ -50,7 +49,7 @@ test('start and close connectionsManager', async () => {
     controlPort: controlPort,
     options: {
       env: {
-        LD_LIBRARY_PATH: pathDevLib,
+        LD_LIBRARY_PATH: torDirForPlatform(),
         HOME: os.homedir()
       },
       detached: true

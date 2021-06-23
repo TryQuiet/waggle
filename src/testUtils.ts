@@ -19,7 +19,7 @@ export const testBootstrapMultiaddrs = ['/dns4/abcd.onion/tcp/1111/ws/p2p/QmfLUJ
 export const spawnTorProcess = async (zbayDirPath: string): Promise<Tor> => {
   const ports = await getPorts()
   const torPath = torBinForPlatform()
-  const libPath = `${process.cwd()}/tor`
+  const libPath = torDirForPlatform()
   const tor = new Tor({
     appDataPath: zbayDirPath,
     torPath: torPath,
@@ -70,5 +70,9 @@ export const tmpZbayDirPath = (name: string): string => {
 
 export const torBinForPlatform = (): string => {
   const ext = process.platform === 'win32' ? '.exe' : ''
-  return path.join(process.cwd(), 'tor', process.platform, 'tor'.concat(ext))
+  return path.join(torDirForPlatform(), 'tor'.concat(ext))
+}
+
+export const torDirForPlatform = (): string => {
+  return path.join(process.cwd(), 'tor', process.platform)
 }
