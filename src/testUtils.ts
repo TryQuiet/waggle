@@ -1,7 +1,7 @@
 import tmp from 'tmp'
 import { SocksProxyAgent } from 'socks-proxy-agent'
 import { Config } from './constants'
-import { getPorts } from './utils'
+import { getPorts, torBinForPlatform, torDirForPlatform } from './utils'
 import { Tor } from './torManager'
 import { ConnectionsManager } from './libp2p/connectionsManager'
 import path from 'path'
@@ -66,13 +66,4 @@ export const createTmpDir = (): TmpDir => {
 
 export const tmpZbayDirPath = (name: string): string => {
   return path.join(name, Config.ZBAY_DIR)
-}
-
-export const torBinForPlatform = (): string => {
-  const ext = process.platform === 'win32' ? '.exe' : ''
-  return path.join(torDirForPlatform(), 'tor'.concat(ext))
-}
-
-export const torDirForPlatform = (): string => {
-  return path.join(process.cwd(), 'tor', process.platform)
 }

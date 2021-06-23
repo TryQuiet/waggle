@@ -162,7 +162,7 @@ export class Tor {
     const password = crypto.randomBytes(16).toString('hex')
     const hashedPassword = child_process.execSync(`${this.torPath} --quiet --hash-password ${password}`)
     this.torPassword = password
-    this.torHashedPassword = hashedPassword.toString()
+    this.torHashedPassword = hashedPassword.toString().trim()
   }
 
   public getServiceAddress = (port: number): string => {

@@ -1,9 +1,9 @@
 /* eslint import/first: 0 */
 import { Tor } from './torManager'
-import { getPorts } from '../utils'
-import { createTmpDir, spawnTorProcess, TmpDir, tmpZbayDirPath, torBinForPlatform, torDirForPlatform } from '../testUtils'
+import { getPorts, torBinForPlatform, torDirForPlatform } from '../utils'
+import { createTmpDir, spawnTorProcess, TmpDir, tmpZbayDirPath } from '../testUtils'
 
-jest.setTimeout(30_000)
+jest.setTimeout(50_000)
 
 let tmpDir: TmpDir
 let tmpAppDataPath: string
@@ -88,7 +88,7 @@ describe('Tor manager', () => {
     tor.generateHashedPassword()
     console.log(tor.torHashedPassword)
     console.log(tor.torPassword)
-    expect(tor.torHashedPassword).toHaveLength(62)
+    expect(tor.torHashedPassword).toHaveLength(61)
     expect(tor.torPassword).toHaveLength(32)
   })
 })
