@@ -69,7 +69,7 @@ export class Tor {
       }
 
       if (oldTorPid && process.platform !== 'win32') {
-        child_process.exec(`ps -p ${oldTorPid as string} -o comm=`, (err, stdout, _stderr) => {
+        child_process.exec(this.torProcessNameCommand(oldTorPid.toString()), (err, stdout, _stderr) => {
           if (err) {
             log.error(err)
           }
@@ -84,6 +84,14 @@ export class Tor {
         this.spawnTor(resolve)
       }
     })
+  }
+
+  private readonly torProcessNameCommand = (oldTorPid: string): string => {
+    const byPlatform = {
+      linux: `ps -p ${oldTorPid} -o comm=`,
+      darwin: `ps -c -p ${oldTorPid} -o comm=`
+    }
+    return byPlatform[process.platform]
   }
 
   private readonly spawnTor = resolve => {
