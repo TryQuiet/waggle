@@ -87,11 +87,9 @@ export class Storage {
     zbayDir: string,
     io: any,
     options?: Partial<StorageOptions>,
-    isWaggleMobileMode?: boolean
   ) {
     this.zbayDir = zbayDir
     this.io = io
-    this.isWaggleMobileMode = isWaggleMobileMode || true
     this.options = {
       ...new StorageOptions(),
       ...options
@@ -333,11 +331,10 @@ export class Storage {
 
     if (repo && !repo.eventsAttached) {
       log('Subscribing to channel ', channelAddress)
-      if (!this.isWaggleMobileMode) {
+      if (!this.options.isWaggleMobileMode) {
         console.log('subscribing for channel for desktop mode')
         db.events.on('write', (_address, entry) => {
           log('Writing to messages db')
-          log(entry.payload.value)
           socketMessage(this.io, { message: entry.payload.value, channelAddress })
         })
         db.events.on('replicate.progress', (address, hash, entry, progress, have) => {
@@ -370,10 +367,12 @@ export class Storage {
 
   public async askForMessages(channelAddress: string, ids: string[]) {
     const repo = this.publicChannelsRepos.get(channelAddress)
+    if (!repo) return
     const messages = this.getAllEventLogEntries(repo.db)
     const filteredMessages = []
     // eslint-disable-next-line
-    for (id in ids) {
+    for (let id of ids) {
+      console.log(`FOROF: ${id}`)
       filteredMessages.push(messages.filter(i => i.id === id))
     }
     loadAllMessages(this.io, filteredMessages, channelAddress)

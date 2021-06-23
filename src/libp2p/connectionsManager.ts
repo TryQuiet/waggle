@@ -28,6 +28,7 @@ class ConnectionsManagerOptions {
 
   bootstrapMultiaddrs: string[] = []
   createPaths: boolean = true
+  isWaggleMobileMode: boolean = true
 }
 
 interface IConstructor {
@@ -37,7 +38,6 @@ interface IConstructor {
   agentHost: string
   options?: Partial<ConnectionsManagerOptions>
   io: any
-  isWaggleMobileMode?: boolean
 }
 interface IBasicMessage {
   id: string
@@ -71,7 +71,7 @@ export class ConnectionsManager {
   bootstrapMultiaddrs: string[]
   trackerApi: any
 
-  constructor({ host, port, agentHost, agentPort, options, io, isWaggleMobileMode }: IConstructor) {
+  constructor({ host, port, agentHost, agentPort, options, io }: IConstructor) {
     this.host = host
     this.port = port
     this.io = io
@@ -83,7 +83,7 @@ export class ConnectionsManager {
       ...options
     }
     this.zbayDir = options?.env?.appDataPath || ZBAY_DIR_PATH
-    this.storage = new Storage(this.zbayDir, this.io, { ...options }, isWaggleMobileMode)
+    this.storage = new Storage(this.zbayDir, this.io, { ...options })
     this.peerId = null
     this.bootstrapMultiaddrs = options.bootstrapMultiaddrs || this.defaultBootstrapMultiaddrs()
     this.listenAddrs = `/dns4/${this.host}/tcp/${this.port}/ws`

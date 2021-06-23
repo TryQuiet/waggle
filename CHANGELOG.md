@@ -18,6 +18,7 @@ Events:
 API:
   ConnectionsManager: added optional isWaggleMobileMode
   Storage: added optional isWaggleMobileMode
+  !IMPORTANT: Those will be removed as soon as mobile version will adopt the new API
 
 ### Fixed
 

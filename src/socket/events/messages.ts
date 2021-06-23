@@ -28,6 +28,7 @@ export const sendIdsToZbay = (socket: SocketIO.Server, ids: string[], channelAdd
   if (ids.length === 0) {
     return
   }
+  console.log(`IDS are ${ids}`)
   socket.emit(EventTypesResponse.SEND_IDS, {
     channelAddress,
     ids
