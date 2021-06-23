@@ -24,7 +24,7 @@ describe('Tor manager', () => {
     await tor.init()
     await tor.kill()
   })
-  
+
   it('should detect and kill old tor process before new tor is spawned', async () => {
     const torPath = torBinForPlatform()
     const ports = await getPorts()
@@ -42,9 +42,9 @@ describe('Tor manager', () => {
         detached: true
       }
     })
-  
+
     await tor.init()
-  
+
     const torSecondInstance = new Tor({
       appDataPath: tmpAppDataPath,
       socksPort: ports.socksPort,
@@ -61,7 +61,7 @@ describe('Tor manager', () => {
     await torSecondInstance.init()
     await torSecondInstance.kill()
   })
-  
+
   it('spawns new hidden service', async () => {
     const tor = await spawnTorProcess(tmpAppDataPath)
     await tor.init()
@@ -69,7 +69,7 @@ describe('Tor manager', () => {
     expect(hiddenService.onionAddress).toHaveLength(56)
     await tor.kill()
   })
-  
+
   it('spawns hidden service using private key', async () => {
     const tor = await spawnTorProcess(tmpAppDataPath)
     await tor.init()
@@ -82,7 +82,7 @@ describe('Tor manager', () => {
     expect(hiddenServiceOnionAddress).toBe('u2rg2direy34dj77375h2fbhsc2tvxj752h4tlso64mjnlevcv54oaad')
     await tor.kill()
   })
-  
+
   it('generates hashed password', async () => {
     const tor = await spawnTorProcess(tmpAppDataPath)
     tor.generateHashedPassword()
@@ -92,4 +92,3 @@ describe('Tor manager', () => {
     expect(tor.torPassword).toHaveLength(32)
   })
 })
-
