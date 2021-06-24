@@ -22,8 +22,8 @@ beforeEach(() => {
 })
 
 afterEach(async () => {
-  tmpDir.removeCallback()
   storage && await storage.stopOrbitDb()
+  tmpDir.removeCallback()
 })
 
 test('Create storage paths by default', async () => {

@@ -10,7 +10,6 @@ import fs from 'fs'
 import fp from 'find-free-port'
 import { createMinConnectionManager, createTmpDir, testBootstrapMultiaddrs, TmpDir, tmpZbayDirPath } from '../testUtils'
 import * as utils from '../utils'
-jest.setTimeout(30_000)
 
 let tmpDir: TmpDir
 let tmpAppDataPath: string
@@ -28,12 +27,12 @@ beforeEach(() => {
 })
 
 afterEach(async () => {
-  tmpDir.removeCallback()
   if (connectionsManager) {
     await connectionsManager.closeStorage()
     await connectionsManager.stopLibp2p()
   }
   dataServer && await dataServer.close()
+  tmpDir.removeCallback()
 })
 
 test('start and close connectionsManager', async () => {

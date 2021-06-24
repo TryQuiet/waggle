@@ -29,7 +29,8 @@
       "/node_modules/"
     ],
     "testRegex": "src/.*\\.test\\.(t|j)s$",
-    "testEnvironment": "node"
+    "testEnvironment": "node",
+    "testTimeout": 30000
   },
   "devDependencies": {
     "@types/node": "^14.14.7",
