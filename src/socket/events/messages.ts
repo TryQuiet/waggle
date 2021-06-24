@@ -3,7 +3,7 @@ import { IMessage } from '../../storage/storage'
 import { EventTypesResponse } from '../constantsReponse'
 
 export const message = (socket: SocketIO.Server, message) => {
-  console.log(`emitting message to zbay`)
+  console.log('emitting message to zbay')
   socket.emit(EventTypesServer.MESSAGE, message)
 }
 

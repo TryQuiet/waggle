@@ -45,7 +45,7 @@ export interface IChannelInfo {
   owner: string
   timestamp: number
   address: string
-  keys: { ivk?: string; sk?: string }
+  keys: { ivk?: string, sk?: string }
 }
 
 export interface ChannelInfoResponse {
@@ -332,7 +332,6 @@ export class Storage {
         console.log('subscribing for channel for desktop mode')
         db.events.on('write', (_address, entry) => {
           log(`Writing to public channel db ${channelAddress}`)
-          const ids = this.getAllEventLogEntries(db).map(msg => msg.id)
           socketMessage(this.io, { message: entry.payload.value, channelAddress })
         })
         db.events.on('replicated', () => {
@@ -350,7 +349,6 @@ export class Storage {
       } else {
         console.log('subscribing for channel for mobile mode')
         db.events.on('write', (_address, entry) => {
-          log('mobile mode')
           log(`Writing to messages db ${channelAddress}`)
           log(entry.payload.value)
           socketMessage(this.io, { message: entry.payload.value, channelAddress })
