@@ -338,6 +338,7 @@ export class Storage {
         db.events.on('replicated', () => {
           const ids = this.getAllEventLogEntries(db).map(msg => msg.id)
           console.log('Message replicated')
+          sendIdsToZbay(this.io, ids, channelAddress)
         })
         db.events.on('ready', () => {
           const ids = this.getAllEventLogEntries(db).map(msg => msg.id)
