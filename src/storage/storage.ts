@@ -45,7 +45,7 @@ export interface IChannelInfo {
   owner: string
   timestamp: number
   address: string
-  keys: { ivk?: string, sk?: string }
+  keys: { ivk?: string; sk?: string }
 }
 
 export interface ChannelInfoResponse {
@@ -53,6 +53,7 @@ export interface ChannelInfoResponse {
 }
 
 class StorageOptions {
+  loadAllDirectMessages
   createPaths: boolean = true
 }
 
@@ -83,11 +84,7 @@ export class Storage {
   public orbitDbDir: string
   public ipfsRepoPath: string
 
-  constructor(
-    zbayDir: string,
-    io: any,
-    options?: Partial<StorageOptions>
-  ) {
+  constructor(zbayDir: string, io: any, options?: Partial<StorageOptions>) {
     this.zbayDir = zbayDir
     this.io = io
     this.options = {
@@ -181,6 +178,33 @@ export class Storage {
         write: ['*']
       }
     })
+
+    //   "zbay": {
+    //     "address": "zs10zkaj29rcev9qd5xeuzck4ly5q64kzf6m6h9nfajwcvm8m2vnjmvtqgr0mzfjywswwkwke68t00",
+    //     "name": "zbay",
+    //     "description": "zbay marketplace channel",
+    //     "owner": "030fdc016427a6e41ca8dccaf0c09cfbf002e5916a13ee16f5fe7240d0dfe50ede",
+    //     "keys": {
+    //         "ivk": "zxviews1qvzslllpqcqqpq8z3uyzunfm57xqlpysl5es4nm7eve5y4kkm6p7rhh6xdr27kxsql4dkk0qcad6cm7hxzclq4kzd8ukandz9p8edyw75jvqlxenvwa6ydzlqzch4wt3kdf2vma9gg25qjgc7fxn7pth0qf68ljww6qe379p4xun4za7mgk2qgzkpxlj9wu4ukyta8rfk348v78wn4zrhx2889d3mkj9yhmr0ua95jwv4ln8pyjv0ps5mw78kvadwl6ajxyn6dp2ahgvaau3x"
+    //     },
+    //     "timestamp": 1587009699
+    // },
+    // const channelData = {
+    //   address: 'zs10zkaj29rcev9qd5xeuzck4ly5q64kzf6m6h9nfajwcvm8m2vnjmvtqgr0mzfjywswwkwke68t00',
+    //   name: 'zbay',
+    //   description: 'zbay marketplace channel',
+    //   owner: '030fdc016427a6e41ca8dccaf0c09cfbf002e5916a13ee16f5fe7240d0dfe50ede',
+    //   keys: {
+    //     ivk:
+    //       'zxviews1qvzslllpqcqqpq8z3uyzunfm57xqlpysl5es4nm7eve5y4kkm6p7rhh6xdr27kxsql4dkk0qcad6cm7hxzclq4kzd8ukandz9p8edyw75jvqlxenvwa6ydzlqzch4wt3kdf2vma9gg25qjgc7fxn7pth0qf68ljww6qe379p4xun4za7mgk2qgzkpxlj9wu4ukyta8rfk348v78wn4zrhx2889d3mkj9yhmr0ua95jwv4ln8pyjv0ps5mw78kvadwl6ajxyn6dp2ahgvaau3x'
+    //   },
+    //   timestamp: 1587009699
+    // }
+
+    // await this.channels.put(
+    //   'zs10zkaj29rcev9qd5xeuzck4ly5q64kzf6m6h9nfajwcvm8m2vnjmvtqgr0mzfjywswwkwke68t00',
+    //   channelData
+    // )
 
     this.channels.events.on('replicated', () => {
       log('REPLICATED: CHANNELS')
@@ -334,11 +358,20 @@ export class Storage {
       if (!this.options.isWaggleMobileMode) {
         console.log('subscribing for channel for desktop mode')
         db.events.on('write', (_address, entry) => {
-          log('Writing to messages db')
+          log('desktop mode')
+          log(`Writing to messages db ${channelAddress}`)
+          const ids = this.getAllEventLogEntries(db).map(msg => msg.id)
+          console.log(ids)
           socketMessage(this.io, { message: entry.payload.value, channelAddress })
         })
         db.events.on('replicate.progress', (address, hash, entry, progress, have) => {
+          console.log('replciate progress')
           sendIdsToZbay(this.io, [entry.payload.value.id], channelAddress)
+        })
+        db.events.on('replicated', () => {
+          const ids = this.getAllEventLogEntries(db).map(msg => msg.id)
+          console.log(ids)
+          console.log('replicated')
         })
         db.events.on('ready', () => {
           const ids = this.getAllEventLogEntries(db).map(msg => msg.id)
@@ -350,7 +383,8 @@ export class Storage {
       } else {
         console.log('subscribing for channel for mobile mode')
         db.events.on('write', (_address, entry) => {
-          log('Writing to messages db')
+          log('mobile mode')
+          log(`Writing to messages db ${channelAddress}`)
           log(entry.payload.value)
           socketMessage(this.io, { message: entry.payload.value, channelAddress })
         })
@@ -373,7 +407,7 @@ export class Storage {
     // eslint-disable-next-line
     for (let id of ids) {
       console.log(`FOROF: ${id}`)
-      filteredMessages.push(messages.filter(i => i.id === id))
+      filteredMessages.push(...messages.filter(i => i.id === id))
     }
     loadAllMessages(this.io, filteredMessages, channelAddress)
   }
@@ -393,6 +427,7 @@ export class Storage {
       return
     }
     log('BEFORE CREATING NEW ZBAY CHANNEL')
+    console.log(`channels.${channelAddress}`)
     const db: EventStore<IMessage> = await this.orbitdb.log<IMessage>(
       `channels.${channelAddress}`,
       {
@@ -403,6 +438,7 @@ export class Storage {
     )
 
     const channel = this.channels.get(channelAddress)
+    console.log(JSON.stringify(channel))
     if (!channel) {
       await this.channels.put(channelAddress, {
         orbitAddress: `/orbitdb/${db.address.root}/${db.address.path}`,
