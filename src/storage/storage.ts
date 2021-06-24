@@ -491,7 +491,7 @@ export class Storage {
     log(`creatin direct message thread for ${channelAddress}`)
 
     const db: EventStore<IMessage> = await this.orbitdb.log<IMessage>(
-      `direct.messages.${channelAddress}`,
+      `dms.${channelAddress}`,
       {
         accessController: {
           write: ['*']
