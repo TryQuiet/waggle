@@ -329,7 +329,6 @@ export class Storage {
     if (repo && !repo.eventsAttached) {
       log('Subscribing to channel ', channelAddress)
       if (!this.options.isWaggleMobileMode) {
-        console.log('subscribing for channel for desktop mode')
         db.events.on('write', (_address, entry) => {
           log(`Writing to public channel db ${channelAddress}`)
           socketMessage(this.io, { message: entry.payload.value, channelAddress })
@@ -347,7 +346,6 @@ export class Storage {
         const ids = this.getAllEventLogEntries(db).map(msg => msg.id)
         sendIdsToZbay(this.io, ids, channelAddress)
       } else {
-        console.log('subscribing for channel for mobile mode')
         db.events.on('write', (_address, entry) => {
           log(`Writing to messages db ${channelAddress}`)
           log(entry.payload.value)
@@ -371,7 +369,6 @@ export class Storage {
     const filteredMessages = []
     // eslint-disable-next-line
     for (let id of ids) {
-      console.log(`FOROF: ${id}`)
       filteredMessages.push(...messages.filter(i => i.id === id))
     }
     loadAllMessages(this.io, filteredMessages, channelAddress)
@@ -391,8 +388,6 @@ export class Storage {
       log("No channel address, can't create channel")
       return
     }
-    log('BEFORE CREATING NEW ZBAY CHANNEL')
-    console.log(`channels.${channelAddress}`)
     const db: EventStore<IMessage> = await this.orbitdb.log<IMessage>(
       `channels.${channelAddress}`,
       {
@@ -403,7 +398,6 @@ export class Storage {
     )
 
     const channel = this.channels.get(channelAddress)
-    console.log(JSON.stringify(channel))
     if (!channel) {
       await this.channels.put(channelAddress, {
         orbitAddress: `/orbitdb/${db.address.root}/${db.address.path}`,
