@@ -18,6 +18,8 @@ import { loadCertificates } from '../socket/events/certificates'
 import { IRepo, StorageOptions, IChannelInfo, IMessage, ChannelInfoResponse, IZbayChannel, IPublicKey, IMessageThread } from '../common/types'
 import { verifyUserCert } from '@zbayapp/identity'
 import debug from 'debug'
+import { parseCertificate } from '@zbayapp/identity/lib/extractPubKey'
+import { CertFieldsTypes } from '@zbayapp/identity/lib/common'
 const log = Object.assign(debug('waggle:db'), {
   error: debug('waggle:db:err')
 })
@@ -493,6 +495,23 @@ export class Storage {
     }
     log('Saving certificate...')
     await this.certificates.add(certificate)
+    return true
+  }
+
+  public validateUsername(username: string): boolean {
+    const certificates = this.getAllEventLogEntries(this.certificates)
+    for (const cert of certificates) {
+      const parsedCert = parseCertificate(cert)
+      const typesAndValues = parsedCert.subject.typesAndValues
+      for (const tav of typesAndValues) {
+        if (tav.type === CertFieldsTypes.nickName) {
+          const certUsername = tav.value.valueBlock.value
+          if (certUsername.localeCompare(username, undefined, {sensitivity: 'base'}))
+            console.log(tav.value.valueBlock.value)
+            return false
+        }
+      }
+    }
     return true
   }
 }
