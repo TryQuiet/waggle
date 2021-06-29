@@ -107,7 +107,7 @@ export class Storage {
 
   public async createDbForCertificates() {
     log('createDbForCertificates init')
-    this.certificates = await this.orbitdb.log<string>('zbay-certificates', {
+    this.certificates = await this.orbitdb.log<string>('certificates', {
       accessController: {
         write: ['*']
       }
