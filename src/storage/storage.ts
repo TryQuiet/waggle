@@ -499,6 +499,9 @@ export class Storage {
   }
 
   public validateUsername(username: string): boolean {
+    /**
+     * Check if given username is already in use
+     */
     const certificates = this.getAllEventLogEntries(this.certificates)
     for (const cert of certificates) {
       const parsedCert = parseCertificate(cert)

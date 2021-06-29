@@ -49,10 +49,10 @@ export class ConnectionsManager {
       ...new ConnectionsManagerOptions(),
       ...options
     }
-    this.zbayDir = options?.env?.appDataPath || ZBAY_DIR_PATH
+    this.zbayDir = this.options.env?.appDataPath || ZBAY_DIR_PATH
     this.storage = new Storage(this.zbayDir, this.io, { ...options })
     this.peerId = null
-    this.bootstrapMultiaddrs = options.bootstrapMultiaddrs || this.defaultBootstrapMultiaddrs()
+    this.bootstrapMultiaddrs = this.getBootstrapMultiaddrs()
     this.listenAddrs = `/dns4/${this.host}/tcp/${this.port}/ws`
     this.trackerApi = fetchAbsolute(fetch)('http://okmlac2qjgo2577dkyhpisceua2phwxhdybw4pssortdop6ddycntsyd.onion:7788')
 
@@ -70,7 +70,10 @@ export class ConnectionsManager {
     this.socksProxyAgent = new SocksProxyAgent({ port: this.agentPort, host: this.agentHost })
   }
 
-  private readonly defaultBootstrapMultiaddrs = () => {
+  private readonly getBootstrapMultiaddrs = () => {
+    if (this.options.bootstrapMultiaddrs.length > 0) {
+      return this.options.bootstrapMultiaddrs
+    }
     return [
       '/dns4/2lmfmbj4ql56d55lmv7cdrhdlhls62xa4p6lzy6kymxuzjlny3vnwyqd.onion/tcp/7788/ws/p2p/Qmak8HeMad8X1HGBmz2QmHfiidvGnhu6w6ugMKtx8TFc85'
     ]
