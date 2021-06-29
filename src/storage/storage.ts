@@ -7,7 +7,6 @@ import EventStore from 'orbit-db-eventstore'
 import PeerId from 'peer-id'
 import {
   message as socketMessage,
-  directMessage as socketDirectMessage,
   loadAllMessages,
   loadAllDirectMessages,
   sendIdsToZbay
@@ -431,7 +430,7 @@ export class Storage {
     if (repo && !repo.eventsAttached) {
       log('Subscribing to direct messages thread ', channelAddress)
       loadAllDirectMessages(this.io, this.getAllEventLogEntries(db), channelAddress)
-      db.events.on('write', (_address, entry) => {
+      db.events.on('write', (_address, _entry) => {
         log('Writing')
         loadAllDirectMessages(this.io, this.getAllEventLogEntries(db), channelAddress)
       })
