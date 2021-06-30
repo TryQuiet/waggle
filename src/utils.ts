@@ -1,5 +1,6 @@
 import fs from 'fs'
 import fp from 'find-free-port'
+import path from 'path'
 import SocketIO from 'socket.io'
 
 export interface Ports {
@@ -35,9 +36,19 @@ export const getPorts = async (): Promise<Ports> => {
   }
 }
 
+
 export class DummyIOServer extends SocketIO.Server {
   emit(event: string, ...args: any[]): boolean {
     console.log(`Emitting ${event}`)
     return true
   }
+}
+
+export const torBinForPlatform = (): string => {
+  const ext = process.platform === 'win32' ? '.exe' : ''
+  return path.join(torDirForPlatform(), 'tor'.concat(ext))
+}
+
+export const torDirForPlatform = (): string => {
+  return path.join(process.cwd(), 'tor', process.platform)
 }

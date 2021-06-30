@@ -1,6 +1,6 @@
 {
   "name": "waggle",
-  "version": "2.0.4",
+  "version": "2.0.6",
   "author": "jk",
   "description": "tlg-manager",
   "types": "lib/index.d.ts",
@@ -11,8 +11,8 @@
     "version": "git add -A src",
     "postversion": "git push && git push --tags",
     "lint": "eslint --ext .jsx,.js,.ts,.tsx ./src/",
-    "test": "DEBUG=ipfs:*,waggle:* jest ./src/**/* --runInBand",
-    "test-ci": "jest ./src/**/* --runInBand --collectCoverage --colors --ci --silent --verbose"
+    "test": "DEBUG=ipfs:*,waggle:* jest ./src/**/* --runInBand --verbose",
+    "test-ci": "jest ./src/**/* --runInBand --colors --ci --silent --verbose"
   },
   "repository": {
     "type": "git",
@@ -33,7 +33,8 @@
       "/node_modules/"
     ],
     "testRegex": "src/.*\\.test\\.(t|j)s$",
-    "testEnvironment": "node"
+    "testEnvironment": "node",
+    "testTimeout": 30000
   },
   "devDependencies": {
     "@types/node": "^14.14.7",

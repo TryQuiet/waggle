@@ -7,9 +7,10 @@ import EventStore from 'orbit-db-eventstore'
 import PeerId from 'peer-id'
 import {
   message as socketMessage,
-  directMessage as socketDirectMessage
-} from '../socket/events/message'
-import { loadAllMessages, loadAllDirectMessages } from '../socket/events/allMessages'
+  loadAllMessages,
+  loadAllDirectMessages,
+  sendIdsToZbay
+} from '../socket/events/messages'
 import { EventTypesResponse } from '../socket/constantsReponse'
 import { loadAllPublicChannels } from '../socket/events/channels'
 import { Libp2p } from 'libp2p-gossipsub/src/interfaces'
@@ -55,10 +56,7 @@ export class Storage {
   public async init(libp2p: any, peerID: PeerId): Promise<void> {
     log('STORAGE: Entered init')
     if (this.options?.createPaths) {
-      createPaths([
-        this.ipfsRepoPath,
-        this.orbitDbDir
-      ])
+      createPaths([this.ipfsRepoPath, this.orbitDbDir])
     }
     this.ipfs = await this.initIPFS(libp2p, peerID)
 
@@ -111,7 +109,7 @@ export class Storage {
 
   public async createDbForCertificates() {
     log('createDbForCertificates init')
-    this.certificates = await this.orbitdb.log<string>('zbay-certificates', {
+    this.certificates = await this.orbitdb.log<string>('certificates', {
       accessController: {
         write: ['*']
       }
@@ -141,7 +139,7 @@ export class Storage {
 
   private async createDbForChannels() {
     log('createDbForChannels init')
-    this.channels = await this.orbitdb.keyvalue<IZbayChannel>('zbay-public-channels', {
+    this.channels = await this.orbitdb.keyvalue<IZbayChannel>('public-channels', {
       accessController: {
         write: ['*']
       }
@@ -159,7 +157,7 @@ export class Storage {
   }
 
   private async createDbForMessageThreads() {
-    this.messageThreads = await this.orbitdb.keyvalue<IMessageThread>('message-threads', {
+    this.messageThreads = await this.orbitdb.keyvalue<IMessageThread>('msg-threads', {
       accessController: {
         write: ['*']
       }
@@ -181,7 +179,7 @@ export class Storage {
   }
 
   private async createDbForUsers() {
-    this.directMessagesUsers = await this.orbitdb.keyvalue<IPublicKey>('direct-messages', {
+    this.directMessagesUsers = await this.orbitdb.keyvalue<IPublicKey>('dms', {
       accessController: {
         write: ['*']
       }
@@ -264,7 +262,8 @@ export class Storage {
     loadAllPublicChannels(this.io, this.getChannelsResponse())
   }
 
-  private getAllEventLogEntries(db: EventStore<any>): any[] { // TODO: fix typing
+  private getAllEventLogEntries(db: EventStore<any>): any[] {
+    // TODO: fix typing
     // TODO: move to e.g custom Store
     return db
       .iterator({ limit: -1 })
@@ -301,22 +300,50 @@ export class Storage {
 
     if (repo && !repo.eventsAttached) {
       log('Subscribing to channel ', channelAddress)
-      db.events.on('write', (_address, entry) => {
-        log('Writing to messages db')
-        log(entry.payload.value)
-        socketMessage(this.io, { message: entry.payload.value, channelAddress })
-      })
-      db.events.on('replicated', () => {
-        log('Message replicated')
+      if (!this.options.isWaggleMobileMode) {
+        db.events.on('write', (_address, entry) => {
+          log(`Writing to public channel db ${channelAddress}`)
+          socketMessage(this.io, { message: entry.payload.value, channelAddress })
+        })
+        db.events.on('replicated', () => {
+          const ids = this.getAllEventLogEntries(db).map(msg => msg.id)
+          console.log('Message replicated')
+          sendIdsToZbay(this.io, ids, channelAddress)
+        })
+        db.events.on('ready', () => {
+          const ids = this.getAllEventLogEntries(db).map(msg => msg.id)
+          sendIdsToZbay(this.io, ids, channelAddress)
+        })
+        repo.eventsAttached = true
+        const ids = this.getAllEventLogEntries(db).map(msg => msg.id)
+        sendIdsToZbay(this.io, ids, channelAddress)
+      } else {
+        db.events.on('write', (_address, entry) => {
+          log(`Writing to messages db ${channelAddress}`)
+          log(entry.payload.value)
+          socketMessage(this.io, { message: entry.payload.value, channelAddress })
+        })
+        db.events.on('replicated', () => {
+          log('Message replicated')
+          loadAllMessages(this.io, this.getAllEventLogEntries(db), channelAddress)
+        })
+        repo.eventsAttached = true
         loadAllMessages(this.io, this.getAllEventLogEntries(db), channelAddress)
-      })
-      db.events.on('ready', () => {
-        loadAllMessages(this.io, this.getAllEventLogEntries(db), channelAddress)
-      })
-      repo.eventsAttached = true
-      loadAllMessages(this.io, this.getAllEventLogEntries(db), channelAddress)
-      log('Subscription to channel ready', channelAddress)
+        log('Subscription to channel ready', channelAddress)
+      }
     }
+  }
+
+  public async askForMessages(channelAddress: string, ids: string[]) {
+    const repo = this.publicChannelsRepos.get(channelAddress)
+    if (!repo) return
+    const messages = this.getAllEventLogEntries(repo.db)
+    const filteredMessages = []
+    // eslint-disable-next-line
+    for (let id of ids) {
+      filteredMessages.push(...messages.filter(i => i.id === id))
+    }
+    loadAllMessages(this.io, filteredMessages, channelAddress)
   }
 
   public async sendMessage(channelAddress: string, message: IMessage) {
@@ -333,9 +360,8 @@ export class Storage {
       log("No channel address, can't create channel")
       return
     }
-    log('BEFORE CREATING NEW ZBAY CHANNEL')
     const db: EventStore<IMessage> = await this.orbitdb.log<IMessage>(
-      `zbay.channels.${channelAddress}`,
+      `channels.${channelAddress}`,
       {
         accessController: {
           write: ['*']
@@ -367,14 +393,11 @@ export class Storage {
   }
 
   public async initializeConversation(address: string, encryptedPhrase: string): Promise<void> {
-    const db: EventStore<IMessage> = await this.orbitdb.log<IMessage>(
-      `direct.messages.${address}`,
-      {
-        accessController: {
-          write: ['*']
-        }
+    const db: EventStore<IMessage> = await this.orbitdb.log<IMessage>(`dms.${address}`, {
+      accessController: {
+        write: ['*']
       }
-    )
+    })
 
     this.directMessagesRepos.set(address, { db, eventsAttached: false })
     await this.messageThreads.put(address, encryptedPhrase)
@@ -409,9 +432,9 @@ export class Storage {
     if (repo && !repo.eventsAttached) {
       log('Subscribing to direct messages thread ', channelAddress)
       loadAllDirectMessages(this.io, this.getAllEventLogEntries(db), channelAddress)
-      db.events.on('write', (_address, entry) => {
+      db.events.on('write', (_address, _entry) => {
         log('Writing')
-        socketDirectMessage(this.io, { message: entry.payload.value, channelAddress })
+        loadAllDirectMessages(this.io, this.getAllEventLogEntries(db), channelAddress)
       })
       db.events.on('replicated', () => {
         log('Message replicated')
@@ -435,7 +458,7 @@ export class Storage {
     log(`creatin direct message thread for ${channelAddress}`)
 
     const db: EventStore<IMessage> = await this.orbitdb.log<IMessage>(
-      `direct.messages.${channelAddress}`,
+      `dms.${channelAddress}`,
       {
         accessController: {
           write: ['*']

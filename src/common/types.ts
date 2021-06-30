@@ -30,6 +30,7 @@ export interface ChannelInfoResponse {
 
 export class StorageOptions {
   createPaths: boolean = true
+  isWaggleMobileMode: boolean
 }
 
 export interface IZbayChannel extends IChannelInfo {
@@ -48,6 +49,7 @@ export class ConnectionsManagerOptions {
 
   bootstrapMultiaddrs: string[] = []
   createPaths: boolean = true
+  isWaggleMobileMode: boolean = true
 }
 
 export interface IConstructor {
