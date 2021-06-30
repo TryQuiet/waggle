@@ -17,6 +17,8 @@ import { ConnectionsManagerOptions, IChannelInfo, IConstructor, ILibp2pStatus, I
 import fetch from 'node-fetch'
 import debug from 'debug'
 import CustomLibp2p, { Libp2pType } from './customLibp2p'
+import { Tor } from '../torManager'
+import { CertificateRegistration } from '../registration'
 const log = Object.assign(debug('waggle:conn'), {
   error: debug('waggle:conn:err')
 })
@@ -253,6 +255,20 @@ export class ConnectionsManager {
 
   public subscribeForAllConversations = async (conversations: string[]): Promise<void> => {
     await this.storage.subscribeForAllConversations(conversations)
+  }
+
+  public setupRegistrationService = async (tor: Tor): Promise<any> => {
+    const certRegister = new CertificateRegistration(process.env.HIDDEN_SERVICE_SECRET_CERT_REG, tor)
+    try {
+      await certRegister.init()
+    } catch (err) {
+      console.log(`Couldn't initialize certificate registration service: ${err as string}`)
+    }
+    try {
+      await certRegister.listen()
+    } catch (err) {
+      console.log(`Certificate registration service couldn't start listening: ${err as string}`)
+    }
   }
 
   public static readonly createBootstrapNode = ({

@@ -5,19 +5,15 @@ import { dataFromRootPems, ZBAY_DIR_PATH } from '../constants'
 import * as path from 'path'
 import * as os from 'os'
 import fs from 'fs'
+import { Certificate, AttributeTypeAndValue } from 'pkijs'
 import debug from 'debug'
 import { ConnectionsManager } from '../libp2p/connectionsManager'
-import { createUserCert, createUserCsr } from '@zbayapp/identity/lib'
+import { createUserCert, createUserCsr, loadCSR } from '@zbayapp/identity'
 import { DummyIOServer, getPorts, Ports } from '../utils'
+import { CertFieldsTypes } from '@zbayapp/identity/lib/common'
 const log = Object.assign(debug('waggle:identity'), {
   error: debug('waggle:identity:err')
 })
-
-interface CertData {
-  username: string,
-  onionAddress: string,
-  peerId: string
-}
 
 export class CertificateRegistration {
   private readonly _app: express.Application
@@ -26,9 +22,10 @@ export class CertificateRegistration {
   private readonly _socksPort: number
   private readonly _privKey: string
   private _ports: Ports
+  private tor: Tor
   private _connectionsManager: ConnectionsManager
 
-  constructor(hiddenServicePrivKey: string, port?: number, controlPort?: number, socksPort?: number) {
+  constructor(hiddenServicePrivKey: string, tor: Tor, port?: number, controlPort?: number, socksPort?: number) {
     this._app = express()
     this._privKey = hiddenServicePrivKey
     this._port = port || 7789
@@ -36,6 +33,7 @@ export class CertificateRegistration {
     this._socksPort = socksPort
     this._connectionsManager = null
     this._ports = null
+    this.tor = tor
     this.setRouting()
   }
 
@@ -46,12 +44,22 @@ export class CertificateRegistration {
   private setRouting() {
     this._app.use(express.json())
     this._app.post('/register', async (req, res) => {
-      const data = req.body.data  // We need username, onionAddress and peerId
+      const data: string = req.body.data  // user csr
       if (!data) {
-        log('User data needed for registration')
+        log('No csr')
         res.status(400)
+        return
       }
-      const cert = await this.registerCertificate(data)
+      let parsedCsr: Certificate
+      try {
+        parsedCsr = this.parseUserCsr(data)
+      } catch (e) {
+        log('Could not parse csr')
+        res.status(400)
+        return
+      }
+
+      const cert = await this.registerCertificate(parsedCsr)
       if (!cert) {
         res.status(403)
       }
@@ -59,27 +67,52 @@ export class CertificateRegistration {
     })
   }
 
-  private async registerCertificate(data: CertData) {
-    const usernameExists = this._connectionsManager.storage.validateUsername(data.username)
+  private async parseUserCsr(userCsr: string): Promise<Certificate> {
+    let parsedCsr = null
+    try {
+      parsedCsr = await loadCSR(userCsr)
+    } catch (e) {
+      log.error(e)
+      throw e
+    }
+
+    try {
+      this.extractUsernameFromCsr(parsedCsr)
+    } catch (e) {
+      log.error(e)
+      throw e
+    }
+
+    return parsedCsr
+  }
+
+  private extractUsernameFromCsr(csr: Certificate): string {
+    const usernameblock = csr.subject.typesAndValues.find((tav: AttributeTypeAndValue) => tav.type === CertFieldsTypes.nickName)
+    const username = usernameblock.value.valueBlock.value
+    console.log(username)
+    return username
+  }
+
+  private async registerCertificate(userCsr: Certificate): Promise<Certificate> {
+    const username = this.extractUsernameFromCsr(userCsr)
+    const usernameExists = this._connectionsManager.storage.validateUsername(username)
     if (usernameExists) {
       return null
     }
-    const user = await createUserCsr({
-      zbayNickname: data.username,
-      commonName: data.onionAddress,
-      peerId: data.peerId
-    })
 
-    // todo: set proper notAfterDate
-    const userCert = await createUserCert(dataFromRootPems.certificate, dataFromRootPems.privKey, user.userCsr, new Date(), new Date(2030, 1, 1))
+    const userCert = await createUserCert(dataFromRootPems.certificate, dataFromRootPems.privKey, userCsr, new Date(), new Date(2030, 1, 1))
     await this._connectionsManager.storage.saveCertificate(userCert.userCertString)
     return userCert
   }
 
   public async init() {
     await this.setPorts()
-    const onionAddress = await this.initTor()
-    console.log(`Onion: ${onionAddress}`)
+    const onionAddress = await this.tor.spawnHiddenService({
+      virtPort: this._port,
+      targetPort: this._port,
+      privKey: this._privKey
+    })
+    console.log('ONION ADDRESS', onionAddress)
     this._connectionsManager = new ConnectionsManager({
       host: onionAddress,
       port: this._ports.libp2pHiddenService,
@@ -90,59 +123,13 @@ export class CertificateRegistration {
     await this._connectionsManager.initializeNode()
     await this._connectionsManager.initStorage()
   }
-  
-  private async initTor(): Promise<string> {
-    const torPath = `${process.cwd()}/tor/tor`
-    const pathDevLib = path.join.apply(null, [process.cwd(), 'tor'])
-    if (!fs.existsSync(ZBAY_DIR_PATH)) {
-      fs.mkdirSync(ZBAY_DIR_PATH)
-    }
-    const tor = new Tor({
-      appDataPath: ZBAY_DIR_PATH,
-      socksPort: this._ports.socksPort,
-      torPath,
-      controlPort: this._ports.controlPort,
-      options: {
-        env: {
-          LD_LIBRARY_PATH: pathDevLib,
-          HOME: os.homedir()
-        },
-        detached: true
-      }
-    })
-
-    await tor.init()
-    return await tor.spawnHiddenService({
-      virtPort: this._port,
-      targetPort: this._port,
-      privKey: this._privKey
-    })
-  }
 
   public async listen(): Promise<void> {
     return await new Promise(resolve => {
       this._app.listen(this._port, () => {
-        log(`Certificate registration listening on ${this._port}`)
+        log(`Certificate registration service listening on ${this._port}`)
         resolve()
       })
     })
   }
 }
-
-const main = async () => {
-  const certRegister = new CertificateRegistration(process.env.HIDDEN_SERVICE_SECRET_CERT_REG)
-  try {
-    await certRegister.init()
-  } catch (err) {
-    console.log(`Couldn't initialize certificate registration: ${err as string}`)
-  }
-  try {
-    await certRegister.listen()
-  } catch (err) {
-    console.log(`Certificate registration couldn't start listening: ${err as string}`)
-  }
-}
-
-main().catch((err) => {
-  console.log(`Couldn't start certificate registration: ${err as string}`)
-})

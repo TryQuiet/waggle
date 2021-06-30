@@ -74,6 +74,7 @@ class Node {
     const dataServer = await this.initDataServer()
     const connectonsManager = await this.initStorage(dataServer, onionAddress)
     await this.initListeners(dataServer, connectonsManager)
+    await connectonsManager.setupRegistrationService(this.tor)
   }
 
   async spawnTor (): Promise<Tor> {
