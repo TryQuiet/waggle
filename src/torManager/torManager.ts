@@ -107,7 +107,7 @@ export class Tor {
         '--DataDirectory',
         this.torDataDirectory,
         '--HashedControlPassword',
-        this.torHashedPassword.trim()
+        this.torHashedPassword
       ],
       this.options
     )
