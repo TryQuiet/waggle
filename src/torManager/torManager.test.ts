@@ -3,7 +3,7 @@ import { Tor } from './torManager'
 import { getPorts, torBinForPlatform, torDirForPlatform } from '../utils'
 import { createTmpDir, spawnTorProcess, TmpDir, tmpZbayDirPath } from '../testUtils'
 
-jest.setTimeout(50_000)
+jest.setTimeout(100_000)
 
 let tmpDir: TmpDir
 let tmpAppDataPath: string
