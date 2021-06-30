@@ -1,5 +1,16 @@
 # Changelog
 
+## [2.0.7] - WIP
+
+### Added
+
+- Tor binaries for 3 platforms (linux, macos, win). Use proper binary depending on current platform.
+- Run tests on linux and macos (CI)
+
+### Fixed
+
+- Killing existing tor process on macos - command for extracting process name slightly differs for linux and macos
+
 ## [2.0.6] - 2021-06-22
 
 ### Fixed
