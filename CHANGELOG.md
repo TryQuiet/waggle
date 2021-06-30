@@ -1,5 +1,33 @@
 # Changelog
 
+## [2.0.6] - 2021-06-22
+
+### Fixed
+
+Pass envs to tor's --hash-password command - docker was lacking LD_LIBRARY_PATH env and therefore used default openssl 1.1.0 version (tor needs 1.1.1)
+
+## [2.0.5] - 2021-06-22
+
+### Added
+
+Storage:
+  Added new methods:
+    askForMessages
+
+### Changed
+
+Changed databses names.
+
+Events:
+  Merged 'allMessages' and 'message' files into single 'messages' file
+
+API:
+  ConnectionsManager: added optional isWaggleMobileMode
+  Storage: added optional isWaggleMobileMode
+  !IMPORTANT: Those will be removed as soon as mobile version will adopt the new API
+
+### Fixed
+
 ## [2.0.4] - 2021-06-15
 
 ### Fixed
