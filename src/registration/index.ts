@@ -1,6 +1,5 @@
 import express from 'express'
 import { Tor } from '../torManager'
-import { dataFromRootPems } from '../constants'
 import { Certificate } from 'pkijs'
 import debug from 'debug'
 import { ConnectionsManager } from '../libp2p/connectionsManager'
@@ -8,11 +7,17 @@ import { createUserCert, loadCSR } from '@zbayapp/identity'
 import { getCertFieldValue } from '../utils'
 import { CertFieldsTypes } from '@zbayapp/identity/lib/common'
 import { Server } from 'http'
+import { validate, IsBase64, IsNotEmpty } from 'class-validator'
+import { DataFromPems } from '../common/types'
+import { IsCsr } from './validators'
 const log = Object.assign(debug('waggle:identity'), {
   error: debug('waggle:identity:err')
 })
 
-interface UserCsrData {
+class UserCsrData {
+  @IsNotEmpty()
+  @IsBase64()
+  @IsCsr()
   csr: string
 }
 
@@ -24,14 +29,16 @@ export class CertificateRegistration {
   private tor: Tor
   private _connectionsManager: ConnectionsManager
   private _onionAddress: string
+  private _dataFromPems: DataFromPems
 
-  constructor(hiddenServicePrivKey: string, tor: Tor, connectionsManager: ConnectionsManager, port?: number) {
+  constructor(hiddenServicePrivKey: string, tor: Tor, connectionsManager: ConnectionsManager, dataFromPems: DataFromPems, port?: number) {
     this._app = express()
     this._privKey = hiddenServicePrivKey
     this._port = port || 7789
     this._connectionsManager = connectionsManager
     this.tor = tor
     this._onionAddress = null
+    this._dataFromPems = dataFromPems
     this.setRouting()
   }
 
@@ -41,17 +48,20 @@ export class CertificateRegistration {
   }
 
   private async registerUser(req, res) {
-    const data: UserCsrData = req.body // TODO: add validation
     console.log('HERE')
-    if (!data) {
-      log('No csr')
+    const userData = new UserCsrData()
+    userData.csr = req.body.data
+    console.log('GOT', userData.csr)
+    const validationErrors = await validate(userData)
+    if (validationErrors.length > 0) {
+      log.error(`${validationErrors}`)
       res.status(400)
       return
     }
 
     let username: string
     try {
-      const parsedCsr = await loadCSR(data.csr)
+      const parsedCsr = await loadCSR(userData.csr)
       username = getCertFieldValue(parsedCsr, CertFieldsTypes.nickName)
     } catch (e) {
       log.error(`Could not parse csr: ${e.message}`)
@@ -65,13 +75,24 @@ export class CertificateRegistration {
       res.status(403)
       return
     }
-    const cert = await this.registerCertificate(data.csr)
-    res.send(cert.userCertString)
+
+    let cert: Certificate
+    try {
+      cert = await this.registerCertificate(userData.csr)
+    } catch (e) {
+      log.error(`Something went wrong with registering user: ${e.message}`)
+      res.status(400)
+      return
+    }
+    res.send(JSON.stringify(cert.userCertString))
   }
 
   private async registerCertificate(userCsr: string): Promise<Certificate> {
-    const userCert = await createUserCert(dataFromRootPems.certificate, dataFromRootPems.privKey, userCsr, new Date(), new Date(2030, 1, 1))
-    await this._connectionsManager.storage.saveCertificate(userCert.userCertString)
+    const userCert = await createUserCert(this._dataFromPems.certificate, this._dataFromPems.privKey, userCsr, new Date(), new Date(2030, 1, 1))
+    const certSaved = await this._connectionsManager.storage.saveCertificate(userCert.userCertString, this._dataFromPems)
+    if (!certSaved) {
+      throw 'Could not save certificate'
+    }
     log('Saved certificate')
     return userCert
   }

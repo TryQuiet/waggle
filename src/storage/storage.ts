@@ -16,7 +16,7 @@ import { loadAllPublicChannels } from '../socket/events/channels'
 import { Libp2p } from 'libp2p-gossipsub/src/interfaces'
 import { Config, dataFromRootPems } from '../constants'
 import { loadCertificates } from '../socket/events/certificates'
-import { IRepo, StorageOptions, IChannelInfo, IMessage, ChannelInfoResponse, IZbayChannel, IPublicKey, IMessageThread } from '../common/types'
+import { IRepo, StorageOptions, IChannelInfo, IMessage, ChannelInfoResponse, IZbayChannel, IPublicKey, IMessageThread, DataFromPems } from '../common/types'
 import { verifyUserCert, parseCertificate } from '@zbayapp/identity'
 import { CertFieldsTypes } from '@zbayapp/identity/lib/common'
 import debug from 'debug'
@@ -503,13 +503,14 @@ export class Storage {
     this.io.emit(EventTypesResponse.RESPONSE_GET_PRIVATE_CONVERSATIONS, payload)
   }
 
-  public async saveCertificate(certificate: string): Promise<boolean> {
+  public async saveCertificate(certificate: string, fromRootPems?: DataFromPems): Promise<boolean> {
+    const rootPems = fromRootPems || dataFromRootPems  // TODO: tmp for backward compatibilty
     log('About to save certificate...')
     if (!certificate) {
       log('Certificate is either null or undefined, not saving to db')
       return false
     }
-    const verification = await verifyUserCert(dataFromRootPems.certificate, certificate)
+    const verification = await verifyUserCert(rootPems.certificate, certificate)
     if (verification.resultCode !== 0) {
       log.error('Certificate is not valid')
       log.error(verification.resultMessage)

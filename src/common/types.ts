@@ -65,3 +65,8 @@ export interface ILibp2pStatus {
   address: string
   peerId: string
 }
+
+export interface DataFromPems {
+  certificate: string,
+  privKey: string
+}

@@ -13,7 +13,7 @@ import { createPaths, fetchAbsolute } from '../utils'
 import { Config, ZBAY_DIR_PATH } from '../constants'
 import fs from 'fs'
 import path from 'path'
-import { ConnectionsManagerOptions, IChannelInfo, IConstructor, ILibp2pStatus, IMessage } from '../common/types'
+import { ConnectionsManagerOptions, DataFromPems, IChannelInfo, IConstructor, ILibp2pStatus, IMessage } from '../common/types'
 import fetch from 'node-fetch'
 import debug from 'debug'
 import CustomLibp2p, { Libp2pType } from './customLibp2p'
@@ -267,8 +267,8 @@ export class ConnectionsManager {
     await this.storage.subscribeForAllConversations(conversations)
   }
 
-  public setupRegistrationService = async (tor: Tor): Promise<any> => {
-    const certRegister = new CertificateRegistration(process.env.HIDDEN_SERVICE_SECRET_CERT_REG, tor, this)
+  public setupRegistrationService = async (tor: Tor, hiddenServicePrivKey: string, dataFromPems: DataFromPems): Promise<CertificateRegistration> => {
+    const certRegister = new CertificateRegistration(hiddenServicePrivKey, tor, this, dataFromPems)
     try {
       await certRegister.init()
     } catch (err) {
@@ -280,6 +280,7 @@ export class ConnectionsManager {
     } catch (err) {
       log.error(`Certificate registration service couldn't start listening: ${err as string}`)
     }
+    return certRegister
   }
 
   public static readonly createBootstrapNode = ({

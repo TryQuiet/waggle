@@ -54,6 +54,7 @@
     "@zbayapp/identity": "^1.0.4",
     "abortable-iterator": "^3.0.0",
     "async-mutex": "^0.2.6",
+    "class-validator": "^0.13.1",
     "cors": "^2.8.5",
     "debug": "^4.3.1",
     "dotenv": "8.2.0",
