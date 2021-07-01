@@ -1,5 +1,4 @@
 import _ from 'validator'
-import debug from 'debug'
 import joi from 'joi'
 
 import { IMessage, IChannelInfo } from '../common/types'

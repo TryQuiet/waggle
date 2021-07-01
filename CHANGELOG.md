@@ -9,6 +9,9 @@
 - @zbayapp/identity lib
 - Verify certificate before saving it to database
 - Return all certificates on db.load
+- Validators for storage
+- Test for validators
+- Added validation functions to storage
 
 ### Fixed
 
