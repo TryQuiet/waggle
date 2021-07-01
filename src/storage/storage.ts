@@ -1,6 +1,6 @@
 import IPFS from 'ipfs'
 import path from 'path'
-import { createPaths } from '../utils'
+import { createPaths, getCertFieldValue } from '../utils'
 import OrbitDB from 'orbit-db'
 import KeyValueStore from 'orbit-db-kvstore'
 import EventStore from 'orbit-db-eventstore'
@@ -527,14 +527,9 @@ export class Storage {
     const certificates = this.getAllEventLogEntries(this.certificates)
     for (const cert of certificates) {
       const parsedCert = parseCertificate(cert)
-      const typesAndValues = parsedCert.subject.typesAndValues
-      for (const tav of typesAndValues) {
-        if (tav.type === CertFieldsTypes.nickName) {
-          const certUsername = tav.value.valueBlock.value
-          if (certUsername.localeCompare(username, undefined, {sensitivity: 'base'}))
-            console.log(tav.value.valueBlock.value)
-            return true
-        }
+      const certUsername = getCertFieldValue(parsedCert, CertFieldsTypes.nickName)
+      if (certUsername.localeCompare(username, undefined, {sensitivity: 'base'}) === 0) {
+        return true
       }
     }
     return false

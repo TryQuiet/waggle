@@ -108,7 +108,7 @@ describe('Certificate', () => {
     }
   })
 
-  it('username validation fails if username is already in use', async () => {
+  it('username check fails if username is already in use', async () => {
     const user = await createUserCsr({
       zbayNickname: 'userName',
       commonName: 'nqnw4kc4c77fb47lk52m5l57h4tcxceo7ymxekfn7yh5m66t4jv2olad.onion',
@@ -119,17 +119,19 @@ describe('Certificate', () => {
     const peerId = await PeerId.create()
     const libp2p = createLibp2p(peerId)
     await storage.init(libp2p, peerId)
-    const result = await storage.saveCertificate(userCert.userCertString)
-    const isValid = storage.usernameExists('userName')
-    expect(isValid).toBe(false)
+    await storage.saveCertificate(userCert.userCertString)
+    for (const username of ['userName', 'username', 'userNąme']) {
+      const usernameExists = storage.usernameExists(username)
+      expect(usernameExists).toBe(true)
+    }
   })
 
-  it('username validation passes if username is not found in certificates', async () => {
+  it('username check passes if username is not found in certificates', async () => {
     storage = new Storage(tmpAppDataPath, new utils.DummyIOServer(), { createPaths: false })
     const peerId = await PeerId.create()
     const libp2p = createLibp2p(peerId)
     await storage.init(libp2p, peerId)
-    const isValid = storage.usernameExists('userName')
-    expect(isValid).toBe(true)
+    const usernameExists = storage.usernameExists('userName')
+    expect(usernameExists).toBe(false)
   })
 })
