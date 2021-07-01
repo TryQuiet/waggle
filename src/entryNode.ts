@@ -96,7 +96,7 @@ class Node {
           privKey: this.getHiddenServiceSecret()
         }))
       } else {
-        service = await (await this.tor.createNewHiddenService(this.hiddenServicePort, this.hiddenServicePort)).onionAddress
+        service = (await this.tor.createNewHiddenService(this.hiddenServicePort, this.hiddenServicePort)).onionAddress
       }
     }
     return `${service}.onion`
@@ -118,7 +118,7 @@ class Node {
       agentPort: this.socksProxyPort,
       io: dataServer.io,
       options: {
-        bootstrapMultiaddrs: process.env.BOOTSTRAP_ADDRS ? [process.env.BOOTSTRAP_ADDRS] : null
+        bootstrapMultiaddrs: process.env.BOOTSTRAP_ADDRS ? [process.env.BOOTSTRAP_ADDRS] : []
       }
     })
     const node = await connectonsManager.initializeNode(peer)

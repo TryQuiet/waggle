@@ -17,10 +17,9 @@ import { Libp2p } from 'libp2p-gossipsub/src/interfaces'
 import { Config, dataFromRootPems } from '../constants'
 import { loadCertificates } from '../socket/events/certificates'
 import { IRepo, StorageOptions, IChannelInfo, IMessage, ChannelInfoResponse, IZbayChannel, IPublicKey, IMessageThread } from '../common/types'
-import { verifyUserCert } from '@zbayapp/identity'
-import debug from 'debug'
-import { parseCertificate } from '@zbayapp/identity/lib/extractPubKey'
+import { verifyUserCert, parseCertificate } from '@zbayapp/identity'
 import { CertFieldsTypes } from '@zbayapp/identity/lib/common'
+import debug from 'debug'
 const log = Object.assign(debug('waggle:db'), {
   error: debug('waggle:db:err')
 })
@@ -521,7 +520,7 @@ export class Storage {
     return true
   }
 
-  public validateUsername(username: string): boolean {
+  public usernameExists(username: string): boolean {
     /**
      * Check if given username is already in use
      */
@@ -534,10 +533,10 @@ export class Storage {
           const certUsername = tav.value.valueBlock.value
           if (certUsername.localeCompare(username, undefined, {sensitivity: 'base'}))
             console.log(tav.value.valueBlock.value)
-            return false
+            return true
         }
       }
     }
-    return true
+    return false
   }
 }

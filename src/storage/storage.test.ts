@@ -120,7 +120,7 @@ describe('Certificate', () => {
     const libp2p = createLibp2p(peerId)
     await storage.init(libp2p, peerId)
     const result = await storage.saveCertificate(userCert.userCertString)
-    const isValid = storage.validateUsername('userName')
+    const isValid = storage.usernameExists('userName')
     expect(isValid).toBe(false)
   })
 
@@ -129,7 +129,7 @@ describe('Certificate', () => {
     const peerId = await PeerId.create()
     const libp2p = createLibp2p(peerId)
     await storage.init(libp2p, peerId)
-    const isValid = storage.validateUsername('userName')
+    const isValid = storage.usernameExists('userName')
     expect(isValid).toBe(true)
   })
 })

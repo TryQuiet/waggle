@@ -19,6 +19,7 @@ import debug from 'debug'
 import CustomLibp2p, { Libp2pType } from './customLibp2p'
 import { Tor } from '../torManager'
 import { CertificateRegistration } from '../registration'
+// import { createUserCsr } from '@zbayapp/identity'
 const log = Object.assign(debug('waggle:conn'), {
   error: debug('waggle:conn:err')
 })
@@ -108,10 +109,15 @@ export class ConnectionsManager {
   //   return response.json()
   // }
 
-  // private readonly registerPeer = async (address: string): Promise<void> => {
+  // public async registerPeerTest (): Promise<void> {
+  //   const csr = await createUserCsr({
+  //     zbayNickname: 'MYuserName',
+  //     commonName: 'nqnw4kc4c77fb47lk52m5l57h4tcxceo7ymxekfn7yh5m66t4jv2olad.onion',
+  //     peerId: 'Qmf3ySkYqLET9xtAtDzvAr5Pp3egK1H3C5iJAZm1SpLEp6'
+  //   })
   //   const options = {
   //     method: 'POST',
-  //     body: JSON.stringify({ address: address }),
+  //     body: JSON.stringify({ csr: csr.userCsr }),
   //     headers: { 'Content-Type': 'application/json' },
   //     agent: () => {
   //       return this.socksProxyAgent
@@ -262,16 +268,17 @@ export class ConnectionsManager {
   }
 
   public setupRegistrationService = async (tor: Tor): Promise<any> => {
-    const certRegister = new CertificateRegistration(process.env.HIDDEN_SERVICE_SECRET_CERT_REG, tor)
+    const certRegister = new CertificateRegistration(process.env.HIDDEN_SERVICE_SECRET_CERT_REG, tor, this)
     try {
       await certRegister.init()
     } catch (err) {
-      console.log(`Couldn't initialize certificate registration service: ${err as string}`)
+      log.error(`Couldn't initialize certificate registration service: ${err as string}`)
+      return
     }
     try {
       await certRegister.listen()
     } catch (err) {
-      console.log(`Certificate registration service couldn't start listening: ${err as string}`)
+      log.error(`Certificate registration service couldn't start listening: ${err as string}`)
     }
   }
 

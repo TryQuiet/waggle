@@ -1,7 +1,7 @@
 import tmp from 'tmp'
 import { SocksProxyAgent } from 'socks-proxy-agent'
 import { Config } from './constants'
-import { getPorts, torBinForPlatform, torDirForPlatform } from './utils'
+import { DummyIOServer, getPorts, torBinForPlatform, torDirForPlatform } from './utils'
 import { Tor } from './torManager'
 import { ConnectionsManager } from './libp2p/connectionsManager'
 import path from 'path'
@@ -42,7 +42,7 @@ export const createMinConnectionManager = (options = {}): ConnectionsManager => 
     host: 'abcd.onion',
     agentHost: 'localhost',
     agentPort: 2222,
-    io: null,
+    io: new DummyIOServer(),
     options: {
       bootstrapMultiaddrs: testBootstrapMultiaddrs,
       ...options
