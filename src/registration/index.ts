@@ -1,4 +1,4 @@
-import express from 'express'
+import express, { Request, Response } from 'express'
 import { Tor } from '../torManager'
 import { Certificate } from 'pkijs'
 import debug from 'debug'
@@ -47,15 +47,13 @@ export class CertificateRegistration {
     this._app.post('/register', async (req, res) => await this.registerUser(req, res))
   }
 
-  private async registerUser(req, res) {
-    console.log('HERE')
+  private async registerUser(req: Request, res: Response): Promise<void> {
     const userData = new UserCsrData()
     userData.csr = req.body.data
-    console.log('GOT', userData.csr)
     const validationErrors = await validate(userData)
     if (validationErrors.length > 0) {
-      log.error(`${validationErrors}`)
-      res.status(400)
+      log.error(`Received data is not valid: ${validationErrors}`)
+      res.status(400).send(JSON.stringify(validationErrors))
       return
     }
 
@@ -65,14 +63,14 @@ export class CertificateRegistration {
       username = getCertFieldValue(parsedCsr, CertFieldsTypes.nickName)
     } catch (e) {
       log.error(`Could not parse csr: ${e.message}`)
-      res.status(400)
+      res.status(400).send()
       return
     }
     
     const usernameExists = this._connectionsManager.storage.usernameExists(username)
     if (usernameExists) {
       log(`Username ${username} is taken`)
-      res.status(403)
+      res.status(403).send()
       return
     }
 
@@ -81,7 +79,7 @@ export class CertificateRegistration {
       cert = await this.registerCertificate(userData.csr)
     } catch (e) {
       log.error(`Something went wrong with registering user: ${e.message}`)
-      res.status(400)
+      res.status(400).send()
       return
     }
     res.send(JSON.stringify(cert.userCertString))
