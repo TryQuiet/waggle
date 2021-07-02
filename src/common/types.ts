@@ -46,10 +46,9 @@ export class ConnectionsManagerOptions {
   env: {
     appDataPath?: string
   } = {}
-
-  bootstrapMultiaddrs: string[] = []
-  createPaths: boolean = true
-  isWaggleMobileMode: boolean = true
+  bootstrapMultiaddrs?: string[] = []
+  createPaths?: boolean = true
+  isWaggleMobileMode?: boolean = true
 }
 
 export interface IConstructor {

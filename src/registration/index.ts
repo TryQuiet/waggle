@@ -44,7 +44,7 @@ export class CertificateRegistration {
 
   private setRouting() {
     this._app.use(express.json())
-    this._app.post('/register', (req, res) => this.registerUser(req, res))
+    this._app.post('/register', async (req, res) => await this.registerUser(req, res))
   }
 
   private async registerUser(req, res) {
@@ -71,7 +71,7 @@ export class CertificateRegistration {
     
     const usernameExists = this._connectionsManager.storage.usernameExists(username)
     if (usernameExists) {
-      log('Username taken')
+      log(`Username ${username} is taken`)
       res.status(403)
       return
     }

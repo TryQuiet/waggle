@@ -123,7 +123,7 @@ export class Storage {
       log(entry.payload.value)
       loadCertificates(this.io, this.getAllEventLogEntries(this.certificates))
     })
-    this.certificates.events.on('load', () => {
+    this.certificates.events.on('ready', () => {
       log('Loaded certificates to memory')
       loadCertificates(this.io, this.getAllEventLogEntries(this.certificates))
     })

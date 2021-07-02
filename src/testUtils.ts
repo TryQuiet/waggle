@@ -7,6 +7,7 @@ import { ConnectionsManager } from './libp2p/connectionsManager'
 import path from 'path'
 import PeerId from 'peer-id'
 import { Libp2pType } from './libp2p/customLibp2p'
+import { ConnectionsManagerOptions } from './common/types'
 tmp.setGracefulCleanup()
 
 export interface TmpDir {
@@ -36,7 +37,8 @@ export const spawnTorProcess = async (zbayDirPath: string): Promise<Tor> => {
   return tor
 }
 
-export const createMinConnectionManager = (options = {}): ConnectionsManager => {
+export const createMinConnectionManager = (options: ConnectionsManagerOptions): ConnectionsManager => {
+  if (!options.env?.appDataPath) throw 'Test connection manager is lacking appDataPath!'
   return new ConnectionsManager({
     port: 1111,
     host: 'abcd.onion',
