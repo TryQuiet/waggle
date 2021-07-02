@@ -1,13 +1,13 @@
-import { createRootCA, createUserCert, createUserCsr, verifyUserCert } from "@zbayapp/identity"
-import { SocksProxyAgent } from "socks-proxy-agent"
-import { CertificateRegistration } from "."
-import { Time } from "pkijs"
-import { createMinConnectionManager, createTmpDir, spawnTorProcess, TmpDir, tmpZbayDirPath } from "../testUtils"
-import { fetchAbsolute } from "../utils"
+import { createRootCA, createUserCert, createUserCsr, verifyUserCert } from '@zbayapp/identity'
+import { SocksProxyAgent } from 'socks-proxy-agent'
+import { CertificateRegistration } from '.'
+import { Time } from 'pkijs'
+import { createMinConnectionManager, createTmpDir, spawnTorProcess, TmpDir, tmpZbayDirPath } from '../testUtils'
+import { fetchAbsolute } from '../utils'
 import fetch from 'node-fetch'
-import { ConnectionsManager } from "../libp2p/connectionsManager"
-import { Tor } from "../torManager"
-import { RootCA } from "@zbayapp/identity/lib/generateRootCA"
+import { ConnectionsManager } from '../libp2p/connectionsManager'
+import { Tor } from '../torManager'
+import { RootCA } from '@zbayapp/identity/lib/generateRootCA'
 jest.setTimeout(50_000)
 
 let tmpDir: TmpDir
@@ -28,7 +28,7 @@ beforeEach(async () => {
   tmpAppDataPath = tmpZbayDirPath(tmpDir.name)
   tor = null
   registrationService = null
-  manager = createMinConnectionManager({env: {appDataPath: tmpAppDataPath}})
+  manager = createMinConnectionManager({ env: { appDataPath: tmpAppDataPath } })
   certRoot = await createRootCA(new Time({ type: 1, value: new Date() }), new Time({ type: 1, value: new Date(2030, 1, 1) }), 'testRootCA')
 })
 
@@ -45,7 +45,7 @@ async function registerUserTest(csr: string): Promise<Response> {
   const socksProxyAgent = new SocksProxyAgent({ port: 9050, host: 'localhost' })
   const options = {
     method: 'POST',
-    body: JSON.stringify({'data': csr}),
+    body: JSON.stringify({ data: csr }),
     headers: { 'Content-Type': 'application/json' },
     agent: () => {
       return socksProxyAgent
@@ -53,7 +53,6 @@ async function registerUserTest(csr: string): Promise<Response> {
   }
   return await fetchAbsolute(fetch)('http://4avghtoehep5ebjngfqk5b43jolkiyyedfcvvq4ouzdnughodzoglzad.onion:7789')('/register', options)
 }
-
 
 describe('Registration service', () => {
   it('generates and certificate for a new user', async () => {
@@ -70,7 +69,7 @@ describe('Registration service', () => {
     registrationService = await manager.setupRegistrationService(
       tor,
       testHiddenService,
-      {certificate: certRoot.rootCertString, privKey: certRoot.rootKeyString}
+      { certificate: certRoot.rootCertString, privKey: certRoot.rootKeyString }
     )
     const response = await registerUserTest(user.userCsr)
     const returnedUserCertificate = await response.json()
@@ -95,12 +94,12 @@ describe('Registration service', () => {
     await tor.init()
     await manager.initializeNode()
     await manager.initStorage()
-    await manager.storage.saveCertificate(userCert.userCertString, {certificate: certRoot.rootCertString, privKey: certRoot.rootKeyString})
+    await manager.storage.saveCertificate(userCert.userCertString, { certificate: certRoot.rootCertString, privKey: certRoot.rootKeyString })
     const saveCertificate = jest.spyOn(manager.storage, 'saveCertificate')
     registrationService = await manager.setupRegistrationService(
-      tor, 
-      testHiddenService, 
-      {certificate: certRoot.rootCertString, privKey: certRoot.rootKeyString}
+      tor,
+      testHiddenService,
+      { certificate: certRoot.rootCertString, privKey: certRoot.rootKeyString }
     )
     const response = await registerUserTest(userNew.userCsr)
     expect(saveCertificate).not.toHaveBeenCalled()
@@ -114,9 +113,9 @@ describe('Registration service', () => {
     await manager.initStorage()
     const saveCertificate = jest.spyOn(manager.storage, 'saveCertificate')
     registrationService = await manager.setupRegistrationService(
-      tor, 
-      testHiddenService, 
-      {certificate: certRoot.rootCertString, privKey: certRoot.rootKeyString}
+      tor,
+      testHiddenService,
+      { certificate: certRoot.rootCertString, privKey: certRoot.rootKeyString }
     )
     for (const invalidCsr of ['', 'abcd']) {
       const response = await registerUserTest(invalidCsr)

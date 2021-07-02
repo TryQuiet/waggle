@@ -26,10 +26,10 @@ export class CertificateRegistration {
   private _server: Server
   private readonly _port: number
   private readonly _privKey: string
-  private tor: Tor
-  private _connectionsManager: ConnectionsManager
+  private readonly tor: Tor
+  private readonly _connectionsManager: ConnectionsManager
   private _onionAddress: string
-  private _dataFromPems: DataFromPems
+  private readonly _dataFromPems: DataFromPems
 
   constructor(hiddenServicePrivKey: string, tor: Tor, connectionsManager: ConnectionsManager, dataFromPems: DataFromPems, port?: number) {
     this._app = express()
@@ -44,7 +44,7 @@ export class CertificateRegistration {
 
   private setRouting() {
     this._app.use(express.json())
-    this._app.post('/register', async (req, res) => await this.registerUser(req, res))
+    this._app.post('/register', async (req, res): Promise<void> => await this.registerUser(req, res))
   }
 
   private async registerUser(req: Request, res: Response): Promise<void> {
@@ -52,7 +52,7 @@ export class CertificateRegistration {
     userData.csr = req.body.data
     const validationErrors = await validate(userData)
     if (validationErrors.length > 0) {
-      log.error(`Received data is not valid: ${validationErrors}`)
+      log.error(`Received data is not valid: ${validationErrors.toString()}`)
       res.status(400).send(JSON.stringify(validationErrors))
       return
     }
@@ -62,11 +62,11 @@ export class CertificateRegistration {
       const parsedCsr = await loadCSR(userData.csr)
       username = getCertFieldValue(parsedCsr, CertFieldsTypes.nickName)
     } catch (e) {
-      log.error(`Could not parse csr: ${e.message}`)
+      log.error(`Could not parse csr: ${e.message as string}`)
       res.status(400).send()
       return
     }
-    
+
     const usernameExists = this._connectionsManager.storage.usernameExists(username)
     if (usernameExists) {
       log(`Username ${username} is taken`)
@@ -78,7 +78,7 @@ export class CertificateRegistration {
     try {
       cert = await this.registerCertificate(userData.csr)
     } catch (e) {
-      log.error(`Something went wrong with registering user: ${e.message}`)
+      log.error(`Something went wrong with registering user: ${e.message as string}`)
       res.status(400).send()
       return
     }
@@ -89,7 +89,7 @@ export class CertificateRegistration {
     const userCert = await createUserCert(this._dataFromPems.certificate, this._dataFromPems.privKey, userCsr, new Date(), new Date(2030, 1, 1))
     const certSaved = await this._connectionsManager.storage.saveCertificate(userCert.userCertString, this._dataFromPems)
     if (!certSaved) {
-      throw 'Could not save certificate'
+      throw new Error('Could not save certificate')
     }
     log('Saved certificate')
     return userCert

@@ -9,7 +9,7 @@ export function IsCsr(validationOptions?: ValidationOptions) {
       propertyName: propertyName,
       options: validationOptions,
       validator: {
-        validate(value: any, args: ValidationArguments) {
+        async validate(value: any, _args: ValidationArguments) {
           const prom: Promise<boolean> = new Promise(resolve => {
             loadCSR(value).then(() => {
               resolve(true)
@@ -18,8 +18,8 @@ export function IsCsr(validationOptions?: ValidationOptions) {
             })
           })
           return prom
-        },
-      },
+        }
+      }
     })
   }
 }

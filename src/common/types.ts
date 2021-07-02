@@ -46,6 +46,7 @@ export class ConnectionsManagerOptions {
   env: {
     appDataPath?: string
   } = {}
+
   bootstrapMultiaddrs?: string[] = []
   createPaths?: boolean = true
   isWaggleMobileMode?: boolean = true
@@ -66,6 +67,6 @@ export interface ILibp2pStatus {
 }
 
 export interface DataFromPems {
-  certificate: string,
+  certificate: string
   privKey: string
 }

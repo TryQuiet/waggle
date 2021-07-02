@@ -40,14 +40,14 @@ export const getPorts = async (): Promise<Ports> => {
 export const getCertFieldValue = (cert: Certificate, fieldType: string): string => {
   const block = cert.subject.typesAndValues.find((tav: AttributeTypeAndValue) => tav.type === fieldType)
   if (!block) {
-    throw `Field type ${fieldType} not found in certificate`
+    throw new Error(`Field type ${fieldType} not found in certificate`)
   }
   return block.value.valueBlock.value
 }
 
 export class DummyIOServer extends SocketIO.Server {
   emit(event: string, ...args: any[]): boolean {
-    console.log(`Emitting ${event}`)
+    console.log(`Emitting ${event} with args: ${args.toString()}`)
     return true
   }
 }

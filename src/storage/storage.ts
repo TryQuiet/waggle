@@ -504,7 +504,7 @@ export class Storage {
   }
 
   public async saveCertificate(certificate: string, fromRootPems?: DataFromPems): Promise<boolean> {
-    const rootPems = fromRootPems || dataFromRootPems  // TODO: tmp for backward compatibilty
+    const rootPems = fromRootPems || dataFromRootPems // TODO: tmp for backward compatibilty
     log('About to save certificate...')
     if (!certificate) {
       log('Certificate is either null or undefined, not saving to db')
@@ -529,7 +529,7 @@ export class Storage {
     for (const cert of certificates) {
       const parsedCert = parseCertificate(cert)
       const certUsername = getCertFieldValue(parsedCert, CertFieldsTypes.nickName)
-      if (certUsername.localeCompare(username, undefined, {sensitivity: 'base'}) === 0) {
+      if (certUsername.localeCompare(username, undefined, { sensitivity: 'base' }) === 0) {
         return true
       }
     }
