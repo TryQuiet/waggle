@@ -20,10 +20,26 @@ import { loadCertificates } from '../socket/events/certificates'
 import { IRepo, StorageOptions, IChannelInfo, IMessage, ChannelInfoResponse, IZbayChannel, IPublicKey, IMessageThread, DataFromPems } from '../common/types'
 import { verifyUserCert, parseCertificate } from '@zbayapp/identity'
 import { CertFieldsTypes } from '@zbayapp/identity/lib/common'
+import {
+  setEngine,
+  CryptoEngine
+} from 'pkijs'
+import { Crypto } from '@peculiar/webcrypto'
 import debug from 'debug'
 const log = Object.assign(debug('waggle:db'), {
   error: debug('waggle:db:err')
 })
+
+const webcrypto = new Crypto()
+setEngine(
+  'newEngine',
+  webcrypto,
+  new CryptoEngine({
+    name: '',
+    crypto: webcrypto,
+    subtle: webcrypto.subtle
+  })
+)
 
 export class Storage {
   public zbayDir: string

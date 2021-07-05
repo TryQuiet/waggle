@@ -3,7 +3,7 @@ import { SocksProxyAgent } from 'socks-proxy-agent'
 import { CertificateRegistration } from '.'
 import { Time } from 'pkijs'
 import { createMinConnectionManager, createTmpDir, spawnTorProcess, TmpDir, tmpZbayDirPath } from '../testUtils'
-import { fetchAbsolute } from '../utils'
+import { fetchAbsolute, getPorts, Ports } from '../utils'
 import fetch from 'node-fetch'
 import { ConnectionsManager } from '../libp2p/connectionsManager'
 import { Tor } from '../torManager'
@@ -17,6 +17,7 @@ let manager: ConnectionsManager
 let registrationService: CertificateRegistration
 let certRoot: RootCA
 let testHiddenService: string
+let ports: Ports
 
 beforeAll(() => {
   testHiddenService = 'ED25519-V3:iEp140DpauUp45TBx/IdjDm3/kinRPjwmsrXaGC9j39zhFsjI3MHdaiuIHJf3GiivF+hAi/5SUzYq4SzvbKzWQ=='
@@ -30,6 +31,7 @@ beforeEach(async () => {
   registrationService = null
   manager = createMinConnectionManager({ env: { appDataPath: tmpAppDataPath } })
   certRoot = await createRootCA(new Time({ type: 1, value: new Date() }), new Time({ type: 1, value: new Date(2030, 1, 1) }), 'testRootCA')
+  ports = await getPorts()
 })
 
 afterEach(async () => {
@@ -42,7 +44,7 @@ afterEach(async () => {
 })
 
 async function registerUserTest(csr: string): Promise<Response> {
-  const socksProxyAgent = new SocksProxyAgent({ port: 9050, host: 'localhost' })
+  const socksProxyAgent = new SocksProxyAgent({ port: ports.socksPort, host: 'localhost' })
   const options = {
     method: 'POST',
     body: JSON.stringify({ data: csr }),
@@ -62,7 +64,7 @@ describe('Registration service', () => {
       peerId: 'Qmf3ySkYqLET9xtAtDzvAr5Pp3egK1H3C5iJAZm1SpLEp6'
     })
     const saveCertificate = jest.spyOn(manager.storage, 'saveCertificate')
-    tor = await spawnTorProcess(tmpAppDataPath)
+    tor = await spawnTorProcess(tmpAppDataPath, ports)
     await tor.init()
     await manager.initializeNode()
     await manager.initStorage()
@@ -90,7 +92,7 @@ describe('Registration service', () => {
       peerId: 'QmS9vJkgbea9EgzHvVPqhj1u4tH7YKq7eteDN7gnG5zUmc'
     })
     const userCert = await createUserCert(certRoot.rootCertString, certRoot.rootKeyString, user.userCsr, new Date(), new Date(2030, 1, 1))
-    tor = await spawnTorProcess(tmpAppDataPath)
+    tor = await spawnTorProcess(tmpAppDataPath, ports)
     await tor.init()
     await manager.initializeNode()
     await manager.initStorage()
@@ -107,7 +109,7 @@ describe('Registration service', () => {
   })
 
   it('returns 400 if no csr in data or csr has wrong format', async () => {
-    tor = await spawnTorProcess(tmpAppDataPath)
+    tor = await spawnTorProcess(tmpAppDataPath, ports)
     await tor.init()
     await manager.initializeNode()
     await manager.initStorage()
