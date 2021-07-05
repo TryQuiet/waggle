@@ -10,8 +10,8 @@ import { Server } from 'http'
 import { validate, IsBase64, IsNotEmpty } from 'class-validator'
 import { DataFromPems } from '../common/types'
 import { IsCsr } from './validators'
-const log = Object.assign(debug('waggle:identity'), {
-  error: debug('waggle:identity:err')
+const log = Object.assign(debug('waggle:registration'), {
+  error: debug('waggle:registration:err')
 })
 
 class UserCsrData {
@@ -44,6 +44,7 @@ export class CertificateRegistration {
 
   private setRouting() {
     this._app.use(express.json())
+    // eslint-disable-next-line
     this._app.post('/register', async (req, res): Promise<void> => await this.registerUser(req, res))
   }
 
