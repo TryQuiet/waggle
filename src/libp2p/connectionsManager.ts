@@ -13,6 +13,7 @@ import { createPaths, fetchAbsolute } from '../utils'
 import { Config, ZBAY_DIR_PATH } from '../constants'
 import fs from 'fs'
 import path from 'path'
+import Libp2p from 'libp2p'
 import { ConnectionsManagerOptions, IChannelInfo, IConstructor, ILibp2pStatus, IMessage } from '../common/types'
 import fetch from 'node-fetch'
 import debug from 'debug'
@@ -27,7 +28,7 @@ export class ConnectionsManager {
   agentHost: string
   agentPort: number
   socksProxyAgent: any
-  libp2p: null | CustomLibp2p
+  libp2p: null | Libp2p
   localAddress: string | null
   listenAddrs: string
   storage: Storage
@@ -132,7 +133,7 @@ export class ConnectionsManager {
     }
   }
 
-  public initLibp2p = async (): Promise<Libp2pType> => {
+  public initLibp2p = async (): Promise<Libp2p> => {
     const libp2p = await ConnectionsManager.createBootstrapNode({
       peerId: this.peerId,
       listenAddrs: [this.listenAddrs],
@@ -150,6 +151,10 @@ export class ConnectionsManager {
       log('Disconnected from', connection.remotePeer.toB58String())
     })
     return libp2p
+  }
+
+  public startLibp2p = async () => {
+    await this.libp2p.start()
   }
 
   public stopLibp2p = async () => {
@@ -186,10 +191,7 @@ export class ConnectionsManager {
 
   public connectToNetwork = async (target: string) => {
     log(`Attempting to dial ${target}`)
-    await this.libp2p.dial(target, {
-      localAddr: this.localAddress,
-      remoteAddr: new Multiaddr(target)
-    })
+    await this.libp2p.dial(target)
   }
 
   public createOnionPeerId = async (peerId: string) => {
@@ -262,7 +264,7 @@ export class ConnectionsManager {
     agent,
     localAddr,
     bootstrapMultiaddrsList
-  }): Libp2pType => {
+  }): Libp2p => {
     return ConnectionsManager.defaultLibp2pNode({
       peerId,
       listenAddrs,
@@ -278,8 +280,8 @@ export class ConnectionsManager {
     agent,
     localAddr,
     bootstrapMultiaddrsList
-  }): Libp2pType => {
-    return new CustomLibp2p({
+  }): Libp2p => {
+    return new Libp2p({
       peerId,
       addresses: {
         listen: listenAddrs
@@ -289,8 +291,7 @@ export class ConnectionsManager {
         peerDiscovery: [Bootstrap],
         streamMuxer: [Mplex],
         connEncryption: [NOISE],
-        dht: KademliaDHT,
-        pubsub: Gossipsub
+        dht: KademliaDHT
       },
       config: {
         peerDiscovery: {
