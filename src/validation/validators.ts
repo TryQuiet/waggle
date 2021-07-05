@@ -22,7 +22,7 @@ const channelSchema = joi.object({
   keys: joi.object().required()
 })
 
-export const isUser = (publicKey: string, halfKey: string) => {
+export const isUser = (publicKey: string, halfKey: string): boolean => {
   return (
     publicKey.length === 66 &&
     halfKey.length === 64 &&
@@ -31,7 +31,7 @@ export const isUser = (publicKey: string, halfKey: string) => {
   )
 }
 
-export const isConversation = (publicKey: string, encryptedPhrase: string) => {
+export const isConversation = (publicKey: string, encryptedPhrase: string): boolean => {
   return (
     publicKey.length === 64 &&
     encryptedPhrase.length === 108 &&
@@ -40,16 +40,16 @@ export const isConversation = (publicKey: string, encryptedPhrase: string) => {
   )
 }
 
-export const isDirectMessage = (msg: string) => {
+export const isDirectMessage = (msg: string): boolean => {
   return msg.length >= 364 && _.isBase64(msg)
 }
 
-export const isMessage = (msg: IMessage) => {
+export const isMessage = (msg: IMessage): boolean => {
   const value = messageSchema.validate(msg)
   return !value.error
 }
 
-export const isChannel = (channel: IChannelInfo) => {
+export const isChannel = (channel: IChannelInfo): boolean => {
   const value = channelSchema.validate(channel)
   return !value.error
 }

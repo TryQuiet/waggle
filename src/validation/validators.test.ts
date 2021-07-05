@@ -65,7 +65,7 @@ describe('Validators - Conversations', () => {
 describe('Validators - Messages', () => {
   test('message is valid', () => {
     const msg = {
-      id: 'dupa',
+      id: 'fzxjdiasf8ashfisfd',
       type: 1,
       message: 'hello',
       createdAt: 1234567,

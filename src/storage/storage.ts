@@ -356,7 +356,7 @@ export class Storage {
 
   public async sendMessage(channelAddress: string, message: IMessage) {
     if (!validate.isMessage(message)) {
-      log('STORAGE: public channel message is invalid')
+      log.error('STORAGE: public channel message is invalid')
       return
     }
     await this.subscribeForChannel(channelAddress) // Is it necessary?
@@ -373,7 +373,7 @@ export class Storage {
       return
     }
     if (!validate.isChannel(channelData)) {
-      log('STORAGE: Invalid channel format')
+      log.error('STORAGE: Invalid channel format')
       return
     }
     const db: EventStore<IMessage> = await this.orbitdb.log<IMessage>(
@@ -402,7 +402,7 @@ export class Storage {
 
   public async addUser(address: string, halfKey: string): Promise<void> {
     if (!validate.isUser(address, halfKey)) {
-      log('STORAGE: invalid user format')
+      log.error('STORAGE: invalid user format')
       return
     }
     await this.directMessagesUsers.put(address, { halfKey })
@@ -414,7 +414,7 @@ export class Storage {
 
   public async initializeConversation(address: string, encryptedPhrase: string): Promise<void> {
     if (!validate.isConversation(address, encryptedPhrase)) {
-      log('STORAGE: Invalid conversation format')
+      log.error('STORAGE: Invalid conversation format')
       return
     }
     const db: EventStore<IMessage> = await this.orbitdb.log<IMessage>(`dms.${address}`, {
@@ -498,7 +498,7 @@ export class Storage {
 
   public async sendDirectMessage(channelAddress: string, message: string) {
     if (!validate.isDirectMessage(message)) {
-      log('STORAGE: Invalid direct message format')
+      log.error('STORAGE: Invalid direct message format')
       return
     }
     await this.subscribeForDirectMessageThread(channelAddress) // Is it necessary? Yes it is atm
