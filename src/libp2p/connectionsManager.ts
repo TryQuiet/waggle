@@ -13,7 +13,6 @@ import { createPaths, fetchAbsolute } from '../utils'
 import { Config, ZBAY_DIR_PATH } from '../constants'
 import fs from 'fs'
 import path from 'path'
-import Libp2p from 'libp2p'
 import { ConnectionsManagerOptions, IChannelInfo, IConstructor, ILibp2pStatus, IMessage } from '../common/types'
 import fetch from 'node-fetch'
 import debug from 'debug'
@@ -28,7 +27,7 @@ export class ConnectionsManager {
   agentHost: string
   agentPort: number
   socksProxyAgent: any
-  libp2p: null | Libp2p
+  libp2p: null | CustomLibp2p
   localAddress: string | null
   listenAddrs: string
   storage: Storage
@@ -133,7 +132,7 @@ export class ConnectionsManager {
     }
   }
 
-  public initLibp2p = async (): Promise<Libp2p> => {
+  public initLibp2p = async (): Promise<Libp2pType> => {
     const libp2p = await ConnectionsManager.createBootstrapNode({
       peerId: this.peerId,
       listenAddrs: [this.listenAddrs],
@@ -191,7 +190,10 @@ export class ConnectionsManager {
 
   public connectToNetwork = async (target: string) => {
     log(`Attempting to dial ${target}`)
-    await this.libp2p.dial(target)
+    await this.libp2p.dial(target, {
+      localAddr: this.localAddress,
+      remoteAddr: new Multiaddr(target)
+    })
   }
 
   public createOnionPeerId = async (peerId: string) => {
@@ -264,7 +266,7 @@ export class ConnectionsManager {
     agent,
     localAddr,
     bootstrapMultiaddrsList
-  }): Libp2p => {
+  }): Libp2pType => {
     return ConnectionsManager.defaultLibp2pNode({
       peerId,
       listenAddrs,
@@ -280,8 +282,8 @@ export class ConnectionsManager {
     agent,
     localAddr,
     bootstrapMultiaddrsList
-  }): Libp2p => {
-    return new Libp2p({
+  }): Libp2pType => {
+    return new CustomLibp2p({
       peerId,
       addresses: {
         listen: listenAddrs
@@ -291,7 +293,8 @@ export class ConnectionsManager {
         peerDiscovery: [Bootstrap],
         streamMuxer: [Mplex],
         connEncryption: [NOISE],
-        dht: KademliaDHT
+        dht: KademliaDHT,
+        pubsub: Gossipsub
       },
       config: {
         peerDiscovery: {
