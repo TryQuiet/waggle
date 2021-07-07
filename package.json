@@ -102,6 +102,6 @@
     "uint8arrays": "^1.1.0",
     "url": "^0.11.0",
     "validator": "^13.6.0",
-    "wrtc": "../wrtc-mock"
+    "wrtc": "./wrtc-mock"
   }
 }
