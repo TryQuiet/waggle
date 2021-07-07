@@ -11,7 +11,7 @@ export const connections = (io, connectionsManager: ConnectionsManager) => {
     })
     socket.on(
       EventTypesServer.SEND_MESSAGE,
-      async ({ channelAddress, message }: { channelAddress: string; message: IMessage }) => {
+      async ({ channelAddress, message }: { channelAddress: string, message: IMessage }) => {
         await connectionsManager.sendMessage(channelAddress, message)
       }
     )
@@ -23,7 +23,7 @@ export const connections = (io, connectionsManager: ConnectionsManager) => {
     })
     socket.on(
       EventTypesServer.ADD_USER,
-      async ({ publicKey, halfKey }: { publicKey: string; halfKey: string }) => {
+      async ({ publicKey, halfKey }: { publicKey: string, halfKey: string }) => {
         await connectionsManager.addUser(publicKey, halfKey)
       }
     )
@@ -32,7 +32,7 @@ export const connections = (io, connectionsManager: ConnectionsManager) => {
     })
     socket.on(
       EventTypesServer.INITIALIZE_CONVERSATION,
-      async ({ address, encryptedPhrase }: { address: string; encryptedPhrase: string }) => {
+      async ({ address, encryptedPhrase }: { address: string, encryptedPhrase: string }) => {
         await connectionsManager.initializeConversation(address, encryptedPhrase)
       }
     )
@@ -41,7 +41,7 @@ export const connections = (io, connectionsManager: ConnectionsManager) => {
     })
     socket.on(
       EventTypesServer.SEND_DIRECT_MESSAGE,
-      async ({ channelAddress, message }: { channelAddress: string; message: string }) => {
+      async ({ channelAddress, message }: { channelAddress: string, message: string }) => {
         await connectionsManager.sendDirectMessage(channelAddress, message)
       }
     )
@@ -56,7 +56,7 @@ export const connections = (io, connectionsManager: ConnectionsManager) => {
     })
     socket.on(
       EventTypesServer.ASK_FOR_MESSAGES,
-      async ({ channelAddress, ids }: { channelAddress: string; ids: string[] }) => {
+      async ({ channelAddress, ids }: { channelAddress: string, ids: string[] }) => {
         await connectionsManager.askForMessages(channelAddress, ids)
       }
     )

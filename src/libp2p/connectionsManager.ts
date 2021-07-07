@@ -13,14 +13,7 @@ import { createPaths, fetchAbsolute } from '../utils'
 import { Config, ZBAY_DIR_PATH } from '../constants'
 import fs from 'fs'
 import path from 'path'
-import {
-  ConnectionsManagerOptions,
-  DataFromPems,
-  IChannelInfo,
-  IConstructor,
-  ILibp2pStatus,
-  IMessage
-} from '../common/types'
+import { ConnectionsManagerOptions, DataFromPems, IChannelInfo, IConstructor, ILibp2pStatus, IMessage } from '../common/types'
 import fetch from 'node-fetch'
 import debug from 'debug'
 import CustomLibp2p, { Libp2pType } from './customLibp2p'
@@ -65,9 +58,7 @@ export class ConnectionsManager {
     this.peerId = null
     this.bootstrapMultiaddrs = this.getBootstrapMultiaddrs()
     this.listenAddrs = `/dns4/${this.host}/tcp/${this.port}/ws`
-    this.trackerApi = fetchAbsolute(fetch)(
-      'http://okmlac2qjgo2577dkyhpisceua2phwxhdybw4pssortdop6ddycntsyd.onion:7788'
-    )
+    this.trackerApi = fetchAbsolute(fetch)('http://okmlac2qjgo2577dkyhpisceua2phwxhdybw4pssortdop6ddycntsyd.onion:7788')
 
     process.on('unhandledRejection', error => {
       console.error(error)
@@ -219,7 +210,10 @@ export class ConnectionsManager {
     return digest
   }
 
-  public sendMessage = async (channelAddress: string, messagePayload: IMessage): Promise<void> => {
+  public sendMessage = async (
+    channelAddress: string,
+    messagePayload: IMessage
+  ): Promise<void> => {
     const { id, type, signature, createdAt, message, pubKey } = messagePayload
     const messageToSend = {
       id,
@@ -235,7 +229,10 @@ export class ConnectionsManager {
 
   // DMs
 
-  public addUser = async (publicKey: string, halfKey: string): Promise<void> => {
+  public addUser = async (
+    publicKey: string,
+    halfKey: string
+  ): Promise<void> => {
     log(`CONNECTIONS MANAGER: addUser - publicKey ${publicKey} and halfKey ${halfKey}`)
     await this.storage.addUser(publicKey, halfKey)
   }
@@ -271,11 +268,7 @@ export class ConnectionsManager {
     await this.storage.subscribeForAllConversations(conversations)
   }
 
-  public setupRegistrationService = async (
-    tor: Tor,
-    hiddenServicePrivKey: string,
-    dataFromPems: DataFromPems
-  ): Promise<CertificateRegistration> => {
+  public setupRegistrationService = async (tor: Tor, hiddenServicePrivKey: string, dataFromPems: DataFromPems): Promise<CertificateRegistration> => {
     const certRegister = new CertificateRegistration(hiddenServicePrivKey, tor, this, dataFromPems)
     try {
       await certRegister.init()
