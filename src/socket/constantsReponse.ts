@@ -8,5 +8,6 @@ export enum EventTypesResponse {
   RESPONSE_GET_PRIVATE_CONVERSATIONS = 'responseGetPrivateConversations',
   RESPONSE_FETCH_ALL_DIRECT_MESSAGES = 'responseFetchAllDirectMessages',
   SEND_IDS = 'sendIds',
+  SEND_USER_CERTIFICATE = 'sendUserCertificate',
   RESPONSE_GET_CERTIFICATES = 'responseGetCertificates'
 }

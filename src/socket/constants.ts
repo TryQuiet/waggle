@@ -20,5 +20,6 @@ export enum EventTypesServer {
   DIRECT_MESSAGE = 'directMessage',
   SUBSCRIBE_FOR_ALL_CONVERSATIONS = 'subscribeForAllConversations',
   ASK_FOR_MESSAGES = 'askForMessages',
+  REGISTER_USER_CERTIFICATE = 'registerUserCertificate',
   SAVE_CERTIFICATE = 'saveCertificate'
 }
