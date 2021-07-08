@@ -289,6 +289,10 @@ export class ConnectionsManager {
     if (response.status !== 200) {
       switch (response.status) {
         case 403:
+          this.emitCertificateRegistrationError('Username already taken.')
+          break
+        default:
+          this.emitCertificateRegistrationError('Registering username failed.')
           break
       }
       return
@@ -317,6 +321,10 @@ export class ConnectionsManager {
       console.error(e)
       throw e
     }
+  }
+
+  public emitCertificateRegistrationError(message: string) {
+    this.io.emit(EventTypesResponse.CERTIFICATE_REGISTRATION_ERROR, message)
   }
 
   public static readonly createBootstrapNode = ({
