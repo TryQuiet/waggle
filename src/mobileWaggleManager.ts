@@ -42,10 +42,12 @@ export const runWaggle = async (): Promise<any> => {
       await connectionsManager.initStorage()
     })
     .catch(error => {
+      // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
       console.error(`Couldn't initialize waggle: ${error.message}`)
     })
 }
 
 runWaggle().catch(error => {
+  // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
   console.log(`Run waggle err: ${error.message}`)
 })
