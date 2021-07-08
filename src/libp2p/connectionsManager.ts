@@ -38,7 +38,7 @@ export class ConnectionsManager {
   options: ConnectionsManagerOptions
   zbayDir: string
   io: any
-  peerId: PeerId
+  peerId: PeerId | null
   bootstrapMultiaddrs: string[]
   trackerApi: any
 
@@ -208,6 +208,11 @@ export class ConnectionsManager {
     const key = new TextEncoder().encode(`onion${peerId.substring(0, 10)}`)
     const digest = await multihashing(key, 'sha2-256')
     return digest
+  }
+
+  public sendPeerId = () => {
+    const payload = this.peerId?.toB58String()
+    this.io.emit(EventTypesResponse.SEND_PEER_ID, payload)
   }
 
   public sendMessage = async (
