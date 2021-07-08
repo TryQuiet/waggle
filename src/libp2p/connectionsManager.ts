@@ -284,8 +284,8 @@ export class ConnectionsManager {
     return certRegister
   }
 
-  public registerUserCertificate = async (userCsr: UserCsr) => {
-    const response = await this.sendCertificateRegistrationRequest(userCsr)
+  public registerUserCertificate = async (serviceAddress: string, userCsr: UserCsr) => {
+    const response = await this.sendCertificateRegistrationRequest(serviceAddress, userCsr)
     if (response.status !== 200) {
       switch (response.status) {
         case 403:
@@ -304,7 +304,7 @@ export class ConnectionsManager {
     this.io.emit(EventTypesResponse.SEND_USER_CERTIFICATE, certificate)
   }
 
-  public sendCertificateRegistrationRequest = async (userCsr: UserCsr): Promise<Response> => {
+  public sendCertificateRegistrationRequest = async (serviceAddress: string, userCsr: UserCsr): Promise<Response> => {
     const options = {
       method: 'POST',
       body: JSON.stringify({ data: userCsr }),
@@ -314,9 +314,7 @@ export class ConnectionsManager {
       }
     }
     try {
-      return await fetchAbsolute(fetch)(
-        'http://wzispgrbrrkt3bari4kljpqz2j6ozzu3vlsoi2wqupgu7ewi4ncibrid.onion:7789'
-      )('/register', options)
+      return await fetchAbsolute(fetch)(serviceAddress)('/register', options)
     } catch (e) {
       console.error(e)
       throw e
