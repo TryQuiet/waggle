@@ -1,7 +1,6 @@
 import { EventTypesServer } from '../constants'
 import { ConnectionsManager } from '../../libp2p/connectionsManager'
 import { IChannelInfo, IMessage } from '../../common/types'
-import { UserCsr } from '@zbayapp/identity/lib/requestCertificate'
 
 export const connections = (io, connectionsManager: ConnectionsManager) => {
   io.on(EventTypesServer.CONNECTION, socket => {

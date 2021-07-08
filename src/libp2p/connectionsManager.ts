@@ -20,7 +20,7 @@ import CustomLibp2p, { Libp2pType } from './customLibp2p'
 import { Tor } from '../torManager'
 import { CertificateRegistration } from '../registration'
 import { EventTypesResponse } from '../socket/constantsReponse'
-import { UserCsr } from '@zbayapp/identity/lib/requestCertificate'
+
 const log = Object.assign(debug('waggle:conn'), {
   error: debug('waggle:conn:err')
 })
