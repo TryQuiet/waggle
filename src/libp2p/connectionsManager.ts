@@ -284,27 +284,23 @@ export class ConnectionsManager {
     return certRegister
   }
 
-  public registerUserCertificate = async (serviceAddress: string, userCsr: UserCsr) => {
+  public registerUserCertificate = async (serviceAddress: string, userCsr: string) => {
     const response = await this.sendCertificateRegistrationRequest(serviceAddress, userCsr)
-    if (response.status !== 200) {
-      switch (response.status) {
-        case 403:
-          this.emitCertificateRegistrationError('Username already taken.')
-          break
-        default:
-          this.emitCertificateRegistrationError('Registering username failed.')
-          break
-      }
-      return
+    switch (response.status) {
+      case 200:
+        break
+      case 403:
+        this.emitCertificateRegistrationError('Username already taken.')
+        return
+      default:
+        this.emitCertificateRegistrationError('Registering username failed.')
+        return
     }
     const certificate: string = await response.json()
-
-    await this.saveCertificate(certificate)
-
     this.io.emit(EventTypesResponse.SEND_USER_CERTIFICATE, certificate)
   }
 
-  public sendCertificateRegistrationRequest = async (serviceAddress: string, userCsr: UserCsr): Promise<Response> => {
+  public sendCertificateRegistrationRequest = async (serviceAddress: string, userCsr: string): Promise<Response> => {
     const options = {
       method: 'POST',
       body: JSON.stringify({ data: userCsr }),

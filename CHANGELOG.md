@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.0.9] - WIP
+
+### Added
+
+- Registering user certificate (websocket + http) - fetch data from front-end and send request to the service
+
 ## [2.0.8] - 2021-07-07
 
 ### Fix

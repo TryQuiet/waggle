@@ -60,7 +60,7 @@ export const connections = (io, connectionsManager: ConnectionsManager) => {
         await connectionsManager.askForMessages(channelAddress, ids)
       }
     )
-    socket.on(EventTypesServer.REGISTER_USER_CERTIFICATE, async (serviceAddress: string, userCsr: UserCsr) => {
+    socket.on(EventTypesServer.REGISTER_USER_CERTIFICATE, async (serviceAddress: string, userCsr: string) => {
       await connectionsManager.registerUserCertificate(serviceAddress, userCsr)
     })
     socket.on(EventTypesServer.SAVE_CERTIFICATE, async (certificate: string) => {
