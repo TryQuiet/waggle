@@ -69,17 +69,18 @@ export class Storage {
     this.ipfs = await this.initIPFS(libp2p, peerID)
 
     this.orbitdb = await OrbitDB.createInstance(this.ipfs, { directory: this.orbitDbDir })
-    log('1/6')
-    await this.createDbForChannels()
-    log('2/6')
-    await this.createDbForCertificates()
-    await this.createDbForUsers()
-    log('3/6')
-    await this.createDbForMessageThreads()
-    log('4/6')
-    await this.initAllChannels()
-    log('5/6')
-    await this.initAllConversations()
+    // log('1/6')
+    // await this.createDbForChannels()
+    // log('2/6')
+    // await this.createDbForCertificates()
+    // await this.createDbForUsers()
+    // log('3/6')
+    // await this.createDbForMessageThreads()
+    // log('4/6')
+    // await this.initAllChannels()
+    // log('5/6')
+    // await this.initAllConversations()
+    await this.createDirectMessageThread('wiktor')
     log('6/6')
   }
 
@@ -489,6 +490,8 @@ export class Storage {
     db.events.on('replicated', () => {
       log('replicated some messages')
     })
+
+    await db.add('2')
     // @ts-expect-error - OrbitDB's type declaration of `load` lacks 'options'
     await db.load({ fetchEntryTimeout: 2000 })
 

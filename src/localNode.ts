@@ -122,7 +122,7 @@ class Node {
     })
     const node = await connectonsManager.initializeNode(peer)
     console.log('NODEEEE',node)
-    await connectonsManager.startLibp2p()
+    await connectonsManager.initStorage()
     return connectonsManager
   }
 
