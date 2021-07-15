@@ -310,9 +310,7 @@ export class ConnectionsManager {
       method: 'POST',
       body: JSON.stringify({ data: userCsr }),
       headers: { 'Content-Type': 'application/json' },
-      agent: () => {
-        return new SocksProxyAgent({ port: this.agentPort, host: this.agentHost })
-      }
+      agent: new SocksProxyAgent({ port: this.agentPort, host: this.agentHost })
     }
     try {
       return await fetchAbsolute(fetch)(serviceAddress)('/register', options)
