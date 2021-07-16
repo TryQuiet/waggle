@@ -34,7 +34,6 @@ export const isUser = (publicKey: string, halfKey: string): boolean => {
 export const isConversation = (publicKey: string, encryptedPhrase: string): boolean => {
   return (
     publicKey.length === 64 &&
-    encryptedPhrase.length === 108 &&
     _.isHexadecimal(publicKey) &&
     _.isBase64(encryptedPhrase)
   )
