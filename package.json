@@ -34,7 +34,7 @@
     ],
     "testRegex": "src/.*\\.test\\.(t|j)s$",
     "testEnvironment": "node",
-    "testTimeout": 30000
+    "testTimeout": 40000
   },
   "devDependencies": {
     "@types/node": "^14.14.7",
@@ -75,7 +75,7 @@
     "ipfs": "0.52",
     "it-pipe": "^1.1.0",
     "joi": "^17.4.0",
-    "libp2p": "^0.29.3",
+    "libp2p": "^0.29.4",
     "libp2p-bootstrap": "^0.12.1",
     "libp2p-gossipsub": "^0.6.1",
     "libp2p-interfaces": "^0.7.1",
