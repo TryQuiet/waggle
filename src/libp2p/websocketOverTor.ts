@@ -203,6 +203,7 @@ class WebsocketsOverTor extends WebSockets {
     return listener
   }
 
+  // eslint-disable-next-line
   createListener (options = {}, handler) {
     if (typeof options === 'function') {
       handler = options
