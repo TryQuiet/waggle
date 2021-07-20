@@ -202,6 +202,15 @@ class WebsocketsOverTor extends WebSockets {
     }
     return listener
   }
+
+  createListener (options = {}, handler) {
+    if (typeof options === 'function') {
+      handler = options
+      options = {}
+    }
+
+    return this.prepareListener({ handler, upgrader: this._upgrader }, options)
+  }
 }
 
 export default withIs(WebsocketsOverTor, {
