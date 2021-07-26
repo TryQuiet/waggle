@@ -169,6 +169,7 @@ export class ConnectionsManager {
   }
 
   public subscribeForTopic = async (channelData: IChannelInfo) => {
+    console.log('subscribeForTopic')
     await this.storage.subscribeForChannel(channelData.address, channelData)
   }
 

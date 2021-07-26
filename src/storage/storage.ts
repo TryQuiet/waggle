@@ -25,9 +25,16 @@ import {
   CryptoEngine
 } from 'pkijs'
 import { Crypto } from '@peculiar/webcrypto'
+import { CID }  from 'multiformats/cid'
+const Log = require('ipfs-log')
+const Entry = Log.Entry
 import debug from 'debug'
+import fs from 'fs'
 const log = Object.assign(debug('waggle:db'), {
   error: debug('waggle:db:err')
+})
+const logSync = Object.assign(debug('logSync'), {
+  error: debug('logSync:err')
 })
 
 const webcrypto = new Crypto()
@@ -57,6 +64,9 @@ export class Storage {
   public options: StorageOptions
   public orbitDbDir: string
   public ipfsRepoPath: string
+  public snapshotSaved: boolean
+  public msgReplCount: number
+  public snapshotLoaded: boolean
 
   constructor(zbayDir: string, io: any, options?: Partial<StorageOptions>) {
     this.zbayDir = zbayDir
@@ -67,6 +77,9 @@ export class Storage {
     }
     this.orbitDbDir = path.join(this.zbayDir, Config.ORBIT_DB_DIR)
     this.ipfsRepoPath = path.join(this.zbayDir, Config.IPFS_REPO_PATH)
+    this.snapshotSaved = false
+    this.snapshotLoaded = false
+    this.msgReplCount = 0
   }
 
   public async init(libp2p: any, peerID: PeerId): Promise<void> {
@@ -167,7 +180,7 @@ export class Storage {
       async () => {
         log('REPLICATED: CHANNELS')
         if (this.options.isEntryNode) {
-          log('Entry node. Subscribing for all replicated channels')
+          console.log('Entry node. Subscribing for all replicated channels')
           await Promise.all(
             Object.values(this.channels.all).map(async channel => {
               if (!this.publicChannelsRepos.has(channel.address)) {
@@ -240,7 +253,7 @@ export class Storage {
     await Promise.all(
       Object.values(this.channels.all).map(async channel => {
         if (!this.publicChannelsRepos.has(channel.address)) {
-          await this.createChannel(channel.address, channel)
+          await this.subscribeForChannel(channel.address, channel)
         }
       })
     )
@@ -248,7 +261,7 @@ export class Storage {
   }
 
   async initAllConversations() {
-    console.time('initAllConversations')
+    // console.time('initAllConversations')
     await Promise.all(
       Object.keys(this.messageThreads.all).map(async conversation => {
         if (!this.directMessagesRepos.has(conversation)) {
@@ -256,7 +269,7 @@ export class Storage {
         }
       })
     )
-    console.timeEnd('initAllConversations')
+    // console.timeEnd('initAllConversations')
   }
 
   private getChannelsResponse(): ChannelInfoResponse {
@@ -313,6 +326,9 @@ export class Storage {
     channelAddress: string,
     channelInfo?: IChannelInfo
   ): Promise<void> {
+    if (channelAddress !== 'zs10zkaj29rcev9qd5xeuzck4ly5q64kzf6m6h9nfajwcvm8m2vnjmvtqgr0mzfjywswwkwke68t00') {
+      return  // We are testing only 
+    }
     let db: EventStore<IMessage>
     let repo = this.publicChannelsRepos.get(channelAddress)
 
@@ -328,7 +344,7 @@ export class Storage {
     }
 
     if (repo && !repo.eventsAttached) {
-      log('Subscribing to channel ', channelAddress)
+      console.log('Subscribing to channel ', channelAddress)
       if (!this.options.isWaggleMobileMode) {
         db.events.on('write', (_address, entry) => {
           log(`Writing to public channel db ${channelAddress}`)
@@ -402,10 +418,28 @@ export class Storage {
       {
         accessController: {
           write: ['*']
-        }
+        },
+        // @ts-expect-error
+        syncLocal: true
       }
     )
 
+    db.events.on('replicated', async () => {
+      this.msgReplCount += 1
+      logSync(`Msg replicated ${this.msgReplCount}`)
+      if (process.env.RECEIVER && this.msgReplCount >= 7) {
+        logSync('Saving SNAPSHOT')
+        await this.saveSnapshot(db)
+      }
+    })
+
+    if (!process.env.RECEIVER) {
+      await this.saveRemoteSnapshot(db)
+      logSync('Replication status before loading from snapshot:', db.replicationStatus)
+      await this.loadFromSnapshot(db)
+      logSync('Replication status after loading from snapshot:', db.replicationStatus)
+    }
+    
     const channel = this.channels.get(channelAddress)
     if (!channel) {
       await this.channels.put(channelAddress, {
@@ -413,12 +447,124 @@ export class Storage {
         address: channelAddress,
         ...channelData
       })
-      log(`Created channel ${channelAddress}`)
+      logSync(`Created channel ${channelAddress}`)
     }
     this.publicChannelsRepos.set(channelAddress, { db, eventsAttached: false })
+    logSync(`load ${channelAddress} start`)
     // @ts-expect-error - OrbitDB's type declaration of `load` lacks 'options'
     await db.load({ fetchEntryTimeout: 2000 })
+    logSync(`load ${channelAddress} end`)
+    logSync('Entries: ', this.getAllEventLogEntries(db).length)
     return db
+  }
+
+  async loadFromSnapshot (db) {  // Copied from orbid-db-store
+    if (this.snapshotLoaded) {
+      return
+    }
+    if (db.options.onLoad) {
+      await db.options.onLoad(db)
+    }
+
+    db.events.emit('load', db.address.toString()) // TODO emits inconsistent params, missing heads param
+
+    const maxClock = (res, val) => Math.max(res, val.clock.time)
+
+    const queue = await db._cache.get(db.queuePath)
+    db.sync(queue || [])
+
+    const snapshot = await db._cache.get(db.snapshotPath)
+    // console.log('snapshot', snapshot)
+    if (snapshot) {
+      const chunks = []
+      for await (const chunk of db._ipfs.cat(snapshot.hash)) {
+        chunks.push(chunk)
+      }
+      logSync('loadFromSnapshot chunks count', chunks.length)
+      const buffer = Buffer.concat(chunks)
+      const snapshotData = JSON.parse(buffer.toString())
+      logSync('loadFromSnapshot heads count', snapshotData['heads'].length)
+      fs.writeFileSync('loadedSnapshotData.log', buffer.toString())
+
+      const onProgress = (hash, entry, count, total) => {
+        db._recalculateReplicationStatus(count, entry.clock.time)
+        db._onLoadProgress(hash, entry)
+        logSync('loadFromSnapshot.onProgress', hash, count)
+      }
+
+      // Fetch the entries
+      // Timeout 1 sec to only load entries that are already fetched (in order to not get stuck at loading)
+      db._recalculateReplicationMax(snapshotData.values.reduce(maxClock, 0))
+      if (snapshotData) {
+        const log = await Log.fromJSON(db._ipfs, db.identity, snapshotData, { access: db.access, sortFn: db.options.sortFn, length: -1, timeout: 100000, onProgressCallback: onProgress })
+        // console.log('LOG', log)
+        await db._oplog.join(log)
+        await db._updateIndex()
+        db.events.emit('replicated', db.address.toString()) // TODO: inconsistent params, count param not emited
+      }
+      logSync('db._oplog.heads', db._oplog.heads)
+      db.events.emit('ready', db.address.toString(), db._oplog.heads)
+    } else {
+      throw new Error(`Snapshot for ${db.address} not found!`)
+    }
+    this.snapshotLoaded = true
+    return db
+  }
+
+  async saveSnapshot (db) {  // Copied from orbid-db-store
+    logSync('Store.saveSnapshot')
+    const unfinished = db._replicator.getQueue()
+
+    const snapshotData = db._oplog.toSnapshot()
+    const buf = Buffer.from(JSON.stringify({
+      id: snapshotData.id,
+      heads: snapshotData.heads,
+      size: snapshotData.values.length,
+      values: snapshotData.values,
+      type: db.type
+    }))
+    logSync('saving snapshot data')
+    fs.writeFileSync('savedSnapshotData.log', buf)
+    const snapshot = await db._ipfs.add(buf)
+
+    snapshot.hash = snapshot.cid.toString() // js-ipfs >= 0.41, ipfs.add results contain a cid property (a CID instance) instead of a string hash property
+    await db._cache.set(db.snapshotPath, snapshot)
+    await db._cache.set(db.queuePath, unfinished)
+    logSync('db.snapshotPath', db.snapshotPath)
+    logSync('snapshot', snapshot)
+    logSync(snapshot.cid)
+    logSync('db.queuePath', db.queuePath)
+    logSync('unfinished', unfinished)
+
+    logSync(`Saved snapshot: ${snapshot.hash}, queue length: ${unfinished.length}`)
+    return [snapshot]
+  }
+
+
+  public async saveRemoteSnapshot(db) {
+    if (this.snapshotSaved) {
+      return
+    }
+    console.log('Saving remote snapshot locally')
+    const queuePath = '/orbitdb/zdpuB32tZ25tgfgXykc1asQpg2ViXDJxtyzhDD7f67wbvjgC3/channels.zs10zkaj29rcev9qd5xeuzck4ly5q64kzf6m6h9nfajwcvm8m2vnjmvtqgr0mzfjywswwkwke68t00/queue'
+    const snapshotPath = '/orbitdb/zdpuB32tZ25tgfgXykc1asQpg2ViXDJxtyzhDD7f67wbvjgC3/channels.zs10zkaj29rcev9qd5xeuzck4ly5q64kzf6m6h9nfajwcvm8m2vnjmvtqgr0mzfjywswwkwke68t00/snapshot'
+    const unfinished = []
+    const cidObj = CID.parse('QmbcgT9JhUoKLwhzEmHnaUUGYL28nr8hUye2YhV7XLQcVp')
+    console.log('CID', cidObj)
+    const snapshot = {
+      path: 'QmbcgT9JhUoKLwhzEmHnaUUGYL28nr8hUye2YhV7XLQcVp',
+      cid: cidObj,
+      size: 159145,
+      mode: 420,
+      mtime: undefined,
+      hash: 'QmbcgT9JhUoKLwhzEmHnaUUGYL28nr8hUye2YhV7XLQcVp'
+    }
+    
+    //// @ts-expect-error
+    await db._cache.set(snapshotPath, snapshot)
+    //// @ts-expect-error
+    await db._cache.set(queuePath, unfinished)
+    this.snapshotSaved = true
   }
 
   public async addUser(address: string, halfKey: string): Promise<void> {
