@@ -62,7 +62,7 @@ class Node {
     const dataServer = await this.initDataServer()
     const connectonsManager = await this.initStorage(dataServer, onionAddress)
     await this.initListeners(dataServer, connectonsManager)
-    await connectonsManager.setupRegistrationService(this.tor, process.env.HIDDEN_SERVICE_SECRET_REGISTRATION, dataFromRootPems)
+    // await connectonsManager.setupRegistrationService(this.tor, process.env.HIDDEN_SERVICE_SECRET_REGISTRATION, dataFromRootPems)
   }
 
   async spawnTor (): Promise<Tor> {
@@ -85,7 +85,7 @@ class Node {
 
   async spawnService (): Promise<string> {
     console.log('Spawning service')
-    let service: string
+    let service: any
     try {
       service = this.tor.getServiceAddress(this.hiddenServicePort)
     } catch (e) {
@@ -96,7 +96,11 @@ class Node {
           privKey: this.getHiddenServiceSecret()
         }))
       } else {
-        service = (await this.tor.createNewHiddenService(this.hiddenServicePort, this.hiddenServicePort)).onionAddress
+        let hservice: any
+        hservice = (await this.tor.createNewHiddenService(this.hiddenServicePort, this.hiddenServicePort))
+        service = hservice.onionAddress
+        console.log('PKEY', hservice.privateKey)
+        console.log('ONION', hservice.onionAddress)
       }
     }
     return `${service}.onion`

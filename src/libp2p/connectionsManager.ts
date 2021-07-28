@@ -20,6 +20,7 @@ import CustomLibp2p, { Libp2pType } from './customLibp2p'
 import { Tor } from '../torManager'
 import { CertificateRegistration } from '../registration'
 import { EventTypesResponse } from '../socket/constantsReponse'
+import { StorageTest } from '../storage/storage'
 
 const log = Object.assign(debug('waggle:conn'), {
   error: debug('waggle:conn:err')
@@ -54,7 +55,7 @@ export class ConnectionsManager {
       ...options
     }
     this.zbayDir = this.options.env?.appDataPath || ZBAY_DIR_PATH
-    this.storage = new Storage(this.zbayDir, this.io, { ...options })
+    this.storage = new StorageTest(this.zbayDir, this.io, { ...options })
     this.peerId = null
     this.bootstrapMultiaddrs = this.getBootstrapMultiaddrs()
     this.listenAddrs = `/dns4/${this.host}/tcp/${this.port}/ws`
@@ -79,7 +80,8 @@ export class ConnectionsManager {
       return this.options.bootstrapMultiaddrs
     }
     return [
-      '/dns4/2lmfmbj4ql56d55lmv7cdrhdlhls62xa4p6lzy6kymxuzjlny3vnwyqd.onion/tcp/7788/ws/p2p/Qmak8HeMad8X1HGBmz2QmHfiidvGnhu6w6ugMKtx8TFc85'
+      '/dns4/q56onwxkxsntgtskn6dusxkfqjjjwx3ca2rclbvmnwgq63ryw6uub6yd.onion/tcp/7788/ws/p2p/Qmc5a7fPUzS7atfpdXizkzJNkuAfP8EQU7QBkxt2CFMwbs'
+      // '/dns4/2lmfmbj4ql56d55lmv7cdrhdlhls62xa4p6lzy6kymxuzjlny3vnwyqd.onion/tcp/7788/ws/p2p/Qmak8HeMad8X1HGBmz2QmHfiidvGnhu6w6ugMKtx8TFc85'
     ]
   }
 
@@ -91,6 +93,7 @@ export class ConnectionsManager {
         createPaths([this.zbayDir])
       }
       peerId = await PeerId.create()
+      console.log(peerId.toJSON())
       fs.writeFileSync(peerIdKeyPath, peerId.toJSON().privKey)
     } else {
       const peerIdKey = fs.readFileSync(peerIdKeyPath, { encoding: 'utf8' })

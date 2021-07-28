@@ -52,8 +52,8 @@ export class Storage {
   public zbayDir: string
   public io: any
   public peerId: PeerId
-  private ipfs: IPFS.IPFS
-  private orbitdb: OrbitDB
+  protected ipfs: IPFS.IPFS
+  protected orbitdb: OrbitDB
   private channels: KeyValueStore<IZbayChannel>
   private directMessagesUsers: KeyValueStore<IPublicKey>
   private messageThreads: KeyValueStore<IMessageThread>
@@ -67,6 +67,7 @@ export class Storage {
   public snapshotSaved: boolean
   public msgReplCount: number
   public snapshotLoaded: boolean
+  public stream: fs.WriteStream
 
   constructor(zbayDir: string, io: any, options?: Partial<StorageOptions>) {
     this.zbayDir = zbayDir
@@ -80,6 +81,7 @@ export class Storage {
     this.snapshotSaved = false
     this.snapshotLoaded = false
     this.msgReplCount = 0
+    this.stream = fs.createWriteStream("loadingHashes.txt", {flags:'a'})
   }
 
   public async init(libp2p: any, peerID: PeerId): Promise<void> {
@@ -304,7 +306,7 @@ export class Storage {
     loadAllPublicChannels(this.io, this.getChannelsResponse())
   }
 
-  private getAllEventLogEntries(db: EventStore<any>): any[] {
+  protected getAllEventLogEntries(db: EventStore<any>): any[] {
     // TODO: fix typing
     // TODO: move to e.g custom Store
     return db
@@ -427,7 +429,7 @@ export class Storage {
     db.events.on('replicated', async () => {
       this.msgReplCount += 1
       logSync(`Msg replicated ${this.msgReplCount}`)
-      if (process.env.RECEIVER && this.msgReplCount >= 7) {
+      if (process.env.RECEIVER && this.msgReplCount >= 6) {
         logSync('Saving SNAPSHOT')
         await this.saveSnapshot(db)
       }
@@ -459,12 +461,15 @@ export class Storage {
   }
 
   async loadFromSnapshot (db) {  // Copied from orbid-db-store
+    logSync('TRYING TO LOAD SNAPSHOT')
     if (this.snapshotLoaded) {
       return
     }
     if (db.options.onLoad) {
       await db.options.onLoad(db)
     }
+    this.snapshotLoaded = true
+    console.time('loadFromSnapshot')
 
     db.events.emit('load', db.address.toString()) // TODO emits inconsistent params, missing heads param
 
@@ -476,38 +481,50 @@ export class Storage {
     const snapshot = await db._cache.get(db.snapshotPath)
     // console.log('snapshot', snapshot)
     if (snapshot) {
+      logSync('SNAPSHOT EXISTS IN CACHE, LOADING')
       const chunks = []
       for await (const chunk of db._ipfs.cat(snapshot.hash)) {
         chunks.push(chunk)
       }
       logSync('loadFromSnapshot chunks count', chunks.length)
+      // const entry = 'zdpuB36ofEZSHECF9BrWGjkLTZs8jgrQ5LSaeTyHe2L918MV2'
+      // const head = 'zdpuAnF7Vif8eKrEMhXmFeYiuAF8ct89pEGEdTDHstwnNsjVx'
+      // const ipfsEntry = await db._ipfs.dag.get(head, {timeout: 5000})
+      // logSync(`Entry ${head} exists? ${ipfsEntry}`)
       const buffer = Buffer.concat(chunks)
       const snapshotData = JSON.parse(buffer.toString())
       logSync('loadFromSnapshot heads count', snapshotData['heads'].length)
-      fs.writeFileSync('loadedSnapshotData.log', buffer.toString())
+      fs.writeFileSync('loadedSnapshotData.json', buffer.toString())
 
       const onProgress = (hash, entry, count, total) => {
         db._recalculateReplicationStatus(count, entry.clock.time)
         db._onLoadProgress(hash, entry)
         logSync('loadFromSnapshot.onProgress', hash, count)
+        // this.stream.write(hash + '\n')
+        
       }
 
       // Fetch the entries
       // Timeout 1 sec to only load entries that are already fetched (in order to not get stuck at loading)
       db._recalculateReplicationMax(snapshotData.values.reduce(maxClock, 0))
       if (snapshotData) {
-        const log = await Log.fromJSON(db._ipfs, db.identity, snapshotData, { access: db.access, sortFn: db.options.sortFn, length: -1, timeout: 100000, onProgressCallback: onProgress })
-        // console.log('LOG', log)
+        console.time('Log.fromJSON')
+        const log = await Log.fromJSON(db._ipfs, db.identity, snapshotData, { access: db.access, sortFn: db.options.sortFn, length: -1, timeout: 1000, onProgressCallback: onProgress })
+        console.timeEnd('Log.fromJSON')
         await db._oplog.join(log)
         await db._updateIndex()
         db.events.emit('replicated', db.address.toString()) // TODO: inconsistent params, count param not emited
       }
-      logSync('db._oplog.heads', db._oplog.heads)
+      // const ipfsEntryAfterLog = await db._ipfs.dag.get(head, {timeout: 5000})
+      // logSync(`Entry ${head} exists (AFTER LOG)? ${ipfsEntryAfterLog}`)
+      // logSync('TREE', await db._ipfs.dag.tree(head, {timeout: 10000}))
+      logSync('db._oplog.heads count', db._oplog.heads.length)
       db.events.emit('ready', db.address.toString(), db._oplog.heads)
     } else {
       throw new Error(`Snapshot for ${db.address} not found!`)
     }
     this.snapshotLoaded = true
+    console.timeEnd('loadFromSnapshot')
     return db
   }
 
@@ -524,7 +541,7 @@ export class Storage {
       type: db.type
     }))
     logSync('saving snapshot data')
-    fs.writeFileSync('savedSnapshotData.log', buf)
+    fs.writeFileSync(`savedSnapshotData${this.msgReplCount}.json`, buf)
     const snapshot = await db._ipfs.add(buf)
 
     snapshot.hash = snapshot.cid.toString() // js-ipfs >= 0.41, ipfs.add results contain a cid property (a CID instance) instead of a string hash property
@@ -540,30 +557,37 @@ export class Storage {
     return [snapshot]
   }
 
+  protected getSnapshotData() {
+    const queuePath = '/orbitdb/zdpuB32tZ25tgfgXykc1asQpg2ViXDJxtyzhDD7f67wbvjgC3/channels.zs10zkaj29rcev9qd5xeuzck4ly5q64kzf6m6h9nfajwcvm8m2vnjmvtqgr0mzfjywswwkwke68t00/queue'
+    const snapshotPath = '/orbitdb/zdpuB32tZ25tgfgXykc1asQpg2ViXDJxtyzhDD7f67wbvjgC3/channels.zs10zkaj29rcev9qd5xeuzck4ly5q64kzf6m6h9nfajwcvm8m2vnjmvtqgr0mzfjywswwkwke68t00/snapshot'
+    const unfinished = []
+    const cidObj = CID.parse('Qmf7D1m67hPYUnqYAfydbJx9tDTyCJqT99VCSX1M9n66jf')
+    console.log('CID', cidObj)
+    const snapshot = {
+      path: 'Qmf7D1m67hPYUnqYAfydbJx9tDTyCJqT99VCSX1M9n66jf',
+      cid: cidObj,
+      size: 179826,
+      mode: 420,
+      mtime: undefined,
+      hash: 'Qmf7D1m67hPYUnqYAfydbJx9tDTyCJqT99VCSX1M9n66jf'
+    }
+    return {
+      queuePath, snapshotPath, snapshot, unfinished
+    }
+  }
 
   public async saveRemoteSnapshot(db) {
     if (this.snapshotSaved) {
       return
     }
     console.log('Saving remote snapshot locally')
-    const queuePath = '/orbitdb/zdpuB32tZ25tgfgXykc1asQpg2ViXDJxtyzhDD7f67wbvjgC3/channels.zs10zkaj29rcev9qd5xeuzck4ly5q64kzf6m6h9nfajwcvm8m2vnjmvtqgr0mzfjywswwkwke68t00/queue'
-    const snapshotPath = '/orbitdb/zdpuB32tZ25tgfgXykc1asQpg2ViXDJxtyzhDD7f67wbvjgC3/channels.zs10zkaj29rcev9qd5xeuzck4ly5q64kzf6m6h9nfajwcvm8m2vnjmvtqgr0mzfjywswwkwke68t00/snapshot'
-    const unfinished = []
-    const cidObj = CID.parse('QmbcgT9JhUoKLwhzEmHnaUUGYL28nr8hUye2YhV7XLQcVp')
-    console.log('CID', cidObj)
-    const snapshot = {
-      path: 'QmbcgT9JhUoKLwhzEmHnaUUGYL28nr8hUye2YhV7XLQcVp',
-      cid: cidObj,
-      size: 159145,
-      mode: 420,
-      mtime: undefined,
-      hash: 'QmbcgT9JhUoKLwhzEmHnaUUGYL28nr8hUye2YhV7XLQcVp'
-    }
+    const snapshotData = this.getSnapshotData()
+    
     
     //// @ts-expect-error
-    await db._cache.set(snapshotPath, snapshot)
+    await db._cache.set(snapshotData.snapshotPath, snapshotData.snapshot)
     //// @ts-expect-error
-    await db._cache.set(queuePath, unfinished)
+    await db._cache.set(snapshotData.queuePath, snapshotData.unfinished)
     this.snapshotSaved = true
   }
 
@@ -728,4 +752,96 @@ export class Storage {
     }
     return false
   }
+}
+
+
+export class StorageTest extends Storage {
+  public messages: EventStore<string>
+
+  constructor(zbayDir: string, io: any, options?: Partial<StorageOptions>) {
+    super(zbayDir, io, options)
+  }
+  
+  public async init(libp2p: any, peerID: PeerId): Promise<void> {
+    logSync('StorageMin: Entered init')
+    if (this.options?.createPaths) {
+      createPaths([this.ipfsRepoPath, this.orbitDbDir])
+    }
+    this.ipfs = await this.initIPFS(libp2p, peerID)
+
+    this.orbitdb = await OrbitDB.createInstance(this.ipfs, { directory: this.orbitDbDir })
+    await this.createDbForMessages()
+  }
+
+  private async createDbForMessages() {
+    logSync('createDbForMessages init')
+    this.messages = await this.orbitdb.log<string>('3479623912-test', {
+      accessController: {
+        write: ['*']
+      }
+    })
+
+    if (!process.env.SAVE_SNAPSHOT) {
+      await this.saveRemoteSnapshot(this.messages)
+      console.time('load from snapshot')
+      await this.loadFromSnapshot(this.messages)
+      console.timeEnd('load from snapshot')
+    } else {
+      console.time('Adding messages')
+      await this.addMessages()
+      console.timeEnd('Adding messages')
+      console.time('Loading messages')
+      // @ts-expect-error - OrbitDB's type declaration of `load` lacks 'options'
+      await this.messages.load({ fetchEntryTimeout: 15000 })
+      console.timeEnd('Loading messages')
+      logSync('Saving SNAPSHOT')
+      console.time('Saving Snapshot')
+      await this.saveSnapshot(this.messages)
+      console.timeEnd('Saving Snapshot')
+    }
+
+    this.messages.events.on('replicated', async () => {
+      this.msgReplCount += 1
+      logSync(`Replicated ${this.msgReplCount} chunk`)
+      await this.messages.load()
+      console.log('Loaded entries after replication:', this.getAllEventLogEntries(this.messages).length)
+    })
+
+    this.messages.events.on('replicate.progress', async () => {
+      await this.messages.load()
+      console.log('Loaded entries replicate.progress:', this.getAllEventLogEntries(this.messages).length)
+    })
+
+    // @ts-expect-error - OrbitDB's type declaration of `load` lacks 'options'
+    await this.messages.load({ fetchEntryTimeout: 15000 })
+    console.log('Loaded entries:', this.getAllEventLogEntries(this.messages).length)
+  }
+
+  private async addMessages() {
+    let range = n => Array.from(Array(n).keys())
+    for (const nr of range(1000)) {
+      await this.messages.add(`message_${nr.toString()}`)
+    }
+    console.log(process.argv)
+  }
+
+  protected getSnapshotData() {
+    const queuePath = '/orbitdb/zdpuAspUowSU4eEQ1Zyexq5vCfqH13B5nhdL762uuQZMgjaic/3479623912-test/queue'
+    const snapshotPath = '/orbitdb/zdpuAspUowSU4eEQ1Zyexq5vCfqH13B5nhdL762uuQZMgjaic/3479623912-test/snapshot'
+    const unfinished = []
+    const cidObj = CID.parse('QmQSqwXFtwm5awHyMAkqDRw1zqnDtH324bm6bYKLDyAWHF')
+    console.log('CID', cidObj)
+    const snapshot = {
+      path: 'QmQSqwXFtwm5awHyMAkqDRw1zqnDtH324bm6bYKLDyAWHF',
+      cid: cidObj,
+      size: 1549886,
+      mode: 420,
+      mtime: undefined,
+      hash: 'QmQSqwXFtwm5awHyMAkqDRw1zqnDtH324bm6bYKLDyAWHF'
+    }
+    return {
+      queuePath, snapshotPath, snapshot, unfinished
+    }
+  }
+
 }
