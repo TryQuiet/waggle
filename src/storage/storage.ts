@@ -757,9 +757,11 @@ export class Storage {
 
 export class StorageTest extends Storage {
   public messages: EventStore<string>
+  public startedReplication: boolean
 
   constructor(zbayDir: string, io: any, options?: Partial<StorageOptions>) {
     super(zbayDir, io, options)
+    this.startedReplication = false
   }
   
   public async init(libp2p: any, peerID: PeerId): Promise<void> {
@@ -778,21 +780,22 @@ export class StorageTest extends Storage {
     this.messages = await this.orbitdb.log<string>('3479623912-test', {
       accessController: {
         write: ['*']
-      }
+      },
+      // @ts-expect-error
+      referenceCount: 128
     })
 
     if (!process.env.SAVE_SNAPSHOT) {
-      await this.saveRemoteSnapshot(this.messages)
-      console.time('load from snapshot')
-      await this.loadFromSnapshot(this.messages)
-      console.timeEnd('load from snapshot')
+      // await this.saveRemoteSnapshot(this.messages)
+      // console.time('load from snapshot')
+      // await this.loadFromSnapshot(this.messages)
+      // console.timeEnd('load from snapshot')
     } else {
       console.time('Adding messages')
       await this.addMessages()
       console.timeEnd('Adding messages')
       console.time('Loading messages')
-      // @ts-expect-error - OrbitDB's type declaration of `load` lacks 'options'
-      await this.messages.load({ fetchEntryTimeout: 15000 })
+      await this.messages.load()
       console.timeEnd('Loading messages')
       logSync('Saving SNAPSHOT')
       console.time('Saving Snapshot')
@@ -803,17 +806,31 @@ export class StorageTest extends Storage {
     this.messages.events.on('replicated', async () => {
       this.msgReplCount += 1
       logSync(`Replicated ${this.msgReplCount} chunk`)
-      await this.messages.load()
+      // await this.messages.load()
       console.log('Loaded entries after replication:', this.getAllEventLogEntries(this.messages).length)
     })
 
-    this.messages.events.on('replicate.progress', async () => {
-      await this.messages.load()
-      console.log('Loaded entries replicate.progress:', this.getAllEventLogEntries(this.messages).length)
+    this.messages.events.on('replicate.progress', async (address, hash, entry, progress, total) => {
+      if (!this.startedReplication) {
+        console.time('Replication time')
+        this.startedReplication = true
+        console.log('progress start', progress)
+      }
+      // console.log('---')
+      // console.log(`replicate.progress: ${address}`)
+      // console.log(`replicate.progress: ${hash}`)
+      // console.log(`replicate.progress: ${entry.payload.value}`)
+      // console.log(`replicate.progress: ${progress}`)
+      // console.log(`replicate.progress: ${total}`)
+      // await this.messages.load()
+      // console.log('Loaded entries replicate.progress:', this.getAllEventLogEntries(this.messages).length)
+      // fs.writeFileSync('allReplicatedMessages.json', JSON.stringify(this.getAllEventLogEntries(this.messages)))
+      if (progress === 1000) {
+        console.timeEnd('Replication time')
+      }
     })
 
-    // @ts-expect-error - OrbitDB's type declaration of `load` lacks 'options'
-    await this.messages.load({ fetchEntryTimeout: 15000 })
+    await this.messages.load()
     console.log('Loaded entries:', this.getAllEventLogEntries(this.messages).length)
   }
 
@@ -826,18 +843,19 @@ export class StorageTest extends Storage {
   }
 
   protected getSnapshotData() {
+    const cid = 'QmQikcVWJ1zZWsSAWLrsbV5yhGtXWc4yMC7XV1ogdkWYmp'
     const queuePath = '/orbitdb/zdpuAspUowSU4eEQ1Zyexq5vCfqH13B5nhdL762uuQZMgjaic/3479623912-test/queue'
     const snapshotPath = '/orbitdb/zdpuAspUowSU4eEQ1Zyexq5vCfqH13B5nhdL762uuQZMgjaic/3479623912-test/snapshot'
     const unfinished = []
-    const cidObj = CID.parse('QmQSqwXFtwm5awHyMAkqDRw1zqnDtH324bm6bYKLDyAWHF')
+    const cidObj = CID.parse(cid)
     console.log('CID', cidObj)
     const snapshot = {
-      path: 'QmQSqwXFtwm5awHyMAkqDRw1zqnDtH324bm6bYKLDyAWHF',
+      path: cid,
       cid: cidObj,
-      size: 1549886,
+      size: 1653002,
       mode: 420,
       mtime: undefined,
-      hash: 'QmQSqwXFtwm5awHyMAkqDRw1zqnDtH324bm6bYKLDyAWHF'
+      hash: cid
     }
     return {
       queuePath, snapshotPath, snapshot, unfinished
