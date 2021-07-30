@@ -755,13 +755,26 @@ export class Storage {
 }
 
 
+interface SnapshotInfo {
+  queuePath: string,
+  snapshotPath: string,
+  // snapshot: any,
+  mode: number,
+  hash: string,
+  size: number,
+  unfinished: Array<any>
+}
+
 export class StorageTest extends Storage {
   public messages: EventStore<string>
   public startedReplication: boolean
+  public messagesCount: number
+  public snapshotInfoDb: EventStore<SnapshotInfo>
 
   constructor(zbayDir: string, io: any, options?: Partial<StorageOptions>) {
     super(zbayDir, io, options)
     this.startedReplication = false
+    this.messagesCount = 100
   }
   
   public async init(libp2p: any, peerID: PeerId): Promise<void> {
@@ -772,6 +785,24 @@ export class StorageTest extends Storage {
     this.ipfs = await this.initIPFS(libp2p, peerID)
 
     this.orbitdb = await OrbitDB.createInstance(this.ipfs, { directory: this.orbitDbDir })
+    this.snapshotInfoDb = await this.orbitdb.log<SnapshotInfo>('092183012', {
+      accessController: {
+        write: ['*']
+      },
+    })
+    this.snapshotInfoDb.events.on('replicated', async () => {
+      if (!process.env.SAVE_SNAPSHOT) {
+        logSync('Replicated snapshotInfoDb')
+        await this.saveRemoteSnapshot(this.messages)
+        console.time('load from snapshot')
+        await this.loadFromSnapshot(this.messages)
+        console.timeEnd('load from snapshot')
+      }
+    })
+    this.snapshotInfoDb.events.on('replicate.progress', (address, hash, entry, progress, total) => {
+      console.log('replication in progress:', address, hash, entry, progress, total)
+      console.log('>>', entry.payload.value.snapshot)
+    })
     await this.createDbForMessages()
   }
 
@@ -780,24 +811,29 @@ export class StorageTest extends Storage {
     this.messages = await this.orbitdb.log<string>('3479623912-test', {
       accessController: {
         write: ['*']
-      },
-      // @ts-expect-error
-      referenceCount: 128
+      }
     })
 
-    if (!process.env.SAVE_SNAPSHOT) {
-      // await this.saveRemoteSnapshot(this.messages)
-      // console.time('load from snapshot')
-      // await this.loadFromSnapshot(this.messages)
-      // console.timeEnd('load from snapshot')
-    } else {
+    // if (!process.env.SAVE_SNAPSHOT) {
+    //   this.snapshotInfoDb.events.on('replicated', async () => {
+    //     logSync('Replicated snapshotInfoDb')
+    //     await this.saveRemoteSnapshot(this.messages)
+    //     console.time('load from snapshot')
+    //     await this.loadFromSnapshot(this.messages)
+    //     console.timeEnd('load from snapshot')
+    //   })
+    //   this.snapshotInfoDb.events.on('replicate.progress', (address, hash, entry, progress, total) => {
+    //     console.log('replication in progress:', address, hash, entry, progress, total)
+    //   })
+      
+    // }
+    if (process.env.SAVE_SNAPSHOT) {
       console.time('Adding messages')
       await this.addMessages()
       console.timeEnd('Adding messages')
       console.time('Loading messages')
       await this.messages.load()
       console.timeEnd('Loading messages')
-      logSync('Saving SNAPSHOT')
       console.time('Saving Snapshot')
       await this.saveSnapshot(this.messages)
       console.timeEnd('Saving Snapshot')
@@ -825,7 +861,7 @@ export class StorageTest extends Storage {
       // await this.messages.load()
       // console.log('Loaded entries replicate.progress:', this.getAllEventLogEntries(this.messages).length)
       // fs.writeFileSync('allReplicatedMessages.json', JSON.stringify(this.getAllEventLogEntries(this.messages)))
-      if (progress === 1000) {
+      if (progress === this.messagesCount) {
         console.timeEnd('Replication time')
       }
     })
@@ -835,31 +871,148 @@ export class StorageTest extends Storage {
   }
 
   private async addMessages() {
+    // Generate and add "messages" to db
     let range = n => Array.from(Array(n).keys())
-    for (const nr of range(1000)) {
+    for (const nr of range(this.messagesCount)) {
       await this.messages.add(`message_${nr.toString()}`)
     }
-    console.log(process.argv)
   }
 
-  protected getSnapshotData() {
-    const cid = 'QmQikcVWJ1zZWsSAWLrsbV5yhGtXWc4yMC7XV1ogdkWYmp'
-    const queuePath = '/orbitdb/zdpuAspUowSU4eEQ1Zyexq5vCfqH13B5nhdL762uuQZMgjaic/3479623912-test/queue'
-    const snapshotPath = '/orbitdb/zdpuAspUowSU4eEQ1Zyexq5vCfqH13B5nhdL762uuQZMgjaic/3479623912-test/snapshot'
-    const unfinished = []
-    const cidObj = CID.parse(cid)
+  public async saveRemoteSnapshot(db) {
+    if (this.snapshotSaved) {
+      return
+    }
+    console.log('Saving remote snapshot locally')
+    const snapshotData = this.getSnapshotFromDb()
+    
+    //// @ts-expect-error
+    await db._cache.set(snapshotData.snapshotPath, snapshotData.snapshot)
+    //// @ts-expect-error
+    await db._cache.set(snapshotData.queuePath, snapshotData.unfinished)
+    this.snapshotSaved = true
+  }
+
+  async saveSnapshotInfoToDb (queuePath, snapshotPath, snapshot, unfinished) {
+    logSync('Saving snapshot info to DB')
+    await this.snapshotInfoDb.add({
+      queuePath, 
+      snapshotPath, 
+      snapshot, 
+      unfinished
+    })
+    logSync('Saved snapshot info to DB')
+  }
+
+  public getSnapshotFromDb () {
+    const snapshotInfo: SnapshotInfo = this.getAllEventLogEntries(this.snapshotInfoDb)[0]  // Assume that at this point we replicated snapshot info
+    const cidObj = CID.parse(snapshotInfo.hash)
     console.log('CID', cidObj)
     const snapshot = {
-      path: cid,
+      path: snapshotInfo.hash,
       cid: cidObj,
-      size: 1653002,
-      mode: 420,
+      size: snapshotInfo.size,
+      mode: snapshotInfo.mode,
       mtime: undefined,
-      hash: cid
+      hash: snapshotInfo.hash
     }
     return {
-      queuePath, snapshotPath, snapshot, unfinished
+      queuePath: snapshotInfo.queuePath, 
+      snapshotPath: snapshotInfo.snapshotPath, 
+      snapshot, 
+      unfinished: snapshotInfo.unfinished
     }
   }
+
+  async saveSnapshot (db) {  // Copied from orbit-db-store
+    const unfinished = db._replicator.getQueue()
+
+    const snapshotData = db._oplog.toSnapshot()
+    const buf = Buffer.from(JSON.stringify({
+      id: snapshotData.id,
+      heads: snapshotData.heads,
+      size: snapshotData.values.length,
+      values: snapshotData.values,
+      type: db.type
+    }))
+
+    const snapshot = await db._ipfs.add(buf)
+
+    snapshot.hash = snapshot.cid.toString() // js-ipfs >= 0.41, ipfs.add results contain a cid property (a CID instance) instead of a string hash property
+    await db._cache.set(db.snapshotPath, snapshot)
+    await db._cache.set(db.queuePath, unfinished)
+
+    console.debug(`Saved snapshot: ${snapshot.hash}, queue length: ${unfinished.length}`)
+    await this.saveSnapshotInfoToDb(
+      db.queuePath,
+      db.snapshotPath,
+      snapshot,
+      unfinished
+    )
+    return [snapshot]
+  }
+
+  async loadFromSnapshot (db) { // Copied from orbit-db-store
+    if (db.options.onLoad) {
+      await db.options.onLoad(db)
+    }
+
+    db.events.emit('load', db.address.toString()) // TODO emits inconsistent params, missing heads param
+
+    const maxClock = (res, val) => Math.max(res, val.clock.time)
+
+    const queue = await db._cache.get(db.queuePath)
+    db.sync(queue || [])
+
+    const snapshot = await db._cache.get(db.snapshotPath)
+
+    if (snapshot) {
+      const chunks = []
+      for await (const chunk of db._ipfs.cat(snapshot.hash)) {
+        chunks.push(chunk)
+      }
+      const buffer = Buffer.concat(chunks)
+      const snapshotData = JSON.parse(buffer.toString())
+
+      const onProgress = (hash, entry, count, total) => {
+        db._recalculateReplicationStatus(count, entry.clock.time)
+        db._onLoadProgress(hash, entry)
+      }
+
+      // Fetch the entries
+      // Timeout 1 sec to only load entries that are already fetched (in order to not get stuck at loading)
+      db._recalculateReplicationMax(snapshotData.values.reduce(maxClock, 0))
+      if (snapshotData) {
+        const log = await Log.fromJSON(db._ipfs, db.identity, snapshotData, { access: db.access, sortFn: db.options.sortFn, length: -1, timeout: 1000, onProgressCallback: onProgress })
+        await db._oplog.join(log)
+        await db._updateIndex()
+        db.events.emit('replicated', db.address.toString()) // TODO: inconsistent params, count param not emited
+      }
+      db.events.emit('ready', db.address.toString(), db._oplog.heads)
+    } else {
+      throw new Error(`Snapshot for ${db.address} not found!`)
+    }
+
+    return db
+  }
+
+  // protected getSnapshotData() {
+  //   const cid = 'Qme9quJZKpzPpZogSCiVRzmeVd3z5wJvDCcuk3AidKYPvU'
+  //   const queuePath = '/orbitdb/zdpuAspUowSU4eEQ1Zyexq5vCfqH13B5nhdL762uuQZMgjaic/3479623912-test/queue'
+  //   const snapshotPath = '/orbitdb/zdpuAspUowSU4eEQ1Zyexq5vCfqH13B5nhdL762uuQZMgjaic/3479623912-test/snapshot'
+  //   const unfinished = []
+  //   const cidObj = CID.parse(cid)
+  //   console.log('CID', cidObj)
+  //   const snapshot = {
+  //     path: cid,
+  //     cid: cidObj,
+  //     size: 30709,
+  //     mode: 420,
+  //     mtime: undefined,
+  //     hash: cid
+  //   }
+  //   return {
+  //     queuePath, snapshotPath, snapshot, unfinished
+  //   }
+  // }
 
 }
