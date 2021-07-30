@@ -9,7 +9,7 @@ import { CertFieldsTypes } from '@zbayapp/identity/lib/common'
 import { Server } from 'http'
 import { validate, IsBase64, IsNotEmpty } from 'class-validator'
 import { DataFromPems } from '../common/types'
-import { IsCsr } from './validators'
+import { CsrContainsFields, IsCsr } from './validators'
 const log = Object.assign(debug('waggle:registration'), {
   error: debug('waggle:registration:err')
 })
@@ -18,6 +18,7 @@ class UserCsrData {
   @IsNotEmpty()
   @IsBase64()
   @IsCsr()
+  @CsrContainsFields()
   csr: string
 }
 
