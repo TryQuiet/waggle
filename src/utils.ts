@@ -38,7 +38,7 @@ export const getPorts = async (): Promise<Ports> => {
 
 export class DummyIOServer extends SocketIO.Server {
   emit(event: string, ...args: any[]): boolean {
-    console.log(`Emitting ${event} with args: ${args.toString()}`)
+    console.log(`Emitting ${event} with args:`, args)
     return true
   }
 }
