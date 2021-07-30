@@ -1,5 +1,12 @@
 # Changelog
 
+## [unreleased]
+
+### Added
+
+* Handle older pre-migration certificates (without dmPublicKey field). Generate second certificate for existing user
+* Registration - validate if csr has basic fields
+
 ## [2.1.0-0]
 
 ### Changed
