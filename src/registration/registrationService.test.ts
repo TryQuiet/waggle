@@ -18,7 +18,7 @@ async function registerUserTest(csr: string, socksPort: number, localhost: boole
     headers: { 'Content-Type': 'application/json' }
   }
   if (!localhost) {
-    options = Object.assign(options, {agent: new SocksProxyAgent({ port: socksPort, host: 'localhost', timeout: 100000 })})
+    options = Object.assign(options, { agent: new SocksProxyAgent({ port: socksPort, host: 'localhost', timeout: 100000 }) })
     address = '4avghtoehep5ebjngfqk5b43jolkiyyedfcvvq4ouzdnughodzoglzad.onion'
   }
   return await fetch(`http://${address}:7789/register`, options)
@@ -109,7 +109,7 @@ describe('Registration service', () => {
     registrationService = await manager.setupRegistrationService(
       // @ts-expect-error
       new TorMock(),
-      testHiddenService,
+      'testHiddenServiceKey',
       { certificate: certRoot.rootCertString, privKey: certRoot.rootKeyString }
     )
     const response = await registerUserTest(userNew.userCsr, ports.socksPort)
@@ -124,7 +124,7 @@ describe('Registration service', () => {
     registrationService = await manager.setupRegistrationService(
       // @ts-expect-error
       new TorMock(),
-      testHiddenService,
+      'testHiddenServiceKey',
       { certificate: certRoot.rootCertString, privKey: certRoot.rootKeyString }
     )
     for (const invalidCsr of ['', 'abcd']) {
@@ -138,7 +138,7 @@ describe('Registration service', () => {
     registrationService = await manager.setupRegistrationService(
       // @ts-expect-error
       new TorMock(),
-      'something',
+      'testHiddenServiceKey',
       { certificate: certRoot.rootCertString, privKey: certRoot.rootKeyString }
     )
     // Csr with only commonName and nickName

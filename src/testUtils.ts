@@ -80,6 +80,7 @@ export class TorMock {
     targetPort: number
     privKey: string
   }): Promise<any> {
+    console.log('TorMock.spawnHiddenService', virtPort, targetPort, privKey)
     return {
       onionAddress: 'testOnionAddress',
       privateKey: 'testprivateKey'
