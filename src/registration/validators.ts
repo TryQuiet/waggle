@@ -41,14 +41,12 @@ export function CsrContainsFields(validationOptions?: ValidationOptions) {
         async validate(value: any, _args: ValidationArguments) {
           const prom: Promise<boolean> = new Promise(resolve => {
             loadCSR(value).then(() => {
-              try {
-                for (const certType of [CertFieldsTypes.peerId, CertFieldsTypes.commonName, CertFieldsTypes.nickName]) {
-                  getCertFieldValue(value, certType)
+              for (const certType of [CertFieldsTypes.commonName, CertFieldsTypes.peerId, CertFieldsTypes.nickName]) {
+                if (!getCertFieldValue(value, certType)) {
+                  log.error(`Certificate is lacking a field '${certType}'`)
+                  resolve(false)
+                  return
                 }
-              } catch (e) {
-                log.error(`Certificate is lacking a field:`, e)
-                resolve(false)
-                return
               }
               resolve(true)
             }, () => {
