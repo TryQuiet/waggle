@@ -896,15 +896,18 @@ export class StorageTest extends Storage {
     logSync('Saving snapshot info to DB')
     await this.snapshotInfoDb.add({
       queuePath, 
-      snapshotPath, 
-      snapshot, 
+      snapshotPath,
+      mode: snapshot.mode,
+      hash: snapshot.hash,
+      size: snapshot.size,
       unfinished
     })
     logSync('Saved snapshot info to DB')
   }
 
   public getSnapshotFromDb () {
-    const snapshotInfo: SnapshotInfo = this.getAllEventLogEntries(this.snapshotInfoDb)[0]  // Assume that at this point we replicated snapshot info
+    const snapshotInfo: SnapshotInfo = this.getAllEventLogEntries(this.snapshotInfoDb)[0] // Assume that at this point we replicated snapshot info
+    console.log('snapshot retrieved', snapshotInfo)
     const cidObj = CID.parse(snapshotInfo.hash)
     console.log('CID', cidObj)
     const snapshot = {
@@ -972,6 +975,7 @@ export class StorageTest extends Storage {
       }
       const buffer = Buffer.concat(chunks)
       const snapshotData = JSON.parse(buffer.toString())
+      fs.writeFileSync(`loadedSnapshotData${new Date().toISOString()}.json`, buffer.toString())
 
       const onProgress = (hash, entry, count, total) => {
         db._recalculateReplicationStatus(count, entry.clock.time)
