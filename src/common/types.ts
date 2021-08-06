@@ -61,6 +61,7 @@ export interface IConstructor {
   agentHost: string
   options?: Partial<ConnectionsManagerOptions>
   io: any
+  storageClass?: any  // TODO: what type?
 }
 
 export interface ILibp2pStatus {

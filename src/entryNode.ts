@@ -6,9 +6,9 @@ import { dataFromRootPems, ZBAY_DIR_PATH } from './constants'
 import * as os from 'os'
 import fs from 'fs'
 import PeerId from 'peer-id'
-import { torBinForPlatform, torDirForPlatform } from './utils'
+import { getPorts, torBinForPlatform, torDirForPlatform } from './utils'
 
-class Node {
+export class Node {
   tor: Tor
   torPath: string
   torAppDataPath: string
@@ -26,7 +26,14 @@ class Node {
     this.torAppDataPath = torAppDataPath
     this.pathDevLib = pathDevLib || torDirForPlatform()
     this.peerIdFileName = peerIdFileName || this.getPeerIdFileName()
-    this.port = port
+    let pport: number
+    if (process.argv.length === 3) {
+      console.log(process.argv)
+      pport = Number(process.argv[2])
+    } else {
+      pport = port
+    } 
+    this.port = pport
     this.socksProxyPort = socksProxyPort
     this.torControlPort = torControlPort
     this.hiddenServicePort = hiddenServicePort
@@ -56,11 +63,11 @@ class Node {
   }
 
   public async init(): Promise<void> {
-    this.tor = await this.spawnTor()
-    const onionAddress = await this.spawnService()
-    console.log('onion', onionAddress)
+    // this.tor = await this.spawnTor()
+    // const onionAddress = await this.spawnService()
+    // console.log('onion', onionAddress)
     const dataServer = await this.initDataServer()
-    const connectonsManager = await this.initStorage(dataServer, onionAddress)
+    const connectonsManager = await this.initStorage(dataServer, '0.0.0.0')
     await this.initListeners(dataServer, connectonsManager)
     // await connectonsManager.setupRegistrationService(this.tor, process.env.HIDDEN_SERVICE_SECRET_REGISTRATION, dataFromRootPems)
   }
@@ -108,12 +115,14 @@ class Node {
 
   async initDataServer(): Promise<DataServer> {
     console.log('Init DataServer')
-    const dataServer = new DataServer()
+    const ports = await getPorts()
+    const dataServer = new DataServer(ports.dataServer)
     await dataServer.listen()
     return dataServer
   }
 
-  async initStorage(dataServer: DataServer, host: string): Promise<ConnectionsManager> {
+  async initStorage(dataServer: DataServer, host: string, storageClass?: any): Promise<ConnectionsManager> {
+    console.log('initStorage.storageClass:->', storageClass)
     const peer = await this.getPeer()
     const connectonsManager = new ConnectionsManager({
       port: this.port,
@@ -121,6 +130,7 @@ class Node {
       agentHost: 'localhost',
       agentPort: this.socksProxyPort,
       io: dataServer.io,
+      storageClass,
       options: {
         bootstrapMultiaddrs: process.env.BOOTSTRAP_ADDRS ? [process.env.BOOTSTRAP_ADDRS] : [],
         isEntryNode: true
@@ -142,6 +152,6 @@ const main = async () => {
   await node.init()
 }
 
-main().catch(err => {
-  console.log(`Couldn't start entryNode: ${err as string}`)
-})
+// main().catch(err => {
+//   console.log(`Couldn't start entryNode: ${err as string}`)
+// })

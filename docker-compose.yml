@@ -1,28 +1,37 @@
 version: "3.9"
 # Creates local network of waggles (peers)
 
-x-common-variables: &common-variables
+x-common: &common
+    USE_SNAPSHOT: "true"
+
+x-with-tor: &with-tor
     BOOTSTRAP_ADDRS: /dns4/ix2oumqrtjaupt53l6cqpk6ct6iaa5guconwgtvgdk2v3i5wjiyehryd.onion/tcp/7788/ws/p2p/QmRbkBkhTt2DbLMF8kAaf1oxpfKQuEfLKFzVCDzQhabwkw
+    USE_TOR: "true"
+
+x-without-tor: &without-tor
+    BOOTSTRAP_ADDRS: /dns4/0.0.0.0/tcp/7788/ws/p2p/QmRbkBkhTt2DbLMF8kAaf1oxpfKQuEfLKFzVCDzQhabwkw
+    USE_TOR: "false"
 
 services:
   entrynode:
     build: .
     environment:
-        <<: *common-variables
+        <<: *with-tor
         HIDDEN_SERVICE_SECRET: ED25519-V3:+OQSh718QNMfTV+jpsO1moEjSRVnHvPOlEhS1WKdGGkP0OPwMG0iXWx6FJ9liCsbhJGFwLg/I13v6qhB8KVv5Q==
         PEERID_FILE: localEntryNodePeerId.json
-    volumes:
-        - entrynode-data:/root/.config/Zbay
+        CREATE_SNAPSHOT: "true"
   
   peer: &peer
     build: .
+    depends_on: 
+        - "entrynode"
     environment: 
-        <<: *common-variables
+        <<: *with-tor
         HIDDEN_SERVICE_SECRET: null
         PEERID_FILE: ""
 
-  peer-extra:
-    <<: *peer
+  # peer-extra:
+  #   <<: *peer
 
 volumes:
     entrynode-data:

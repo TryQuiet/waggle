@@ -7,6 +7,7 @@ import PeerId from 'peer-id'
 import WebsocketsOverTor from './websocketOverTor'
 import Multiaddr from 'multiaddr'
 import Bootstrap from 'libp2p-bootstrap'
+import Websockets from 'libp2p-websockets'
 import multihashing from 'multihashing-async'
 import { Storage } from '../storage'
 import { createPaths } from '../utils'
@@ -20,7 +21,6 @@ import CustomLibp2p, { Libp2pType } from './customLibp2p'
 import { Tor } from '../torManager'
 import { CertificateRegistration } from '../registration'
 import { EventTypesResponse } from '../socket/constantsReponse'
-import { StorageTest } from '../storage/storage'
 
 const log = Object.assign(debug('waggle:conn'), {
   error: debug('waggle:conn:err')
@@ -43,7 +43,7 @@ export class ConnectionsManager {
   bootstrapMultiaddrs: string[]
   trackerApi: any
 
-  constructor({ host, port, agentHost, agentPort, options, io }: IConstructor) {
+  constructor({ host, port, agentHost, agentPort, options, io, storageClass }: IConstructor) {
     this.host = host
     this.port = port
     this.io = io
@@ -55,11 +55,13 @@ export class ConnectionsManager {
       ...options
     }
     this.zbayDir = this.options.env?.appDataPath || ZBAY_DIR_PATH
-    this.storage = new StorageTest(this.zbayDir, this.io, { ...options })
+    console.log('STOGAGE CLASS', storageClass)
+    const storageCls = storageClass || Storage
+    this.storage = new storageCls(this.zbayDir, this.io, { ...this.options })
+    // console.log('STOGAGE', this.storage)
     this.peerId = null
     this.bootstrapMultiaddrs = this.getBootstrapMultiaddrs()
     this.listenAddrs = `/dns4/${this.host}/tcp/${this.port}/ws`
-    // this.trackerApi = fetchAbsolute(fetch)('http://okmlac2qjgo2577dkyhpisceua2phwxhdybw4pssortdop6ddycntsyd.onion:7788')
 
     process.on('unhandledRejection', error => {
       console.error(error)
@@ -80,8 +82,8 @@ export class ConnectionsManager {
       return this.options.bootstrapMultiaddrs
     }
     return [
-      '/dns4/q56onwxkxsntgtskn6dusxkfqjjjwx3ca2rclbvmnwgq63ryw6uub6yd.onion/tcp/7788/ws/p2p/Qmc5a7fPUzS7atfpdXizkzJNkuAfP8EQU7QBkxt2CFMwbs'
-      // '/dns4/2lmfmbj4ql56d55lmv7cdrhdlhls62xa4p6lzy6kymxuzjlny3vnwyqd.onion/tcp/7788/ws/p2p/Qmak8HeMad8X1HGBmz2QmHfiidvGnhu6w6ugMKtx8TFc85'
+      // '/dns4/q56onwxkxsntgtskn6dusxkfqjjjwx3ca2rclbvmnwgq63ryw6uub6yd.onion/tcp/7788/ws/p2p/Qmc5a7fPUzS7atfpdXizkzJNkuAfP8EQU7QBkxt2CFMwbs'
+      '/dns4/0.0.0.0/tcp/7788/ws/p2p/Qmedyo4vN5t1SJa5ChgXN8nCqb17sopNX26Trb2JcXYyPF'
     ]
   }
 
@@ -136,7 +138,9 @@ export class ConnectionsManager {
     } else {
       this.peerId = staticPeerId
     }
-    this.createAgent()
+    if (this.options.bootstrapMultiaddrs[0].includes('onion')) {  // Tmp ugly check
+      this.createAgent()
+    }
     this.localAddress = `${this.listenAddrs}/p2p/${this.peerId.toB58String()}`
     log('local address:', this.localAddress)
     log('bootstrapMultiaddrs:', this.bootstrapMultiaddrs)
@@ -357,7 +361,7 @@ export class ConnectionsManager {
         listen: listenAddrs
       },
       modules: {
-        transport: [WebsocketsOverTor],
+        transport: [Websockets],
         peerDiscovery: [Bootstrap],
         streamMuxer: [Mplex],
         connEncryption: [NOISE],
@@ -386,10 +390,7 @@ export class ConnectionsManager {
           }
         },
         transport: {
-          WebsocketsOverTor: {
-            websocket: {
-              agent
-            },
+          Websockets: {
             localAddr
           }
         }
