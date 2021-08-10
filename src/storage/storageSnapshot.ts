@@ -36,8 +36,9 @@ export class StorageTestSnapshot extends Storage {
   constructor(zbayDir: string, io: any, options?: Partial<StorageOptions>) {
     super(zbayDir, io, options)
     this.startedReplication = false
-    this.useSnapshot = process.env.USE_SNAPSHOT === "true"
-    this.messagesCount = 1000
+    this.useSnapshot = options.useSnapshot || process.env.USE_SNAPSHOT === "true"  // Actually use snapshot mechanizm
+    console.log('useSnapshot', this.useSnapshot)
+    this.messagesCount = 100  // Quantity of messages that will be added to db
   }
 
   public async init(libp2p: any, peerID: PeerId): Promise<void> {
@@ -56,7 +57,8 @@ export class StorageTestSnapshot extends Storage {
     this.snapshotInfoDb.events.on('replicated', async () => {
       if (!this.useSnapshot) return
 
-      if (process.env.CREATE_SNAPSHOT !== "true") {
+      // Retrieve snapshot that someone else saved to db
+      if (!this.options.createSnapshot || process.env.CREATE_SNAPSHOT !== "true") {
         logSync('Replicated snapshotInfoDb')
         await this.saveRemoteSnapshot(this.messages)
         console.time('load from snapshot')
@@ -79,7 +81,8 @@ export class StorageTestSnapshot extends Storage {
       }
     })
 
-    if (process.env.CREATE_SNAPSHOT === "true") {
+    // Create snapshot and save to db for other peers to retrieve
+    if (this.options.createSnapshot || process.env.CREATE_SNAPSHOT === "true") {
       console.log('Before adding messages')
       console.time('Adding messages')
       await this.addMessages()
@@ -135,7 +138,7 @@ export class StorageTestSnapshot extends Storage {
     }
   }
 
-  public async saveRemoteSnapshot(db) {
+  public async saveRemoteSnapshot(db) {  // Save retrieved snapshot info to local cache
     if (this.snapshotSaved) {
       return
     }

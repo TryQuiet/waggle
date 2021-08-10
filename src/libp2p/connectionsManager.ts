@@ -74,6 +74,7 @@ export class ConnectionsManager {
   }
 
   private readonly createAgent = () => {
+    console.log(this.agentPort, this.agentHost)
     this.socksProxyAgent = new SocksProxyAgent({ port: this.agentPort, host: this.agentHost })
   }
 
@@ -83,7 +84,7 @@ export class ConnectionsManager {
     }
     return [
       // '/dns4/q56onwxkxsntgtskn6dusxkfqjjjwx3ca2rclbvmnwgq63ryw6uub6yd.onion/tcp/7788/ws/p2p/Qmc5a7fPUzS7atfpdXizkzJNkuAfP8EQU7QBkxt2CFMwbs'
-      '/dns4/0.0.0.0/tcp/7788/ws/p2p/Qmedyo4vN5t1SJa5ChgXN8nCqb17sopNX26Trb2JcXYyPF'
+      // '/dns4/0.0.0.0/tcp/7788/ws/p2p/Qmedyo4vN5t1SJa5ChgXN8nCqb17sopNX26Trb2JcXYyPF'
     ]
   }
 
@@ -138,7 +139,12 @@ export class ConnectionsManager {
     } else {
       this.peerId = staticPeerId
     }
-    if (this.options.bootstrapMultiaddrs[0].includes('onion')) {  // Tmp ugly check
+    if (this.getBootstrapMultiaddrs().length === 0) {
+      console.error('Libp2p needs bootstrap multiaddress!')
+      return null
+    }
+    if (this.getBootstrapMultiaddrs().includes('onion')) {  // Tmp ugly check
+      console.log('CREATING PROXY AGENT!!!')
       this.createAgent()
     }
     this.localAddress = `${this.listenAddrs}/p2p/${this.peerId.toB58String()}`

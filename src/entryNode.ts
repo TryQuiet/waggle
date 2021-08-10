@@ -1,5 +1,6 @@
 import { Tor } from './torManager'
 import { DataServer } from './socket/DataServer'
+import fp from 'find-free-port'
 import { ConnectionsManager } from './libp2p/connectionsManager'
 import initListeners from './socket/listeners/'
 import { dataFromRootPems, ZBAY_DIR_PATH } from './constants'
@@ -21,26 +22,22 @@ export class Node {
   torControlPort: number
   hiddenServicePort: number
 
-  constructor(torPath?: string, pathDevLib?: string, peerIdFileName?: string, port = 7788, socksProxyPort = 9050, torControlPort = 9051, hiddenServicePort = 7788, torAppDataPath = ZBAY_DIR_PATH) {
+  constructor(torPath?: string, pathDevLib?: string, peerIdFileName?: string, port = 7788, socksProxyPort = 9050, torControlPort = 9051, hiddenServicePort = 7788, torAppDataPath = ZBAY_DIR_PATH, hiddenServiceSecret?: string) {
     this.torPath = torPath || torBinForPlatform()
     this.torAppDataPath = torAppDataPath
     this.pathDevLib = pathDevLib || torDirForPlatform()
     this.peerIdFileName = peerIdFileName || this.getPeerIdFileName()
-    let pport: number
-    if (process.argv.length === 3) {
-      console.log(process.argv)
-      pport = Number(process.argv[2])
-    } else {
-      pport = port
-    } 
-    this.port = pport
+    this.port = port
     this.socksProxyPort = socksProxyPort
     this.torControlPort = torControlPort
     this.hiddenServicePort = hiddenServicePort
+    this.hiddenServiceSecret = hiddenServiceSecret
   }
 
   public getHiddenServiceSecret (): string {
-    return process.env.HIDDEN_SERVICE_SECRET
+    const hs = this.hiddenServiceSecret || process.env.HIDDEN_SERVICE_SECRET
+    console.log(hs, '<<<<<')
+    return hs
   }
 
   public getPeerIdFileName (): string {
@@ -121,7 +118,7 @@ export class Node {
     return dataServer
   }
 
-  async initStorage(dataServer: DataServer, host: string, storageClass?: any): Promise<ConnectionsManager> {
+  async initStorage(dataServer: DataServer, host: string, storageClass?: any, options?: any): Promise<ConnectionsManager> {
     console.log('initStorage.storageClass:->', storageClass)
     const peer = await this.getPeer()
     const connectonsManager = new ConnectionsManager({
@@ -133,7 +130,8 @@ export class Node {
       storageClass,
       options: {
         bootstrapMultiaddrs: process.env.BOOTSTRAP_ADDRS ? [process.env.BOOTSTRAP_ADDRS] : [],
-        isEntryNode: true
+        isEntryNode: true,
+        ...options
       }
     })
     const node = await connectonsManager.initializeNode(peer)
