@@ -75,7 +75,7 @@ export class StorageTestSnapshot extends Storage {
 
   private async createDbForMessages() {
     logSync('createDbForMessages init')
-    this.messages = await this.orbitdb.log<string>('3479623912-test', {
+    this.messages = await this.orbitdb.log<string>('3479623913-test', {
       accessController: {
         write: ['*']
       }

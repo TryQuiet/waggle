@@ -21,6 +21,7 @@ import CustomLibp2p, { Libp2pType } from './customLibp2p'
 import { Tor } from '../torManager'
 import { CertificateRegistration } from '../registration'
 import { EventTypesResponse } from '../socket/constantsReponse'
+import websocketOverTor from './websocketOverTor'
 
 const log = Object.assign(debug('waggle:conn'), {
   error: debug('waggle:conn:err')
@@ -74,7 +75,7 @@ export class ConnectionsManager {
   }
 
   private readonly createAgent = () => {
-    console.log(this.agentPort, this.agentHost)
+    console.log(`CREATING AGENT FOR ${this.peerId.toB58String()}`, this.agentPort, this.agentHost)
     this.socksProxyAgent = new SocksProxyAgent({ port: this.agentPort, host: this.agentHost })
   }
 
@@ -143,7 +144,7 @@ export class ConnectionsManager {
       console.error('Libp2p needs bootstrap multiaddress!')
       return null
     }
-    if (this.getBootstrapMultiaddrs().includes('onion')) {  // Tmp ugly check
+    if (this.getBootstrapMultiaddrs()[0].includes('onion')) {  // Tmp ugly check
       console.log('CREATING PROXY AGENT!!!')
       this.createAgent()
     }
@@ -367,7 +368,7 @@ export class ConnectionsManager {
         listen: listenAddrs
       },
       modules: {
-        transport: [Websockets],
+        transport: [WebsocketsOverTor],
         peerDiscovery: [Bootstrap],
         streamMuxer: [Mplex],
         connEncryption: [NOISE],
@@ -396,7 +397,10 @@ export class ConnectionsManager {
           }
         },
         transport: {
-          Websockets: {
+          WebsocketsOverTor: {
+            websocket: {
+              agent
+            },
             localAddr
           }
         }

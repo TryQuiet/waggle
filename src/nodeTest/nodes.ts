@@ -48,9 +48,41 @@ export class NodeWithoutTor extends LocalNode {
       {
         bootstrapMultiaddrs: ['/dns4/0.0.0.0/tcp/7788/ws/p2p/QmRbkBkhTt2DbLMF8kAaf1oxpfKQuEfLKFzVCDzQhabwkw'], 
         createSnapshot: this.createSnapshot,
-        useSnapshot: true
+        useSnapshot: true,
+        env: {
+          appDataPath: this.appDataPath
+        }
       }
     )
+    await this.initListeners(dataServer, connectonsManager)
+  }
+}
+
+export class NodeWithTor2 extends LocalNode {
+
+  public async init(): Promise<void> {
+    console.log('USING NodeWithTor')
+    this.tor = await this.spawnTor()
+    const onionAddress = await this.spawnService()
+    console.log('onion', onionAddress)
+    const dataServer = await this.initDataServer()
+    console.log('INITING STORAGE')
+    const connectonsManager = await this.initStorage(
+      dataServer, 
+      onionAddress, 
+      StorageTestSnapshot,
+      {
+        bootstrapMultiaddrs: [
+         '/dns4/ix2oumqrtjaupt53l6cqpk6ct6iaa5guconwgt22222v3i5wjiyehryd.onion/tcp/7788/ws/p2p/QmRbkBkhTt2DbLMF8kAaf1oxpfKQuEfLKFzVCDzQhabwkw',
+        // '/dns4/2lmfmbj4ql56d55lmv7cdrhdlhls62xa4p6lzy6kymxuzjlny3vnwyqd.onion/tcp/7788/ws/p2p/Qmak8HeMad8X1HGBmz2QmHfiidvGnhu6w6ugMKtx8TFc854'
+      ],
+        createSnapshot: this.createSnapshot,
+        useSnapshot: true,
+        env: {
+          appDataPath: this.appDataPath
+        }
+      }
+      )
     await this.initListeners(dataServer, connectonsManager)
   }
 }
@@ -70,7 +102,7 @@ export class NodeWithTor extends LocalNode {
       StorageTestSnapshot,
       {
         bootstrapMultiaddrs: [
-          '/dns4/ix2oumqrtjaupt53l6cqpk6ct6iaa5guconwgtvgdk2v3i5wjiyehryd.onion/tcp/7788/ws/p2p/QmRbkBkhTt2DbLMF8kAaf1oxpfKQuEfLKFzVCDzQhabwkw',
+         '/dns4/ix2oumqrtjaupt53l6cqpk6ct6iaa5guconwgtvgdk2v3i5wjiyehryd.onion/tcp/7788/ws/p2p/QmRbkBkhTt2DbLMF8kAaf1oxpfKQuEfLKFzVCDzQhabwkw',
         // '/dns4/2lmfmbj4ql56d55lmv7cdrhdlhls62xa4p6lzy6kymxuzjlny3vnwyqd.onion/tcp/7788/ws/p2p/Qmak8HeMad8X1HGBmz2QmHfiidvGnhu6w6ugMKtx8TFc854'
       ],
         createSnapshot: this.createSnapshot,
@@ -83,19 +115,3 @@ export class NodeWithTor extends LocalNode {
     await this.initListeners(dataServer, connectonsManager)
   }
 }
-
-const main = async () => {
-  let node: Node
-  console.log('PROCESS USE TOR?', process.env.USE_TOR)
-  console.log('PROCESS BOOTSTRAP_ADDRS?', process.env.BOOTSTRAP_ADDRS)
-  if (process.env.USE_TOR === "true") {
-    node = new NodeWithTor()
-  } else {
-    node = new NodeWithoutTor()
-  }
-  await node.init()
-}
-
-// main().catch(err => {
-//   console.log(`Couldn't start node: ${err as string}`)
-// })

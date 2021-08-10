@@ -60,11 +60,11 @@ export class Node {
   }
 
   public async init(): Promise<void> {
-    // this.tor = await this.spawnTor()
-    // const onionAddress = await this.spawnService()
-    // console.log('onion', onionAddress)
+    this.tor = await this.spawnTor()
+    const onionAddress = await this.spawnService()
+    console.log('onion', onionAddress)
     const dataServer = await this.initDataServer()
-    const connectonsManager = await this.initStorage(dataServer, '0.0.0.0')
+    const connectonsManager = await this.initStorage(dataServer, onionAddress)
     await this.initListeners(dataServer, connectonsManager)
     // await connectonsManager.setupRegistrationService(this.tor, process.env.HIDDEN_SERVICE_SECRET_REGISTRATION, dataFromRootPems)
   }
