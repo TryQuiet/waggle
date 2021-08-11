@@ -3,10 +3,12 @@ import { ZBAY_DIR_PATH } from '../constants'
 import { StorageTestSnapshot } from '../storage/storageSnapshot'
 import WebsocketsOverTor from '../libp2p/websocketOverTor'
 import Websockets from 'libp2p-websockets'
+import { Storage } from '../storage/storage'
 
 class LocalNode extends Node {
   createSnapshot: boolean
   appDataPath: string
+  storage: any  // Storage | StorageTestSnapshot
 
   constructor(
     torPath?: string, 
@@ -38,7 +40,7 @@ export class NodeWithoutTor extends LocalNode {
   public async init(): Promise<void> {
     console.log('USING NodeWithoutTor')
     const dataServer = await this.initDataServer()
-    const connectonsManager = await this.initStorage(
+    const connectonsManager = await this.initConnectionsManager(
       dataServer, 
       '0.0.0.0', 
       StorageTestSnapshot,
@@ -52,6 +54,7 @@ export class NodeWithoutTor extends LocalNode {
         libp2pTransport: Websockets
       }
     )
+    this.storage = connectonsManager.storage
     await this.initListeners(dataServer, connectonsManager)
   }
 }
@@ -65,7 +68,7 @@ export class NodeWithTor extends LocalNode {
     console.log('onion', onionAddress)
     const dataServer = await this.initDataServer()
     console.log('INITING STORAGE')
-    const connectonsManager = await this.initStorage(
+    const connectonsManager = await this.initConnectionsManager(
       dataServer, 
       onionAddress, 
       StorageTestSnapshot,
@@ -80,7 +83,8 @@ export class NodeWithTor extends LocalNode {
         },
         libp2pTransport: WebsocketsOverTor
       }
-      )
+    )
+    this.storage = connectonsManager.storage
     await this.initListeners(dataServer, connectonsManager)
   }
 }

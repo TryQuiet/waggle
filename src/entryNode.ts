@@ -64,7 +64,7 @@ export class Node {
     const onionAddress = await this.spawnService()
     console.log('onion', onionAddress)
     const dataServer = await this.initDataServer()
-    const connectonsManager = await this.initStorage(dataServer, onionAddress)
+    const connectonsManager = await this.initConnectionsManager(dataServer, onionAddress)
     await this.initListeners(dataServer, connectonsManager)
     // await connectonsManager.setupRegistrationService(this.tor, process.env.HIDDEN_SERVICE_SECRET_REGISTRATION, dataFromRootPems)
   }
@@ -118,7 +118,7 @@ export class Node {
     return dataServer
   }
 
-  async initStorage(dataServer: DataServer, host: string, storageClass?: any, options?: any): Promise<ConnectionsManager> {
+  async initConnectionsManager(dataServer: DataServer, host: string, storageClass?: any, options?: any): Promise<ConnectionsManager> {
     console.log('initStorage.storageClass:->', storageClass)
     const peer = await this.getPeer()
     const connectonsManager = new ConnectionsManager({
@@ -137,6 +137,7 @@ export class Node {
     const node = await connectonsManager.initializeNode(peer)
     console.log(node)
     await connectonsManager.initStorage()
+    console.log('Finished initing storage')
     return connectonsManager
   }
 
