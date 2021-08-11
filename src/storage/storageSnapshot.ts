@@ -38,7 +38,7 @@ export class StorageTestSnapshot extends Storage {
     this.startedReplication = false
     this.useSnapshot = options.useSnapshot || process.env.USE_SNAPSHOT === "true"  // Actually use snapshot mechanizm
     console.log('useSnapshot', this.useSnapshot)
-    this.messagesCount = 100  // Quantity of messages that will be added to db
+    this.messagesCount = 1000  // Quantity of messages that will be added to db
   }
 
   public async init(libp2p: any, peerID: PeerId): Promise<void> {
@@ -128,8 +128,7 @@ export class StorageTestSnapshot extends Storage {
     console.log('Loaded entries:', this.getAllEventLogEntries(this.messages).length)
   }
 
-  private async addMessages() {
-    // Generate and add "messages" to db
+  private async addMessages() {  // Generate and add "messages" to db
     let range = n => Array.from(Array(n).keys())
     for (const nr of range(this.messagesCount)) {
       // console.time(`adding msg ${nr.toString()}`)
@@ -235,7 +234,7 @@ export class StorageTestSnapshot extends Storage {
       }
       const buffer = Buffer.concat(chunks)
       const snapshotData = JSON.parse(buffer.toString())
-      fs.writeFileSync(`loadedSnapshotData${new Date().toISOString()}.json`, buffer.toString())
+      fs.writeFileSync(`loadedSnapshotData${new Date().toISOString()}.json`, buffer.toString()) // Saving snapshot to investigate it later
 
       const onProgress = (hash, entry, count, total) => {
         db._recalculateReplicationStatus(count, entry.clock.time)

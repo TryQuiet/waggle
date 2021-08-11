@@ -56,6 +56,7 @@ export class ConnectionsManagerOptions {
   isEntryNode?: boolean = false
   createSnapshot?: boolean = false
   useSnapshot?: boolean = false
+  libp2pTransportClass?: any = null
 }
 
 export interface IConstructor {

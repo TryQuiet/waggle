@@ -103,8 +103,8 @@ export class Node {
         let hservice: any
         hservice = (await this.tor.createNewHiddenService(this.hiddenServicePort, this.hiddenServicePort))
         service = hservice.onionAddress
-        console.log('PKEY', hservice.privateKey)
-        console.log('ONION', hservice.onionAddress)
+        // console.log('PKEY', hservice.privateKey)
+        // console.log('ONION', hservice.onionAddress)
       }
     }
     return `${service}.onion`

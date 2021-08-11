@@ -1,7 +1,8 @@
 import { Node } from '../entryNode'
 import { ZBAY_DIR_PATH } from '../constants'
 import { StorageTestSnapshot } from '../storage/storageSnapshot'
-import { createTmpDir, tmpZbayDirPath } from '../testUtils'
+import WebsocketsOverTor from '../libp2p/websocketOverTor'
+import Websockets from 'libp2p-websockets'
 
 class LocalNode extends Node {
   createSnapshot: boolean
@@ -24,11 +25,7 @@ class LocalNode extends Node {
     let _port: number = port
     if (process.env.TOR_PORT) {
       _port = Number(process.env.TOR_PORT)
-    }
-    // const tmpDir = createTmpDir()
-    // const tmpAppDataPath = tmpZbayDirPath(tmpDir.name)
-    // console.log('tmpAppDataPath::::::::', tmpAppDataPath)
-    
+    }    
     super(torPath, pathDevLib, peerIdFileName, _port, socksProxyPort, torControlPort, hiddenServicePort, torAppDataPath, hiddenServiceSecret)
     this.createSnapshot = createSnapshot
     this.appDataPath = appDataPath
@@ -51,38 +48,10 @@ export class NodeWithoutTor extends LocalNode {
         useSnapshot: true,
         env: {
           appDataPath: this.appDataPath
-        }
+        },
+        libp2pTransport: Websockets
       }
     )
-    await this.initListeners(dataServer, connectonsManager)
-  }
-}
-
-export class NodeWithTor2 extends LocalNode {
-
-  public async init(): Promise<void> {
-    console.log('USING NodeWithTor')
-    this.tor = await this.spawnTor()
-    const onionAddress = await this.spawnService()
-    console.log('onion', onionAddress)
-    const dataServer = await this.initDataServer()
-    console.log('INITING STORAGE')
-    const connectonsManager = await this.initStorage(
-      dataServer, 
-      onionAddress, 
-      StorageTestSnapshot,
-      {
-        bootstrapMultiaddrs: [
-         '/dns4/ix2oumqrtjaupt53l6cqpk6ct6iaa5guconwgt22222v3i5wjiyehryd.onion/tcp/7788/ws/p2p/QmRbkBkhTt2DbLMF8kAaf1oxpfKQuEfLKFzVCDzQhabwkw',
-        // '/dns4/2lmfmbj4ql56d55lmv7cdrhdlhls62xa4p6lzy6kymxuzjlny3vnwyqd.onion/tcp/7788/ws/p2p/Qmak8HeMad8X1HGBmz2QmHfiidvGnhu6w6ugMKtx8TFc854'
-      ],
-        createSnapshot: this.createSnapshot,
-        useSnapshot: true,
-        env: {
-          appDataPath: this.appDataPath
-        }
-      }
-      )
     await this.initListeners(dataServer, connectonsManager)
   }
 }
@@ -103,13 +72,13 @@ export class NodeWithTor extends LocalNode {
       {
         bootstrapMultiaddrs: [
          '/dns4/ix2oumqrtjaupt53l6cqpk6ct6iaa5guconwgtvgdk2v3i5wjiyehryd.onion/tcp/7788/ws/p2p/QmRbkBkhTt2DbLMF8kAaf1oxpfKQuEfLKFzVCDzQhabwkw',
-        // '/dns4/2lmfmbj4ql56d55lmv7cdrhdlhls62xa4p6lzy6kymxuzjlny3vnwyqd.onion/tcp/7788/ws/p2p/Qmak8HeMad8X1HGBmz2QmHfiidvGnhu6w6ugMKtx8TFc854'
       ],
         createSnapshot: this.createSnapshot,
         useSnapshot: true,
         env: {
           appDataPath: this.appDataPath
-        }
+        },
+        libp2pTransport: WebsocketsOverTor
       }
       )
     await this.initListeners(dataServer, connectonsManager)

@@ -7,7 +7,6 @@ import PeerId from 'peer-id'
 import WebsocketsOverTor from './websocketOverTor'
 import Multiaddr from 'multiaddr'
 import Bootstrap from 'libp2p-bootstrap'
-import Websockets from 'libp2p-websockets'
 import multihashing from 'multihashing-async'
 import { Storage } from '../storage'
 import { createPaths } from '../utils'
@@ -21,7 +20,6 @@ import CustomLibp2p, { Libp2pType } from './customLibp2p'
 import { Tor } from '../torManager'
 import { CertificateRegistration } from '../registration'
 import { EventTypesResponse } from '../socket/constantsReponse'
-import websocketOverTor from './websocketOverTor'
 
 const log = Object.assign(debug('waggle:conn'), {
   error: debug('waggle:conn:err')
@@ -42,6 +40,7 @@ export class ConnectionsManager {
   io: any
   peerId: PeerId | null
   bootstrapMultiaddrs: string[]
+  libp2pTransportClass: any
   trackerApi: any
 
   constructor({ host, port, agentHost, agentPort, options, io, storageClass }: IConstructor) {
@@ -56,13 +55,12 @@ export class ConnectionsManager {
       ...options
     }
     this.zbayDir = this.options.env?.appDataPath || ZBAY_DIR_PATH
-    console.log('STOGAGE CLASS', storageClass)
     const storageCls = storageClass || Storage
     this.storage = new storageCls(this.zbayDir, this.io, { ...this.options })
-    // console.log('STOGAGE', this.storage)
     this.peerId = null
     this.bootstrapMultiaddrs = this.getBootstrapMultiaddrs()
     this.listenAddrs = `/dns4/${this.host}/tcp/${this.port}/ws`
+    this.libp2pTransportClass = options.libp2pTransportClass || WebsocketsOverTor // We use tor by default
 
     process.on('unhandledRejection', error => {
       console.error(error)
@@ -75,7 +73,7 @@ export class ConnectionsManager {
   }
 
   private readonly createAgent = () => {
-    console.log(`CREATING AGENT FOR ${this.peerId.toB58String()}`, this.agentPort, this.agentHost)
+    // console.log(`Creating agent for ${this.peerId.toB58String()}`, this.agentPort, this.agentHost)
     this.socksProxyAgent = new SocksProxyAgent({ port: this.agentPort, host: this.agentHost })
   }
 
@@ -97,7 +95,7 @@ export class ConnectionsManager {
         createPaths([this.zbayDir])
       }
       peerId = await PeerId.create()
-      console.log(peerId.toJSON())
+      // console.log(peerId.toJSON())
       fs.writeFileSync(peerIdKeyPath, peerId.toJSON().privKey)
     } else {
       const peerIdKey = fs.readFileSync(peerIdKeyPath, { encoding: 'utf8' })
@@ -105,34 +103,6 @@ export class ConnectionsManager {
     }
     return peerId
   }
-
-  // private readonly getInitialPeers = async (): Promise<string[]> => {
-  //   const options = {
-  //     method: 'GET',
-  //     agent: () => {
-  //       return this.socksProxyAgent
-  //     }
-  //   }
-  //   const response = await this.trackerApi('/peers', options)
-  //   return response.json()
-  // }
-
-  // public async registerPeerTest (): Promise<void> {
-  //   const csr = await createUserCsr({
-  //     zbayNickname: 'MYuserName',
-  //     commonName: 'nqnw4kc4c77fb47lk52m5l57h4tcxceo7ymxekfn7yh5m66t4jv2olad.onion',
-  //     peerId: 'Qmf3ySkYqLET9xtAtDzvAr5Pp3egK1H3C5iJAZm1SpLEp6'
-  //   })
-  //   const options = {
-  //     method: 'POST',
-  //     body: JSON.stringify({ csr: csr.userCsr }),
-  //     headers: { 'Content-Type': 'application/json' },
-  //     agent: () => {
-  //       return this.socksProxyAgent
-  //     }
-  //   }
-  //   await this.trackerApi('/register', options)
-  // }
 
   public initializeNode = async (staticPeerId?: PeerId): Promise<ILibp2pStatus> => {
     if (!staticPeerId) {
@@ -145,7 +115,7 @@ export class ConnectionsManager {
       return null
     }
     if (this.getBootstrapMultiaddrs()[0].includes('onion')) {  // Tmp ugly check
-      console.log('CREATING PROXY AGENT!!!')
+      // console.log('CREATING PROXY AGENT!!!')
       this.createAgent()
     }
     this.localAddress = `${this.listenAddrs}/p2p/${this.peerId.toB58String()}`
@@ -159,12 +129,13 @@ export class ConnectionsManager {
   }
 
   public initLibp2p = async (): Promise<Libp2pType> => {
-    const libp2p = await ConnectionsManager.createBootstrapNode({
+    const libp2p = ConnectionsManager.createBootstrapNode({
       peerId: this.peerId,
       listenAddrs: [this.listenAddrs],
       agent: this.socksProxyAgent,
       localAddr: this.localAddress,
-      bootstrapMultiaddrsList: this.bootstrapMultiaddrs
+      bootstrapMultiaddrsList: this.bootstrapMultiaddrs, 
+      transportClass: this.libp2pTransportClass
     })
     libp2p.connectionManager.on('peer:connect', async connection => {
       log('Connected to', connection.remotePeer.toB58String())
@@ -344,14 +315,16 @@ export class ConnectionsManager {
     listenAddrs,
     agent,
     localAddr,
-    bootstrapMultiaddrsList
+    bootstrapMultiaddrsList,
+    transportClass
   }): Libp2pType => {
     return ConnectionsManager.defaultLibp2pNode({
       peerId,
       listenAddrs,
       agent,
       localAddr,
-      bootstrapMultiaddrsList
+      bootstrapMultiaddrsList,
+      transportClass
     })
   }
 
@@ -360,7 +333,8 @@ export class ConnectionsManager {
     listenAddrs,
     agent,
     localAddr,
-    bootstrapMultiaddrsList
+    bootstrapMultiaddrsList,
+    transportClass
   }): Libp2pType => {
     return new CustomLibp2p({
       peerId,
@@ -368,7 +342,7 @@ export class ConnectionsManager {
         listen: listenAddrs
       },
       modules: {
-        transport: [WebsocketsOverTor],
+        transport: [transportClass],
         peerDiscovery: [Bootstrap],
         streamMuxer: [Mplex],
         connEncryption: [NOISE],
@@ -397,7 +371,7 @@ export class ConnectionsManager {
           }
         },
         transport: {
-          WebsocketsOverTor: {
+          [transportClass.name]: {
             websocket: {
               agent
             },
