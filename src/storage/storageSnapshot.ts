@@ -10,9 +10,6 @@ const Log = require('ipfs-log')
 const Entry = Log.Entry
 import debug from 'debug'
 import fs from 'fs'
-const log = Object.assign(debug('waggle:db'), {
-  error: debug('waggle:db:err')
-})
 const logSync = Object.assign(debug('logSync'), {
   error: debug('logSync:err')
 })
@@ -215,7 +212,7 @@ export class StorageTestSnapshot extends Storage {
     await db._cache.set(db.queuePath, unfinished)
 
     console.debug(`Saved snapshot: ${snapshot.hash}, queue length: ${unfinished.length}`)
-    await this.saveSnapshotInfoToDb(
+    await this.saveSnapshotInfoToDb(  // Saving it to share with others
       db.queuePath,
       db.snapshotPath,
       snapshot,
@@ -226,8 +223,8 @@ export class StorageTestSnapshot extends Storage {
 
   public saveSnapshotToFile() {
     // @ts-expect-error
-    const snapshot = this.messages._oplog.toSnapshot()
-    fs.writeFileSync(`saveSnapshot${new Date().toISOString()}.json`, snapshot)
+    const snapshot = JSON.stringify(this.messages._oplog.toSnapshot())
+    fs.writeFileSync(`snapshot_${this.name}_${new Date().toISOString()}.json`, snapshot)
   }
 
   async loadFromSnapshot(db) { // Copied from orbit-db-store
