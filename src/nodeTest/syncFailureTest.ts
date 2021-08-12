@@ -21,9 +21,9 @@ const main = async () => {
   for (let i = 1; i <= nodesCount; i++) {
     const torDir = path.join(tmpDir.name, `tor${i}`)
     const tmpAppDataPath = path.join(tmpDir.name, `.zbayTmp${i}`)
-    const port = await fp(7788 + i)
-    const socksProxyPort = await fp(1234 + i)
-    const torControlPort = await fp(9051 + i)
+    const [port] = await fp(7788 + i)
+    const [socksProxyPort] = await fp(1234 + i)
+    const [torControlPort] = await fp(9051 + i)
     const node = new NodeWithTor(undefined, undefined, undefined, port, socksProxyPort, torControlPort, port, torDir, undefined, false, tmpAppDataPath)
     await node.init()
     node.storage.setName(`Node${i}`)

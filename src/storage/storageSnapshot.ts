@@ -14,6 +14,11 @@ const logSync = Object.assign(debug('logSync'), {
   error: debug('logSync:err')
 })
 
+class Stats {
+  replicationTime: string
+
+}
+
 interface SnapshotInfo {
   queuePath: string,
   snapshotPath: string,
@@ -25,19 +30,19 @@ interface SnapshotInfo {
 
 export class StorageTestSnapshot extends Storage {
   public messages: EventStore<string>
-  public startedReplication: boolean
+  public replicationStartTime: Date
   public messagesCount: number
   public snapshotInfoDb: EventStore<SnapshotInfo>
   public useSnapshot: boolean
   public name: string
+  public replicationTime: number
 
   constructor(zbayDir: string, io: any, options?: Partial<StorageOptions>) {
     super(zbayDir, io, options)
-    this.startedReplication = false
     this.useSnapshot = options.useSnapshot || process.env.USE_SNAPSHOT === "true"  // Actually use snapshot mechanizm
     console.log('useSnapshot', this.useSnapshot)
     this.messagesCount = 10  // Quantity of messages that will be added to db
-    this.name = (Math.random() + 1).toString(36).substring(7)
+    this.name = (Math.random() + 1).toString(36).substring(7)    
   }
 
   public async init(libp2p: any, peerID: PeerId): Promise<void> {
@@ -109,9 +114,9 @@ export class StorageTestSnapshot extends Storage {
     })
 
     this.messages.events.on('replicate.progress', async (address, hash, entry, progress, total) => {
-      if (!this.startedReplication) {
+      if (!this.replicationStartTime) {
         console.time(`${this.name}; Replication time`)
-        this.startedReplication = true
+        this.replicationStartTime = new Date()
         console.log('progress start', progress)
       }
       // console.log('---')
@@ -125,6 +130,8 @@ export class StorageTestSnapshot extends Storage {
       // fs.writeFileSync('allReplicatedMessages.json', JSON.stringify(this.getAllEventLogEntries(this.messages)))
       if (progress === this.messagesCount) {
         console.timeEnd(`${this.name}; Replication time`)
+        const diff = (new Date().getTime() - this.replicationStartTime.getTime())
+        this.replicationTime = Number(diff / 1000)
       }
     })
 
