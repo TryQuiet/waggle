@@ -14,9 +14,10 @@ const log = Object.assign(debug('dbSnap'), {
   error: debug('dbSnap:err')
 })
 
-class Stats {
-  replicationTime: string
-
+class StorageTestSnapshotOptions extends StorageOptions {
+  messagesCount: number
+  createSnapshot?: boolean = false
+  useSnapshot?: boolean = false
 }
 
 interface SnapshotInfo {
@@ -36,11 +37,16 @@ export class StorageTestSnapshot extends Storage {
   public useSnapshot: boolean
   public name: string
   public replicationTime: number
+  public options: StorageTestSnapshotOptions
 
-  constructor(zbayDir: string, io: any, options?: Partial<StorageOptions>) {
+  constructor(zbayDir: string, io: any, options?: Partial<StorageTestSnapshotOptions>) {
     super(zbayDir, io, options)
+    this.options = {
+      ...new StorageTestSnapshotOptions(),
+      ...options
+    }
     this.useSnapshot = options.useSnapshot || process.env.USE_SNAPSHOT === "true"  // Actually use snapshot mechanizm
-    this.messagesCount = 1000  // Quantity of messages that will be added to db
+    this.messagesCount = options.messagesCount  // Quantity of messages that will be added to db
     this.name = (Math.random() + 1).toString(36).substring(7)    
   }
 

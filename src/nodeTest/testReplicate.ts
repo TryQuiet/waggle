@@ -1,23 +1,54 @@
 import path from "path"
 import { createTmpDir } from "../testUtils"
-import { NodeWithTor } from "./nodes"
+import { NodeWithTor, NodeWithoutTor, LocalNode } from "./nodes"
 import fp from 'find-free-port'
 import debug from 'debug'
 import Table from 'cli-table'
+import yargs, {Argv} from "yargs"
 const log = Object.assign(debug('localTest'), {
   error: debug('localTest:err')
 })
+let argv = yargs.command('test', "Test replication", (yargs: Argv) => {
+  return yargs.option('useTor', {
+    describe: "Whether to use Tor or run waggle nodes on localhost",
+    default: true,
+    type: 'boolean'
+  }).option('nodesCount', {
+    describe: "How many nodes should be run in test (does not include entry node)",
+    alias: 'n',
+    type: 'number'
+  }).option('timeThreshold', {
+    describe: "Max time for each node complete replication (in seconds)",
+    alias: 't',
+    type: 'number'
+  }).option('entriesCount', {
+    describe: "Number of db entries",
+    alias: 'e',
+    type: 'number'
+  })
+  .demandOption(['nodesCount', 'timeThreshold', 'entriesCount'])
+  .help()
+}).argv
 
-// Run entry node with messages
-// Run second node connecting to entry node
-// Check if the second node replicated all messages within a set time range
+console.log(argv)
 
 const tmpDir = createTmpDir()
-
-const addressBootstrapMultiaddrs =  `/dns4/b3blzzfntawunjjyi5nfgx32zj3uyj3glvblb6ye3ndbvdjuc7r6btqd.onion/tcp/`
+const testTimeout = (argv.nodesCount + 1) * 500
+const addressBootstrapMultiaddrsTor =  `/dns4/b3blzzfntawunjjyi5nfgx32zj3uyj3glvblb6ye3ndbvdjuc7r6btqd.onion/tcp/`
+const addressBootstrapMultiaddrsLocal = '/dns4/0.0.0.0/tcp/'
 const peerIdBootstrapMultiaddrs = '/ws/p2p/Qmc159udVDVd87CAxQjgcYW6ZgBXZHYr4gjpfwJB8M3iZg'
-let testBootstrapMultiaddrs: string
 const testHiddenKey = 'ED25519-V3:kKyIk91pWMhSVEuJG9fnMH4w06ohY8lG2ePz8P6crGFEhRD2W2ahiWj0d/VceSIJn6TZ1DVi4XJ3z4V2txgP1Q=='
+let addressBootstrapMultiaddrs: string
+let testBootstrapMultiaddrs: string
+
+let NodeType: typeof LocalNode
+if (argv.useTor) {
+  NodeType = NodeWithTor
+  addressBootstrapMultiaddrs = addressBootstrapMultiaddrsTor
+} else {
+  NodeType = NodeWithoutTor
+  addressBootstrapMultiaddrs = addressBootstrapMultiaddrsLocal
+}
 
 interface NodeKeyValue {
   [key: number]: NodeData
@@ -40,7 +71,24 @@ const launchNode = async (i: number, hiddenServiceSecret?: string, createMessage
   }
   const [socksProxyPort] = await fp(1234 + i)
   const [torControlPort] = await fp(9051 + i)
-  const node = new NodeWithTor(undefined, undefined, peerIdFilename, port, socksProxyPort, torControlPort, port, torDir, hiddenServiceSecret, createMessages, useSnapshot, tmpAppDataPath, [testBootstrapMultiaddrs])
+  const node = new NodeType(
+    undefined, 
+    undefined, 
+    peerIdFilename, 
+    port, 
+    socksProxyPort, 
+    torControlPort, 
+    port, 
+    torDir, 
+    hiddenServiceSecret, 
+    {
+      createSnapshot: createMessages, 
+      useSnapshot, 
+      messagesCount: argv.entriesCount
+    },
+    tmpAppDataPath, 
+    [testBootstrapMultiaddrs]
+  )
   await node.init()
   node.storage.setName(`Node${i}`)
   log(`${node.storage.name} joined network`)
@@ -52,7 +100,7 @@ const displayResults = (nodes: NodeKeyValue) => {
   for (const nodeData of Object.values(nodes)) {
     table.push([nodeData.node.storage.name, nodeData.actualReplicationTime, nodeData.testPassed])
   }
-  
+  displayTestSetup()
   console.log(table.toString())
   if (Object.values(nodes).filter(node => !node.testPassed).length > 0) {
     log.error('Test failed')
@@ -63,23 +111,28 @@ const displayResults = (nodes: NodeKeyValue) => {
   }
 }
 
-const displayTestAssertions = (replicationThreshold, dbEntriesCount) => {
-  const table = new Table({head: ['Time threshold', 'Messages (db entries) count']})
-  table.push([replicationThreshold, dbEntriesCount])
+const displayTestSetup = () => {
+  const table = new Table({head: ['Time threshold', 'Messages (db entries) count', 'Test used Tor']})
+  table.push([argv.timeThreshold, argv.entriesCount, argv.useTor])
   console.log(table.toString())
 }
 
 const runTest = async () => {
-  const nodesCount = 3 // Nodes count except the entry node. TODO: should be taken from the input
+  // Run entry node with messages
+  // Run second node connecting to entry node
+  // Check if the second node replicated all messages within a set time range
+
   process.on('SIGINT', function() {
     log("Caught interrupt signal")
     log(`Removing tmp dir: ${tmpDir.name}`)
     tmpDir.removeCallback()
     process.exit(1)
   })
+  const testStartTime = new Date().getTime()
+  const nodesCount = Number(argv.nodesCount) // Nodes count except the entry node
+  const maxReplicationTimePerNode = Number(argv.timeThreshold)
   let nodesCounter = 1
   let nodes: NodeKeyValue = {}
-  const maxReplicationTimePerNode = 100 // seconds
 
   // Launch entry node
   await launchNode(0, testHiddenKey, true, 'localTestPeerId.json', false)
@@ -96,6 +149,10 @@ const runTest = async () => {
   }
 
   const testIntervalId = setInterval(async () => {
+    if ((testStartTime - new Date().getTime()) / 100 > testTimeout) {
+      log.error('Timeout')
+      displayResults(nodes)
+    }
     const nodesReplicationFinished = Object.values(nodes).filter(nodeData => nodeData.node.storage.replicationTime !== undefined)
     // Get nodes that finished replicating
     for (const nodeData of nodesReplicationFinished) {
@@ -113,7 +170,6 @@ const runTest = async () => {
       clearInterval(testIntervalId)
       log(`Removing tmp dir: ${tmpDir.name}`)
       tmpDir.removeCallback()
-      displayTestAssertions(maxReplicationTimePerNode, 1000)
       displayResults(nodes)
     }
   }, 5000)

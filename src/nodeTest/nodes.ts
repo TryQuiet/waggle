@@ -5,9 +5,19 @@ import WebsocketsOverTor from '../libp2p/websocketOverTor'
 import Websockets from 'libp2p-websockets'
 import { Storage } from '../storage/storage'
 
-class LocalNode extends Node {
-  createSnapshot: boolean
-  useSnapshot: boolean
+
+
+class TestStorageOptions {
+  createSnapshot?: boolean
+  messagesCount: number
+  useSnapshot?: boolean
+}
+
+export class LocalNode extends Node {
+  // createSnapshot: boolean
+  // useSnapshot: boolean
+  // messagesCount: number
+  storageOptions: any
   appDataPath: string
   storage: any  // Storage | StorageTestSnapshot
   bootstrapMultiaddrs: string[]
@@ -22,8 +32,7 @@ class LocalNode extends Node {
     hiddenServicePort = 7788, 
     torAppDataPath = ZBAY_DIR_PATH,
     hiddenServiceSecret?: string,
-    createSnapshot?: boolean,
-    useSnapshot?: boolean,
+    storageOptions?: TestStorageOptions,
     appDataPath?: string,
     bootstrapMultiaddrs?: string[]
     ) {
@@ -33,8 +42,10 @@ class LocalNode extends Node {
       _port = Number(process.env.TOR_PORT)
     }    
     super(torPath, pathDevLib, peerIdFileName, _port, socksProxyPort, torControlPort, hiddenServicePort, torAppDataPath, hiddenServiceSecret)
-    this.createSnapshot = createSnapshot
-    this.useSnapshot = useSnapshot
+    this.storageOptions = storageOptions
+    // this.createSnapshot = storageOptions.createSnapshot
+    // this.useSnapshot = storageOptions.useSnapshot
+    // this.messagesCount = storageOptions.messagesCount
     this.appDataPath = appDataPath
     this.bootstrapMultiaddrs = bootstrapMultiaddrs
   }
@@ -51,9 +62,11 @@ export class NodeWithoutTor extends LocalNode {
       '0.0.0.0', 
       StorageTestSnapshot,
       {
-        bootstrapMultiaddrs: ['/dns4/0.0.0.0/tcp/7788/ws/p2p/QmRbkBkhTt2DbLMF8kAaf1oxpfKQuEfLKFzVCDzQhabwkw'], 
-        createSnapshot: this.createSnapshot,
-        useSnapshot: this.useSnapshot,
+        bootstrapMultiaddrs: this.bootstrapMultiaddrs, 
+        ...this.storageOptions,
+        // createSnapshot: this.storageOptions.createSnapshot,
+        // useSnapshot: this.storageOptions.useSnapshot,
+        // messagesCount: this.storageOptions.messagesCount,
         env: {
           appDataPath: this.appDataPath
         },
@@ -73,15 +86,16 @@ export class NodeWithTor extends LocalNode {
     const onionAddress = await this.spawnService()
     console.log('onion', onionAddress)
     const dataServer = await this.initDataServer()
-    console.log('INITING STORAGE')
     const connectonsManager = await this.initConnectionsManager(
       dataServer, 
       onionAddress, 
       StorageTestSnapshot,
       {
         bootstrapMultiaddrs: this.bootstrapMultiaddrs,
-        createSnapshot: this.createSnapshot,
-        useSnapshot: this.useSnapshot,
+        ...this.storageOptions,
+        // createSnapshot: this.storageOptions.createSnapshot,
+        // useSnapshot: this.storageOptions.useSnapshot,
+        // messagesCount: this.storageOptions.messagesCount,
         env: {
           appDataPath: this.appDataPath
         },

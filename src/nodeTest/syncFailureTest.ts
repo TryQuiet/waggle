@@ -23,7 +23,23 @@ const main = async () => {
     const [port] = await fp(7788 + i)
     const [socksProxyPort] = await fp(1234 + i)
     const [torControlPort] = await fp(9051 + i)
-    const node = new NodeWithTor(undefined, undefined, undefined, port, socksProxyPort, torControlPort, port, torDir, undefined, false, true, tmpAppDataPath)
+    const node = new NodeWithTor(
+      undefined, 
+      undefined, 
+      undefined, 
+      port, 
+      socksProxyPort, 
+      torControlPort, 
+      port, 
+      torDir, 
+      undefined,
+      {
+        createSnapshot: false, 
+        useSnapshot: true, 
+        messagesCount: 100
+      },
+      tmpAppDataPath
+    )
     await node.init()
     node.storage.setName(`Node${i}`)
     nodes[i] = node

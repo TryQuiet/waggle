@@ -32,8 +32,6 @@ export class StorageOptions {
   createPaths: boolean = true
   isWaggleMobileMode: boolean
   isEntryNode?: boolean = false
-  createSnapshot?: boolean = false
-  useSnapshot?: boolean = false
 }
 
 export interface IZbayChannel extends IChannelInfo {
