@@ -11,7 +11,6 @@ const log = Object.assign(debug('localTest'), {
 
 
 const tmpDir = createTmpDir()
-  
 const main = async () => {
   const nodesCount = 1
   const min = Math.ceil(1);
@@ -24,7 +23,7 @@ const main = async () => {
     const [port] = await fp(7788 + i)
     const [socksProxyPort] = await fp(1234 + i)
     const [torControlPort] = await fp(9051 + i)
-    const node = new NodeWithTor(undefined, undefined, undefined, port, socksProxyPort, torControlPort, port, torDir, undefined, false, tmpAppDataPath)
+    const node = new NodeWithTor(undefined, undefined, undefined, port, socksProxyPort, torControlPort, port, torDir, undefined, false, true, tmpAppDataPath)
     await node.init()
     node.storage.setName(`Node${i}`)
     nodes[i] = node

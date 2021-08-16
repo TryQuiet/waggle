@@ -31,7 +31,7 @@ const launchNode = async (i: number) => {
   const [port] = await fp(7788 + i)
   const [socksProxyPort] = await fp(1234 + i)
   const [torControlPort] = await fp(9051 + i)
-  const node = new NodeWithTor(undefined, undefined, undefined, port, socksProxyPort, torControlPort, port, torDir, undefined, false, tmpAppDataPath)
+  const node = new NodeWithTor(undefined, undefined, undefined, port, socksProxyPort, torControlPort, port, torDir, undefined, false, false, tmpAppDataPath)
   await node.init()
   node.storage.setName(`Node${i}`)
   log(`${node.storage.name} joined network`)

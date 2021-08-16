@@ -14,12 +14,12 @@ const hiddenSecret = 'ED25519-V3:+OQSh718QNMfTV+jpsO1moEjSRVnHvPOlEhS1WKdGGkP0OP
 const main = async () => {
   // Node that generates snapshot
   const port1 = 7788
-  const node1 = new NodeWithTor(undefined, undefined, 'localEntryNodePeerId.json', port1, 1234, 9051, port1, torDir1, hiddenSecret, true, tmpAppDataPath1)
+  const node1 = new NodeWithTor(undefined, undefined, 'localEntryNodePeerId.json', port1, 1234, 9051, port1, torDir1, hiddenSecret, true, true, tmpAppDataPath1)
   await node1.init()
 
   // Node that retrieves snapshot
   const port2 = 7789
-  const node2 = new NodeWithTor(undefined, undefined, undefined, port2, 4321, 9052, port2, torDir2, undefined, false, tmpAppDataPath2)
+  const node2 = new NodeWithTor(undefined, undefined, undefined, port2, 4321, 9052, port2, torDir2, undefined, false, true, tmpAppDataPath2)
   await node2.init()
 }
 

@@ -7,8 +7,10 @@ import { Storage } from '../storage/storage'
 
 class LocalNode extends Node {
   createSnapshot: boolean
+  useSnapshot: boolean
   appDataPath: string
   storage: any  // Storage | StorageTestSnapshot
+  bootstrapMultiaddrs: string[]
 
   constructor(
     torPath?: string, 
@@ -21,7 +23,9 @@ class LocalNode extends Node {
     torAppDataPath = ZBAY_DIR_PATH,
     hiddenServiceSecret?: string,
     createSnapshot?: boolean,
-    appDataPath?: string
+    useSnapshot?: boolean,
+    appDataPath?: string,
+    bootstrapMultiaddrs?: string[]
     ) {
 
     let _port: number = port
@@ -30,7 +34,9 @@ class LocalNode extends Node {
     }    
     super(torPath, pathDevLib, peerIdFileName, _port, socksProxyPort, torControlPort, hiddenServicePort, torAppDataPath, hiddenServiceSecret)
     this.createSnapshot = createSnapshot
+    this.useSnapshot = useSnapshot
     this.appDataPath = appDataPath
+    this.bootstrapMultiaddrs = bootstrapMultiaddrs
   }
 }
 
@@ -47,7 +53,7 @@ export class NodeWithoutTor extends LocalNode {
       {
         bootstrapMultiaddrs: ['/dns4/0.0.0.0/tcp/7788/ws/p2p/QmRbkBkhTt2DbLMF8kAaf1oxpfKQuEfLKFzVCDzQhabwkw'], 
         createSnapshot: this.createSnapshot,
-        useSnapshot: true,
+        useSnapshot: this.useSnapshot,
         env: {
           appDataPath: this.appDataPath
         },
@@ -73,11 +79,9 @@ export class NodeWithTor extends LocalNode {
       onionAddress, 
       StorageTestSnapshot,
       {
-        bootstrapMultiaddrs: [
-         '/dns4/ix2oumqrtjaupt53l6cqpk6ct6iaa5guconwgtvgdk2v3i5wjiyehryd.onion/tcp/7788/ws/p2p/QmRbkBkhTt2DbLMF8kAaf1oxpfKQuEfLKFzVCDzQhabwkw',
-      ],
+        bootstrapMultiaddrs: this.bootstrapMultiaddrs,
         createSnapshot: this.createSnapshot,
-        useSnapshot: true,
+        useSnapshot: this.useSnapshot,
         env: {
           appDataPath: this.appDataPath
         },

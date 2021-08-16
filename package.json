@@ -58,6 +58,7 @@
     "abortable-iterator": "^3.0.0",
     "async-mutex": "^0.2.6",
     "class-validator": "^0.13.1",
+    "cli-table": "^0.3.6",
     "commander": "^7.2.0",
     "cors": "^2.8.5",
     "debug": "^4.3.1",

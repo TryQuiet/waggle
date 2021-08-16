@@ -35,9 +35,7 @@ export class Node {
   }
 
   public getHiddenServiceSecret (): string {
-    const hs = this.hiddenServiceSecret || process.env.HIDDEN_SERVICE_SECRET
-    console.log(hs, '<<<<<')
-    return hs
+    return this.hiddenServiceSecret || process.env.HIDDEN_SERVICE_SECRET
   }
 
   public getPeerIdFileName (): string {
@@ -103,8 +101,6 @@ export class Node {
         let hservice: any
         hservice = (await this.tor.createNewHiddenService(this.hiddenServicePort, this.hiddenServicePort))
         service = hservice.onionAddress
-        // console.log('PKEY', hservice.privateKey)
-        // console.log('ONION', hservice.onionAddress)
       }
     }
     return `${service}.onion`
@@ -137,7 +133,6 @@ export class Node {
     const node = await connectonsManager.initializeNode(peer)
     console.log(node)
     await connectonsManager.initStorage()
-    console.log('Finished initing storage')
     return connectonsManager
   }
 

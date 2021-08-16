@@ -10,8 +10,8 @@ const Log = require('ipfs-log')
 const Entry = Log.Entry
 import debug from 'debug'
 import fs from 'fs'
-const logSync = Object.assign(debug('logSync'), {
-  error: debug('logSync:err')
+const log = Object.assign(debug('dbSnap'), {
+  error: debug('dbSnap:err')
 })
 
 class Stats {
@@ -40,13 +40,12 @@ export class StorageTestSnapshot extends Storage {
   constructor(zbayDir: string, io: any, options?: Partial<StorageOptions>) {
     super(zbayDir, io, options)
     this.useSnapshot = options.useSnapshot || process.env.USE_SNAPSHOT === "true"  // Actually use snapshot mechanizm
-    console.log('useSnapshot', this.useSnapshot)
-    this.messagesCount = 10  // Quantity of messages that will be added to db
+    this.messagesCount = 1000  // Quantity of messages that will be added to db
     this.name = (Math.random() + 1).toString(36).substring(7)    
   }
 
   public async init(libp2p: any, peerID: PeerId): Promise<void> {
-    logSync(`${this.name}; StorageTest: Entered init`)
+    log(`${this.name}; StorageTest: Entered init`)
     if (this.options?.createPaths) {
       createPaths([this.ipfsRepoPath, this.orbitDbDir])
     }
@@ -63,7 +62,7 @@ export class StorageTestSnapshot extends Storage {
 
       // Retrieve snapshot that someone else saved to db
       if (!this.options.createSnapshot || process.env.CREATE_SNAPSHOT !== "true") {
-        logSync('Replicated snapshotInfoDb')
+        log('Replicated snapshotInfoDb')
         await this.saveRemoteSnapshot(this.messages)
         console.time('load from snapshot')
         await this.loadFromSnapshot(this.messages)
@@ -71,11 +70,11 @@ export class StorageTestSnapshot extends Storage {
       }
     })
     this.snapshotInfoDb.events.on('replicate.progress', (address, hash, entry, progress, total) => {
-      logSync(`${this.name}; replication in progress:`, address, hash, entry, progress, total)
-      logSync('>>', entry.payload.value.snapshot)
+      // log(`${this.name}; replication in progress:`, address, hash, entry, progress, total)
+      // log('>>', entry.payload.value.snapshot)
     })
     await this.createDbForMessages()
-    console.log(`Initialized '${this.name}'`)
+    log(`Initialized '${this.name}'`)
   }
 
   public setName(name) {
@@ -83,7 +82,7 @@ export class StorageTestSnapshot extends Storage {
   }
 
   private async createDbForMessages() {
-    logSync('createDbForMessages init')
+    log('createDbForMessages init')
     this.messages = await this.orbitdb.log<string>('3479623913-test', {
       accessController: {
         write: ['*']
@@ -92,10 +91,9 @@ export class StorageTestSnapshot extends Storage {
 
     // Create snapshot and save to db for other peers to retrieve
     if (this.options.createSnapshot || process.env.CREATE_SNAPSHOT === "true") {
-      console.log('Before adding messages')
-      console.time('Adding messages')
+      console.time(`${this.name}; Adding messages`)
       await this.addMessages()
-      console.timeEnd('Adding messages')
+      console.timeEnd(`${this.name}; Adding messages`)
       console.time('Loading messages')
       await this.messages.load()
       console.timeEnd('Loading messages')
@@ -108,25 +106,25 @@ export class StorageTestSnapshot extends Storage {
 
     this.messages.events.on('replicated', async () => {
       this.msgReplCount += 1
-      logSync(`Replicated ${this.msgReplCount} chunk`)
+      log(`${this.name}; Replicated ${this.msgReplCount} chunk`)
       // await this.messages.load()
-      // console.log('Loaded entries after replication:', this.getAllEventLogEntries(this.messages).length)
+      // log('Loaded entries after replication:', this.getAllEventLogEntries(this.messages).length)
     })
 
     this.messages.events.on('replicate.progress', async (address, hash, entry, progress, total) => {
       if (!this.replicationStartTime) {
         console.time(`${this.name}; Replication time`)
         this.replicationStartTime = new Date()
-        console.log('progress start', progress)
+        log('progress start', progress)
       }
-      // console.log('---')
-      // console.log(`replicate.progress: ${address}`)
-      // console.log(`replicate.progress: ${hash}`)
-      console.log(`${this.name}; replicate.progress: ${entry.payload.value}`)
-      // console.log(`replicate.progress: ${progress}`)
-      // console.log(`replicate.progress: ${total}`)
+      // log('---')
+      // log(`replicate.progress: ${address}`)
+      // log(`replicate.progress: ${hash}`)
+      // log(`${this.name}; replicate.progress: ${entry.payload.value}`)
+      // log(`replicate.progress: ${progress}`)
+      // log(`replicate.progress: ${total}`)
       // await this.messages.load()
-      // console.log('Loaded entries replicate.progress:', this.getAllEventLogEntries(this.messages).length)
+      // log('Loaded entries replicate.progress:', this.getAllEventLogEntries(this.messages).length)
       // fs.writeFileSync('allReplicatedMessages.json', JSON.stringify(this.getAllEventLogEntries(this.messages)))
       if (progress === this.messagesCount) {
         console.timeEnd(`${this.name}; Replication time`)
@@ -136,7 +134,7 @@ export class StorageTestSnapshot extends Storage {
     })
 
     await this.messages.load()
-    console.log(`${this.name}; Loaded entries:`, this.getAllEventLogEntries(this.messages).length)
+    log(`${this.name}; Loaded entries:`, this.getAllEventLogEntries(this.messages).length)
   }
 
   private async addMessages() {  // Generate and add "messages" to db
@@ -152,11 +150,15 @@ export class StorageTestSnapshot extends Storage {
     await this.messages.add(msg)
   }
 
+  public getMessagesCount(): number {
+    return this.getAllEventLogEntries(this.messages).length
+  }
+
   public async saveRemoteSnapshot(db) {  // Save retrieved snapshot info to local cache
     if (this.snapshotSaved) {
       return
     }
-    console.log('Saving remote snapshot locally')
+    log('Saving remote snapshot locally')
     const snapshotData = this.getSnapshotFromDb()
 
     //// @ts-expect-error
@@ -167,7 +169,7 @@ export class StorageTestSnapshot extends Storage {
   }
 
   async saveSnapshotInfoToDb(queuePath, snapshotPath, snapshot, unfinished) {
-    logSync('Saving snapshot info to DB')
+    log('Saving snapshot info to DB')
     await this.snapshotInfoDb.add({
       queuePath,
       snapshotPath,
@@ -176,14 +178,14 @@ export class StorageTestSnapshot extends Storage {
       size: snapshot.size,
       unfinished
     })
-    logSync('Saved snapshot info to DB')
+    log('Saved snapshot info to DB')
   }
 
   public getSnapshotFromDb() {
     const snapshotInfo: SnapshotInfo = this.getAllEventLogEntries(this.snapshotInfoDb)[0] // Assume that at this point we replicated snapshot info
-    console.log(`${this.name}; snapshot retrieved`, snapshotInfo)
+    log(`${this.name}; snapshot retrieved`, snapshotInfo)
     const cidObj = CID.parse(snapshotInfo.hash)
-    console.log('CID', cidObj)
+    log('CID', cidObj)
     const snapshot = {
       path: snapshotInfo.hash,
       cid: cidObj,
