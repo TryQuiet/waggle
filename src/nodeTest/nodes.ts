@@ -1,10 +1,9 @@
-import { Node } from '../entryNode'
+import Node from '../node'
 import { ZBAY_DIR_PATH } from '../constants'
 import { StorageTestSnapshot } from '../storage/storageSnapshot'
 import WebsocketsOverTor from '../libp2p/websocketOverTor'
 import Websockets from 'libp2p-websockets'
 import { Storage } from '../storage/storage'
-
 
 
 class TestStorageOptions {

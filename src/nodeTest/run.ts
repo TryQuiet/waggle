@@ -1,8 +1,8 @@
-import { NodeWithoutTor, NodeWithTor } from "./nodes"
-import { Node } from '../entryNode'
+import { LocalNode, NodeWithoutTor, NodeWithTor } from "./nodes"
+// Entry point for local testing with docker
 
 const main = async () => {
-  let node: Node
+  let node: LocalNode
   console.log('PROCESS USE TOR?', process.env.USE_TOR)
   console.log('PROCESS BOOTSTRAP_ADDRS?', process.env.BOOTSTRAP_ADDRS)
   if (process.env.USE_TOR === "true") {
