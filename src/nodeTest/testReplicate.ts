@@ -149,8 +149,10 @@ const runTest = async () => {
   }
 
   const testIntervalId = setInterval(async () => {
-    if ((testStartTime - new Date().getTime()) / 100 > testTimeout) {
-      log.error('Timeout')
+    const timeDiff = (testStartTime - new Date().getTime()) / 100
+    if (timeDiff > testTimeout) {
+      log.error(`Timeout after ${timeDiff}`)
+      // TODO: add more info (snapshots maybe?)
       displayResults(nodes)
     }
     const nodesReplicationFinished = Object.values(nodes).filter(nodeData => nodeData.node.storage.replicationTime !== undefined)
