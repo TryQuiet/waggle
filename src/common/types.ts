@@ -60,8 +60,8 @@ export class ConnectionsManagerOptions {
 export interface IConstructor {
   host: string
   port: number
-  agentPort: number
-  agentHost: string
+  agentPort?: number
+  agentHost?: string
   options?: Partial<ConnectionsManagerOptions>
   io: any
   storageClass?: any  // TODO: what type?

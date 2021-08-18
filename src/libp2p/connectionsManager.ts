@@ -72,8 +72,10 @@ export class ConnectionsManager {
     })
   }
 
-  private readonly createAgent = () => {
-    // console.log(`Creating agent for ${this.peerId.toB58String()}`, this.agentPort, this.agentHost)
+  public readonly createAgent = () => {
+    if (!this.agentPort || !this.agentHost) return
+
+    log("Creating socks proxy agent")
     this.socksProxyAgent = new SocksProxyAgent({ port: this.agentPort, host: this.agentHost })
   }
 
@@ -95,7 +97,6 @@ export class ConnectionsManager {
         createPaths([this.zbayDir])
       }
       peerId = await PeerId.create()
-      // console.log(peerId.toJSON())
       fs.writeFileSync(peerIdKeyPath, peerId.toJSON().privKey)
     } else {
       const peerIdKey = fs.readFileSync(peerIdKeyPath, { encoding: 'utf8' })
@@ -114,10 +115,7 @@ export class ConnectionsManager {
       console.error('Libp2p needs bootstrap multiaddress!')
       return null
     }
-    if (this.getBootstrapMultiaddrs()[0].includes('onion')) {  // Tmp ugly check
-      // console.log('CREATING PROXY AGENT!!!')
-      this.createAgent()
-    }
+    this.createAgent()
     this.localAddress = `${this.listenAddrs}/p2p/${this.peerId.toB58String()}`
     log('local address:', this.localAddress)
     log('bootstrapMultiaddrs:', this.bootstrapMultiaddrs)
