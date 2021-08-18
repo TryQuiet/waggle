@@ -4,19 +4,15 @@ RUN apt-get update && apt-get upgrade -y
 WORKDIR /usr/app
 
 RUN npm install -g node-pre-gyp@0.10.0 typescript ts-node
-ENV HIDDEN_SERVICE_SECRET=ED25519-V3:+OQSh718QNMfTV+jpsO1moEjSRVnHvPOlEhS1WKdGGkP0OPwMG0iXWx6FJ9liCsbhJGFwLg/I13v6qhB8KVv5Q==
-# ENV PEERID_FILE=peerIdDockerNoTor.json
-ENV PEERID_FILE=localEntryNodePeerId.json
-ENV DEBUG=logSync*,waggle*
-ENV CREATE_SNAPSHOT=true
-ENV USE_SNAPSHOT=true
-ENV USE_TOR=true
-ENV BOOTSTRAP_ADDRS=/dns4/ix2oumqrtjaupt53l6cqpk6ct6iaa5guconwgtvgdk2v3i5wjiyehryd.onion/tcp/7788/ws/p2p/QmRbkBkhTt2DbLMF8kAaf1oxpfKQuEfLKFzVCDzQhabwkw
+# Overwritten on aws for entry node:
+ENV HIDDEN_SERVICE_SECRET=ED25519-V3:gOK0SNEHSRCEd3ld9Z4RpegEN2/IN3a+lxyGvNO9vUaG6QQMgqbiu5kTV5YzLghOoDGffQx7bai0rjVlSs5mAw==
+ENV HIDDEN_SERVICE_SECRET_REGISTRATION=ED25519-V3:cGYs+GzhgL/34o7nPr2MLvm+szUA5yV6CdXe8RFj0FBIqHUUKQxx/dJKopHjTZAsbgqc/WzMp7qAIVA1ZPVxBA==
+ENV PEERID_FILE=entryNodePeerId.json
+ENV DEBUG=waggle:*
 
 COPY package.json .
 COPY package-lock.json .
 RUN npm install
 COPY . .
-# VOLUME ["/usr/app/node_modules/orbit-db-store"]
 
-CMD ["ts-node", "src/nodeTest/run.ts"]
+CMD ["ts-node", "src/entryNode.ts"]

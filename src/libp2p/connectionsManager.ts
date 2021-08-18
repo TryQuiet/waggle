@@ -84,8 +84,7 @@ export class ConnectionsManager {
       return this.options.bootstrapMultiaddrs
     }
     return [
-      // '/dns4/q56onwxkxsntgtskn6dusxkfqjjjwx3ca2rclbvmnwgq63ryw6uub6yd.onion/tcp/7788/ws/p2p/Qmc5a7fPUzS7atfpdXizkzJNkuAfP8EQU7QBkxt2CFMwbs'
-      // '/dns4/0.0.0.0/tcp/7788/ws/p2p/Qmedyo4vN5t1SJa5ChgXN8nCqb17sopNX26Trb2JcXYyPF'
+      '/dns4/2lmfmbj4ql56d55lmv7cdrhdlhls62xa4p6lzy6kymxuzjlny3vnwyqd.onion/tcp/7788/ws/p2p/Qmak8HeMad8X1HGBmz2QmHfiidvGnhu6w6ugMKtx8TFc85'
     ]
   }
 
