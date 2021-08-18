@@ -3,7 +3,6 @@ import { ZBAY_DIR_PATH } from '../constants'
 import { StorageTestSnapshot } from '../storage/storageSnapshot'
 import WebsocketsOverTor from '../libp2p/websocketOverTor'
 import Websockets from 'libp2p-websockets'
-import { Storage } from '../storage/storage'
 import { DataServer } from '../socket/DataServer'
 
 
@@ -17,6 +16,7 @@ export class LocalNode extends Node {
   storageOptions: any
   appDataPath: string
   storage: any  // Storage | StorageTestSnapshot
+  localAddress: string
   bootstrapMultiaddrs: string[]
 
   constructor(
@@ -70,6 +70,7 @@ export class NodeWithoutTor extends LocalNode {
       }
     )
     this.storage = connectonsManager.storage
+    this.localAddress = connectonsManager.localAddress
     await this.initListeners(dataServer, connectonsManager)
   }
 }
@@ -96,6 +97,7 @@ export class NodeWithTor extends LocalNode {
       }
     )
     this.storage = connectonsManager.storage
+    this.localAddress = connectonsManager.localAddress
     await this.initListeners(dataServer, connectonsManager)
   }
 }
