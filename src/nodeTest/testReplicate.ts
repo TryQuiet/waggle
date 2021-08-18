@@ -1,33 +1,33 @@
-import path from "path"
-import { createTmpDir } from "../testUtils"
-import { NodeWithTor, NodeWithoutTor, LocalNode } from "./nodes"
+import path from 'path'
+import { createTmpDir } from '../testUtils'
+import { NodeWithTor, NodeWithoutTor, LocalNode } from './nodes'
 import fp from 'find-free-port'
 import debug from 'debug'
 import Table from 'cli-table'
-import yargs, {Argv} from "yargs"
+import yargs, { Argv } from 'yargs'
 const log = Object.assign(debug('localTest'), {
   error: debug('localTest:err')
 })
-let argv = yargs.command('test', "Test replication", (yargs: Argv) => {
+const argv = yargs.command('test', 'Test replication', (yargs: Argv) => {
   return yargs.option('useTor', {
-    describe: "Whether to use Tor or run waggle nodes on localhost",
+    describe: 'Whether to use Tor or run waggle nodes on localhost',
     default: true,
     type: 'boolean'
   }).option('nodesCount', {
-    describe: "How many nodes should be run in test (does not include entry node)",
+    describe: 'How many nodes should be run in test (does not include entry node)',
     alias: 'n',
     type: 'number'
   }).option('timeThreshold', {
-    describe: "Max time for each node complete replication (in seconds)",
+    describe: 'Max time for each node complete replication (in seconds)',
     alias: 't',
     type: 'number'
   }).option('entriesCount', {
-    describe: "Number of db entries",
+    describe: 'Number of db entries',
     alias: 'e',
     type: 'number'
   })
-  .demandOption(['nodesCount', 'timeThreshold', 'entriesCount'])
-  .help()
+    .demandOption(['nodesCount', 'timeThreshold', 'entriesCount'])
+    .help()
 }).argv
 
 console.log(argv)
@@ -43,7 +43,7 @@ if (argv.useTor) {
   NodeType = NodeWithoutTor
 }
 
-let bootstrapNode;
+let bootstrapNode
 
 interface NodeKeyValue {
   [key: number]: NodeData
@@ -64,31 +64,31 @@ const launchNode = async (i: number, bootstrapAddress?: string, createMessages: 
   const [socksProxyPort] = await fp(1234 + i)
   const [torControlPort] = await fp(9051 + i)
   const node = new NodeType(
-    undefined, 
-    undefined, 
-    undefined, 
-    port, 
-    socksProxyPort, 
-    torControlPort, 
-    port, 
-    torDir, 
-    undefined, 
+    undefined,
+    undefined,
+    undefined,
+    port,
+    socksProxyPort,
+    torControlPort,
+    port,
+    torDir,
+    undefined,
     {
-      createSnapshot: createMessages, 
-      useSnapshot, 
+      createSnapshot: createMessages,
+      useSnapshot,
       messagesCount: argv.entriesCount
     },
-    tmpAppDataPath, 
+    tmpAppDataPath,
     bootstrapAddress ? [bootstrapAddress] : [bootstrapNode.localAddress]
   )
   await node.init()
   node.storage.setName(`Node${i}`)
-  log(`${node.storage.name} joined network`)
+  log(`${node.storage.name as string} joined network`)
   return node
 }
 
 const displayResults = (nodes: NodeKeyValue) => {
-  const table = new Table({head: ['Node name', 'Time of replication', 'Test passed']})
+  const table = new Table({ head: ['Node name', 'Time of replication', 'Test passed'] })
   for (const nodeData of Object.values(nodes)) {
     table.push([nodeData.node.storage.name, nodeData.actualReplicationTime, nodeData.testPassed])
   }
@@ -104,7 +104,7 @@ const displayResults = (nodes: NodeKeyValue) => {
 }
 
 const displayTestSetup = () => {
-  const table = new Table({head: ['Time threshold', 'Messages (db entries) count', 'Test used Tor']})
+  const table = new Table({ head: ['Time threshold', 'Messages (db entries) count', 'Test used Tor'] })
   table.push([argv.timeThreshold, argv.entriesCount, argv.useTor])
   console.log(table.toString())
 }
@@ -115,7 +115,7 @@ const runTest = async () => {
   // Check if the second node replicated all messages within a set time range
 
   process.on('SIGINT', function() {
-    log("Caught interrupt signal")
+    log('Caught interrupt signal')
     log(`Removing tmp dir: ${tmpDir.name}`)
     tmpDir.removeCallback()
     process.exit(1)
@@ -123,10 +123,10 @@ const runTest = async () => {
   const testStartTime = new Date().getTime()
   const nodesCount = Number(argv.nodesCount) // Nodes count except the entry node
   const maxReplicationTimePerNode = Number(argv.timeThreshold)
-  let nodes: NodeKeyValue = {}
+  const nodes: NodeKeyValue = {}
 
   const initNode = async (noNumber: number) => {
-    let nodeData = new NodeData()
+    const nodeData = new NodeData()
     nodeData.checked = false
     nodeData.testPassed = false
     nodeData.node = await launchNode(noNumber)
@@ -142,7 +142,7 @@ const runTest = async () => {
   await Promise.all(numbers.map(initNode))
 
   // Checks
-  const testIntervalId = setInterval(async () => {
+  const testIntervalId = setInterval(() => {
     const timeDiff = (new Date().getTime() - testStartTime) / 1000
     if (timeDiff > testTimeout) {
       log.error(`Timeout after ${timeDiff}`)
@@ -164,7 +164,7 @@ const runTest = async () => {
         nodeData.actualReplicationTime = nodeData.node.storage.replicationTime
         nodeData.testPassed = nodeData.actualReplicationTime <= maxReplicationTimePerNode
         nodeData.checked = true
-        log(`Test ${nodeData.testPassed ? 'passed' : 'failed'} for ${nodeData.node.storage.name}. Replication time: ${nodeData.actualReplicationTime}`)
+        log(`Test ${nodeData.testPassed ? 'passed' : 'failed'} for ${nodeData.node.storage.name as string}. Replication time: ${nodeData.actualReplicationTime as string}`)
       }
     }
     if (nodesReplicationFinished.length === nodesCount) {
@@ -177,6 +177,6 @@ const runTest = async () => {
   }, 5_000)
 }
 
-runTest().catch((error)=> {
+runTest().catch((error) => {
   console.error('Something went wrong', error)
 })

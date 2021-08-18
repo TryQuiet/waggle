@@ -1,6 +1,5 @@
 import { Tor } from './torManager'
 import { DataServer } from './socket/DataServer'
-import fp from 'find-free-port'
 import { ConnectionsManager } from './libp2p/connectionsManager'
 import initListeners from './socket/listeners'
 import { dataFromRootPems, ZBAY_DIR_PATH } from './constants'
@@ -96,12 +95,10 @@ export default class Node {
           privKey: this.getHiddenServiceSecret()
         }))
       } else {
-        let hservice: any
-        hservice = (await this.tor.createNewHiddenService(this.hiddenServicePort, this.hiddenServicePort))
-        service = hservice.onionAddress
+        service = (await this.tor.createNewHiddenService(this.hiddenServicePort, this.hiddenServicePort)).onionAddress
       }
     }
-    return `${service}.onion`
+    return `${service as string}.onion`
   }
 
   async initDataServer(): Promise<DataServer> {

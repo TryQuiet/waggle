@@ -55,8 +55,8 @@ export class ConnectionsManager {
       ...options
     }
     this.zbayDir = this.options.env?.appDataPath || ZBAY_DIR_PATH
-    const storageCls = storageClass || Storage
-    this.storage = new storageCls(this.zbayDir, this.io, { ...this.options })
+    const StorageCls = storageClass || Storage
+    this.storage = new StorageCls(this.zbayDir, this.io, { ...this.options })
     this.peerId = null
     this.bootstrapMultiaddrs = this.getBootstrapMultiaddrs()
     this.listenAddrs = `/dns4/${this.host}/tcp/${this.port}/ws`
@@ -75,7 +75,7 @@ export class ConnectionsManager {
   public readonly createAgent = () => {
     if (!this.agentPort || !this.agentHost) return
 
-    log("Creating socks proxy agent")
+    log('Creating socks proxy agent')
     this.socksProxyAgent = new SocksProxyAgent({ port: this.agentPort, host: this.agentHost })
   }
 
@@ -131,7 +131,7 @@ export class ConnectionsManager {
       listenAddrs: [this.listenAddrs],
       agent: this.socksProxyAgent,
       localAddr: this.localAddress,
-      bootstrapMultiaddrsList: this.bootstrapMultiaddrs, 
+      bootstrapMultiaddrsList: this.bootstrapMultiaddrs,
       transportClass: this.libp2pTransportClass
     })
     libp2p.connectionManager.on('peer:connect', async connection => {

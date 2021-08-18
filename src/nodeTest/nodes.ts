@@ -18,25 +18,24 @@ class TestStorageOptions {
 export class LocalNode extends Node {
   storageOptions: any
   appDataPath: string
-  storage: any  // Storage | StorageTestSnapshot
+  storage: any // Storage | StorageTestSnapshot
   localAddress: string
   bootstrapMultiaddrs: string[]
 
   constructor(
-    torPath?: string, 
-    pathDevLib?: string, 
-    peerIdFileName?: string, 
-    port = 7788, 
-    socksProxyPort = 9050, 
-    torControlPort = 9051, 
-    hiddenServicePort = 7788, 
+    torPath?: string,
+    pathDevLib?: string,
+    peerIdFileName?: string,
+    port = 7788,
+    socksProxyPort = 9050,
+    torControlPort = 9051,
+    hiddenServicePort = 7788,
     torAppDataPath = ZBAY_DIR_PATH,
     hiddenServiceSecret?: string,
     storageOptions?: TestStorageOptions,
     appDataPath?: string,
     bootstrapMultiaddrs?: string[]
-    ) {
-
+  ) {
     let _port: number = port
     if (process.env.TOR_PORT) {
       _port = Number(process.env.TOR_PORT)
@@ -55,16 +54,15 @@ export class LocalNode extends Node {
 }
 
 export class NodeWithoutTor extends LocalNode {
-
   public async init(): Promise<void> {
     console.log('USING NodeWithoutTor')
     const dataServer = await this.initDataServer()
     const connectonsManager = await this.initConnectionsManager(
-      dataServer, 
-      '0.0.0.0', 
+      dataServer,
+      '0.0.0.0',
       StorageTestSnapshot,
       {
-        bootstrapMultiaddrs: this.bootstrapMultiaddrs, 
+        bootstrapMultiaddrs: this.bootstrapMultiaddrs,
         ...this.storageOptions,
         env: {
           appDataPath: this.appDataPath
@@ -98,7 +96,6 @@ export class NodeWithoutTor extends LocalNode {
 }
 
 export class NodeWithTor extends LocalNode {
-
   public async init(): Promise<void> {
     console.log('USING NodeWithTor')
     this.tor = await this.spawnTor()
@@ -106,8 +103,8 @@ export class NodeWithTor extends LocalNode {
     console.log('onion', onionAddress)
     const dataServer = await this.initDataServer()
     const connectonsManager = await this.initConnectionsManager(
-      dataServer, 
-      onionAddress, 
+      dataServer,
+      onionAddress,
       StorageTestSnapshot,
       {
         bootstrapMultiaddrs: this.bootstrapMultiaddrs,

@@ -6,10 +6,9 @@ import { StorageOptions } from '../common/types'
 import { Storage } from '../storage'
 
 import { CID } from 'multiformats/cid'
-const Log = require('ipfs-log')
-const Entry = Log.Entry
 import debug from 'debug'
 import fs from 'fs'
+import Log from 'ipfs-log'
 const log = Object.assign(debug('dbSnap'), {
   error: debug('dbSnap:err')
 })
@@ -21,12 +20,12 @@ class StorageTestSnapshotOptions extends StorageOptions {
 }
 
 interface SnapshotInfo {
-  queuePath: string,
-  snapshotPath: string,
-  mode: number,
-  hash: string,
-  size: number,
-  unfinished: Array<any>
+  queuePath: string
+  snapshotPath: string
+  mode: number
+  hash: string
+  size: number
+  unfinished: any[]
 }
 
 export class StorageTestSnapshot extends Storage {
@@ -38,6 +37,8 @@ export class StorageTestSnapshot extends Storage {
   public name: string
   public replicationTime: number
   public options: StorageTestSnapshotOptions
+  protected snapshotSaved: boolean
+  protected msgReplCount: number
 
   constructor(zbayDir: string, io: any, options?: Partial<StorageTestSnapshotOptions>) {
     super(zbayDir, io, options)
@@ -45,9 +46,11 @@ export class StorageTestSnapshot extends Storage {
       ...new StorageTestSnapshotOptions(),
       ...options
     }
-    this.useSnapshot = options.useSnapshot || process.env.USE_SNAPSHOT === "true"  // Actually use snapshot mechanizm
-    this.messagesCount = options.messagesCount  // Quantity of messages that will be added to db
-    this.name = (Math.random() + 1).toString(36).substring(7)    
+    this.useSnapshot = options.useSnapshot || process.env.USE_SNAPSHOT === 'true' // Actually use snapshot mechanizm
+    this.messagesCount = options.messagesCount // Quantity of messages that will be added to db
+    this.msgReplCount = 0
+    this.snapshotSaved = false
+    this.name = (Math.random() + 1).toString(36).substring(7)
   }
 
   public async init(libp2p: any, peerID: PeerId): Promise<void> {
@@ -61,13 +64,15 @@ export class StorageTestSnapshot extends Storage {
     this.snapshotInfoDb = await this.orbitdb.log<SnapshotInfo>('092183012', {
       accessController: {
         write: ['*']
-      },
+      }
     })
+
+    // eslint-disable-next-line
     this.snapshotInfoDb.events.on('replicated', async () => {
       if (!this.useSnapshot) return
 
       // Retrieve snapshot that someone else saved to db
-      if (!this.options.createSnapshot || process.env.CREATE_SNAPSHOT !== "true") {
+      if (!this.options.createSnapshot || process.env.CREATE_SNAPSHOT !== 'true') {
         log('Replicated snapshotInfoDb')
         await this.saveRemoteSnapshot(this.messages)
         console.time('load from snapshot')
@@ -76,8 +81,8 @@ export class StorageTestSnapshot extends Storage {
       }
     })
     // this.snapshotInfoDb.events.on('replicate.progress', (address, hash, entry, progress, total) => {
-      // log(`${this.name}; replication in progress:`, address, hash, entry, progress, total)
-      // log('>>', entry.payload.value.snapshot)
+    // log(`${this.name}; replication in progress:`, address, hash, entry, progress, total)
+    // log('>>', entry.payload.value.snapshot)
     // })
     await this.createDbForMessages()
     log(`Initialized '${this.name}'`)
@@ -96,7 +101,7 @@ export class StorageTestSnapshot extends Storage {
     })
 
     // Create snapshot and save to db for other peers to retrieve
-    if (this.options.createSnapshot || process.env.CREATE_SNAPSHOT === "true") {
+    if (this.options.createSnapshot || process.env.CREATE_SNAPSHOT === 'true') {
       console.time(`${this.name}; Adding messages`)
       await this.addMessages()
       console.timeEnd(`${this.name}; Adding messages`)
@@ -110,6 +115,7 @@ export class StorageTestSnapshot extends Storage {
       }
     }
 
+    // eslint-disable-next-line
     this.messages.events.on('replicated', async () => {
       this.msgReplCount += 1
       log(`${this.name}; Replicated ${this.msgReplCount} chunk`)
@@ -117,7 +123,8 @@ export class StorageTestSnapshot extends Storage {
       // log('Loaded entries after replication:', this.getAllEventLogEntries(this.messages).length)
     })
 
-    this.messages.events.on('replicate.progress', async (address, hash, entry, progress, total) => {
+    // eslint-disable-next-line
+    this.messages.events.on('replicate.progress', async (_address, _hash, _entry, progress, _total) => {
       if (!this.replicationStartTime) {
         console.time(`${this.name}; Replication time`)
         this.replicationStartTime = new Date()
@@ -143,10 +150,10 @@ export class StorageTestSnapshot extends Storage {
     log(`${this.name}; Loaded entries:`, this.getAllEventLogEntries(this.messages).length)
   }
 
-  private async addMessages() {  // Generate and add "messages" to db
-    let range = n => Array.from(Array(n).keys())
+  private async addMessages() { // Generate and add "messages" to db
+    const range = n => Array.from(Array(n).keys())
     const messages = range(this.messagesCount).map(nr => `message_${nr.toString()}`)
-    await Promise.all(messages.map(msg => this.messages.add(msg)))
+    await Promise.all(messages.map(async msg => await this.messages.add(msg)))
 
     // Use code below if you care about messages order
     // for (const nr of range(this.messagesCount)) {
@@ -164,16 +171,14 @@ export class StorageTestSnapshot extends Storage {
     return this.getAllEventLogEntries(this.messages).length
   }
 
-  public async saveRemoteSnapshot(db) {  // Save retrieved snapshot info to local cache
+  public async saveRemoteSnapshot(db) { // Save retrieved snapshot info to local cache
     if (this.snapshotSaved) {
       return
     }
     log('Saving remote snapshot locally')
     const snapshotData = this.getSnapshotFromDb()
 
-    //// @ts-expect-error
     await db._cache.set(snapshotData.snapshotPath, snapshotData.snapshot)
-    //// @ts-expect-error
     await db._cache.set(snapshotData.queuePath, snapshotData.unfinished)
     this.snapshotSaved = true
   }
@@ -212,7 +217,7 @@ export class StorageTestSnapshot extends Storage {
     }
   }
 
-  async saveSnapshot(db) {  // Copied from orbit-db-store
+  async saveSnapshot(db) { // Copied from orbit-db-store
     const unfinished = db._replicator.getQueue()
 
     const snapshotData = db._oplog.toSnapshot()
@@ -230,8 +235,8 @@ export class StorageTestSnapshot extends Storage {
     await db._cache.set(db.snapshotPath, snapshot)
     await db._cache.set(db.queuePath, unfinished)
 
-    console.debug(`Saved snapshot: ${snapshot.hash}, queue length: ${unfinished.length}`)
-    await this.saveSnapshotInfoToDb(  // Saving it to share with others
+    console.debug(`Saved snapshot: ${snapshot.hash as string}, queue length: ${unfinished.length as string}`)
+    await this.saveSnapshotInfoToDb( // Saving it to share with others
       db.queuePath,
       db.snapshotPath,
       snapshot,
@@ -267,9 +272,9 @@ export class StorageTestSnapshot extends Storage {
       }
       const buffer = Buffer.concat(chunks)
       const snapshotData = JSON.parse(buffer.toString())
-      fs.writeFileSync(`loadedSnapshotData${new Date().toISOString()}.json`, buffer.toString()) // Saving snapshot to investigate it later
+      // fs.writeFileSync(`loadedSnapshotData${new Date().toISOString()}.json`, buffer.toString()) // Saving snapshot to investigate it later
 
-      const onProgress = (hash, entry, count, total) => {
+      const onProgress = (hash, entry, count, _total) => {
         db._recalculateReplicationStatus(count, entry.clock.time)
         db._onLoadProgress(hash, entry)
       }
@@ -285,7 +290,7 @@ export class StorageTestSnapshot extends Storage {
       }
       db.events.emit('ready', db.address.toString(), db._oplog.heads)
     } else {
-      throw new Error(`Snapshot for ${db.address} not found!`)
+      throw new Error(`Snapshot for ${db.address as string} not found!`)
     }
 
     return db

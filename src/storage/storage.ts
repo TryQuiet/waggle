@@ -25,11 +25,7 @@ import {
   CryptoEngine
 } from 'pkijs'
 import { Crypto } from '@peculiar/webcrypto'
-import { CID }  from 'multiformats/cid'
-const Log = require('ipfs-log')
-const Entry = Log.Entry
 import debug from 'debug'
-import fs from 'fs'
 const log = Object.assign(debug('waggle:db'), {
   error: debug('waggle:db:err')
 })
@@ -408,8 +404,8 @@ export class Storage {
           write: ['*']
         }
       }
-    )    
-    
+    )
+
     const channel = this.channels.get(channelAddress)
     if (!channel) {
       await this.channels.put(channelAddress, {
