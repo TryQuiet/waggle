@@ -33,7 +33,7 @@ let argv = yargs.command('test', "Test replication", (yargs: Argv) => {
 console.log(argv)
 
 const tmpDir = createTmpDir()
-const testTimeout = (argv.nodesCount + 1) * 500
+const testTimeout = (argv.nodesCount + 1) * 1000
 const addressBootstrapMultiaddrsTor =  `/dns4/b3blzzfntawunjjyi5nfgx32zj3uyj3glvblb6ye3ndbvdjuc7r6btqd.onion/tcp/`
 const addressBootstrapMultiaddrsLocal = '/dns4/0.0.0.0/tcp/'
 const peerIdBootstrapMultiaddrs = '/ws/p2p/Qmc159udVDVd87CAxQjgcYW6ZgBXZHYr4gjpfwJB8M3iZg'
@@ -131,31 +131,36 @@ const runTest = async () => {
   const testStartTime = new Date().getTime()
   const nodesCount = Number(argv.nodesCount) // Nodes count except the entry node
   const maxReplicationTimePerNode = Number(argv.timeThreshold)
-  let nodesCounter = 1
+  // let nodesCounter = 1
   let nodes: NodeKeyValue = {}
+
+  const initNode = async (noNumber: number) => {
+    let nodeData = new NodeData()
+    nodeData.checked = false
+    nodeData.testPassed = false
+    nodeData.node = await launchNode(noNumber)
+    nodeData.timeLaunched = new Date()
+    nodes[noNumber] = nodeData
+  }
 
   // Launch entry node
   await launchNode(0, testHiddenKey, true, 'localTestPeerId.json', false)
 
   // Launch other nodes
-  while (nodesCounter <= nodesCount) {
-    let nodeData = new NodeData()
-    nodeData.checked = false
-    nodeData.testPassed = false
-    nodeData.node = await launchNode(nodesCounter)
-    nodeData.timeLaunched = new Date()
-    nodes[nodesCounter] = nodeData
-    nodesCounter += 1
-  }
+  const numbers = [...Array(nodesCount + 1).keys()].splice(1)
+  await Promise.all(numbers.map(initNode))
 
+  // Checks
   const testIntervalId = setInterval(async () => {
-    const timeDiff = (testStartTime - new Date().getTime()) / 100
-    if (timeDiff > testTimeout) {
-      log.error(`Timeout after ${timeDiff}`)
-      // TODO: add more info (snapshots maybe?)
-      displayResults(nodes)
-    }
+    // const timeDiff = (new Date().getTime() - testStartTime) / 100
+    // if (timeDiff > testTimeout) {
+    //   log('timeout set:', testTimeout)
+    //   log.error(`Timeout after ${timeDiff}`)
+    //   // TODO: add more info (snapshots maybe?)
+    // }
     const nodesReplicationFinished = Object.values(nodes).filter(nodeData => nodeData.node.storage.replicationTime !== undefined)
+    if (nodesReplicationFinished.length === 0) return
+
     // Get nodes that finished replicating
     for (const nodeData of nodesReplicationFinished) {
       if (nodeData.checked === true) {
@@ -174,7 +179,7 @@ const runTest = async () => {
       tmpDir.removeCallback()
       displayResults(nodes)
     }
-  }, 5000)
+  }, 5_000)
 }
 
 runTest().catch((error)=> {

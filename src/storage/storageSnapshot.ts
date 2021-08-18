@@ -75,10 +75,10 @@ export class StorageTestSnapshot extends Storage {
         console.timeEnd('load from snapshot')
       }
     })
-    this.snapshotInfoDb.events.on('replicate.progress', (address, hash, entry, progress, total) => {
+    // this.snapshotInfoDb.events.on('replicate.progress', (address, hash, entry, progress, total) => {
       // log(`${this.name}; replication in progress:`, address, hash, entry, progress, total)
       // log('>>', entry.payload.value.snapshot)
-    })
+    // })
     await this.createDbForMessages()
     log(`Initialized '${this.name}'`)
   }
@@ -145,11 +145,15 @@ export class StorageTestSnapshot extends Storage {
 
   private async addMessages() {  // Generate and add "messages" to db
     let range = n => Array.from(Array(n).keys())
-    for (const nr of range(this.messagesCount)) {
-      // console.time(`adding msg ${nr.toString()}`)
-      await this.messages.add(`message_${nr.toString()}`)
-      // console.timeEnd(`adding msg ${nr.toString()}`)
-    }
+    const messages = range(this.messagesCount).map(nr => `message_${nr.toString()}`)
+    await Promise.all(messages.map(msg => this.messages.add(msg)))
+
+    // Use code below if you care about messages order
+    // for (const nr of range(this.messagesCount)) {
+    //   // console.time(`adding msg ${nr.toString()}`)
+    //   await this.messages.add(`message_${nr.toString()}`)
+    //   // console.timeEnd(`adding msg ${nr.toString()}`)
+    // }
   }
 
   public async addMessage(msg: string) {

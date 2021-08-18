@@ -4,6 +4,7 @@ import { StorageTestSnapshot } from '../storage/storageSnapshot'
 import WebsocketsOverTor from '../libp2p/websocketOverTor'
 import Websockets from 'libp2p-websockets'
 import { Storage } from '../storage/storage'
+import { DataServer } from '../socket/DataServer'
 
 
 class TestStorageOptions {
@@ -13,9 +14,6 @@ class TestStorageOptions {
 }
 
 export class LocalNode extends Node {
-  // createSnapshot: boolean
-  // useSnapshot: boolean
-  // messagesCount: number
   storageOptions: any
   appDataPath: string
   storage: any  // Storage | StorageTestSnapshot
@@ -42,14 +40,16 @@ export class LocalNode extends Node {
     }    
     super(torPath, pathDevLib, peerIdFileName, _port, socksProxyPort, torControlPort, hiddenServicePort, torAppDataPath, hiddenServiceSecret)
     this.storageOptions = storageOptions
-    // this.createSnapshot = storageOptions.createSnapshot
-    // this.useSnapshot = storageOptions.useSnapshot
-    // this.messagesCount = storageOptions.messagesCount
     this.appDataPath = appDataPath
     this.bootstrapMultiaddrs = bootstrapMultiaddrs
   }
-}
 
+  async initDataServer(): Promise<DataServer> {
+    const dataServer = new DataServer(this.port - 50)
+    await dataServer.listen()
+    return dataServer
+  }
+}
 
 export class NodeWithoutTor extends LocalNode {
 
@@ -63,9 +63,6 @@ export class NodeWithoutTor extends LocalNode {
       {
         bootstrapMultiaddrs: this.bootstrapMultiaddrs, 
         ...this.storageOptions,
-        // createSnapshot: this.storageOptions.createSnapshot,
-        // useSnapshot: this.storageOptions.useSnapshot,
-        // messagesCount: this.storageOptions.messagesCount,
         env: {
           appDataPath: this.appDataPath
         },
@@ -92,9 +89,6 @@ export class NodeWithTor extends LocalNode {
       {
         bootstrapMultiaddrs: this.bootstrapMultiaddrs,
         ...this.storageOptions,
-        // createSnapshot: this.storageOptions.createSnapshot,
-        // useSnapshot: this.storageOptions.useSnapshot,
-        // messagesCount: this.storageOptions.messagesCount,
         env: {
           appDataPath: this.appDataPath
         },
