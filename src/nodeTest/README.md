@@ -2,6 +2,8 @@
 
 ### Installation
 
+* `npm install --global ts-node`
+* `npm install --global typescript`
 * `npm install`
 
 ### Running tests
