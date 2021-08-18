@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.1.0-0]
+
+### Changed
+
+* Use unreleased version of orbit-db and orbit-db-store 4.1.0
+
 ## [2.0.15] - 2021-07-20
 
 ### Added
