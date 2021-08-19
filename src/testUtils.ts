@@ -7,7 +7,7 @@ import { ConnectionsManager } from './libp2p/connectionsManager'
 import path from 'path'
 import PeerId from 'peer-id'
 import { Libp2pType } from './libp2p/customLibp2p'
-import WebsocketsOverTor from '../src/libp2p/websocketOverTor'
+import WebsocketsOverTor from './libp2p/websocketOverTor'
 import { ConnectionsManagerOptions } from './common/types'
 tmp.setGracefulCleanup()
 

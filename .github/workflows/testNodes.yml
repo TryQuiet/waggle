@@ -22,7 +22,7 @@ jobs:
         run: npm install --global typescript
       - name: install dependencies
         run: npm ci
-      # - name: run test with tor
-      #   run: DEBUG='dbSnap*,localTest*' ts-node src/nodeTest/testReplicate.ts --nodesCount 1 --timeThreshold 200 --entriesCount 1000 --useTor
       - name: run test without tor
         run: DEBUG='dbSnap*,localTest*' ts-node src/nodeTest/testReplicate.ts --nodesCount 1 --timeThreshold 200 --entriesCount 1000 --no-useTor
+      - name: run test with tor
+        run: DEBUG='dbSnap*,localTest*' ts-node src/nodeTest/testReplicate.ts --nodesCount 1 --timeThreshold 300 --entriesCount 1000 --useTor

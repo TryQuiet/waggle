@@ -1,4 +1,4 @@
-import Node from '../src/node'
+import Node from './node'
 
 const main = async () => {
   const node = new Node()
