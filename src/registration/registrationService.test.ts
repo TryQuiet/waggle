@@ -1,4 +1,4 @@
-import { createRootCA, createUserCert, createUserCsr, verifyUserCert } from '@zbayapp/identity'
+import { createRootCA, createUserCert, createUserCsr, verifyUserCert, configCrypto } from '@zbayapp/identity'
 import { SocksProxyAgent } from 'socks-proxy-agent'
 import { CertificateRegistration } from '.'
 import { Time } from 'pkijs'
@@ -58,7 +58,10 @@ describe('Registration service', () => {
     const user = await createUserCsr({
       zbayNickname: 'userName',
       commonName: 'nqnw4kc4c77fb47lk52m5l57h4tcxceo7ymxekfn7yh5m66t4jv2olad.onion',
-      peerId: 'Qmf3ySkYqLET9xtAtDzvAr5Pp3egK1H3C5iJAZm1SpLEp6'
+      peerId: 'Qmf3ySkYqLET9xtAtDzvAr5Pp3egK1H3C5iJAZm1SpLEp6',
+      dmPublicKey: 'dmPublicKey',
+      signAlg: configCrypto.signAlg,
+      hashAlg: configCrypto.hashAlg
     })
     const saveCertificate = jest.spyOn(manager.storage, 'saveCertificate')
     tor = await spawnTorProcess(tmpAppDataPath, ports)
@@ -81,12 +84,18 @@ describe('Registration service', () => {
     const user = await createUserCsr({
       zbayNickname: 'userName',
       commonName: 'nqnw4kc4c77fb47lk52m5l57h4tcxceo7ymxekfn7yh5m66t4jv2olad.onion',
-      peerId: 'Qmf3ySkYqLET9xtAtDzvAr5Pp3egK1H3C5iJAZm1SpLEp6'
+      peerId: 'Qmf3ySkYqLET9xtAtDzvAr5Pp3egK1H3C5iJAZm1SpLEp6',
+      dmPublicKey: 'dmPublicKey',
+      signAlg: configCrypto.signAlg,
+      hashAlg: configCrypto.hashAlg
     })
     const userNew = await createUserCsr({
       zbayNickname: 'username',
       commonName: 'abcd.onion',
-      peerId: 'QmS9vJkgbea9EgzHvVPqhj1u4tH7YKq7eteDN7gnG5zUmc'
+      peerId: 'QmS9vJkgbea9EgzHvVPqhj1u4tH7YKq7eteDN7gnG5zUmc',
+      dmPublicKey: 'dmPublicKey',
+      signAlg: configCrypto.signAlg,
+      hashAlg: configCrypto.hashAlg
     })
     const userCert = await createUserCert(certRoot.rootCertString, certRoot.rootKeyString, user.userCsr, new Date(), new Date(2030, 1, 1))
     tor = await spawnTorProcess(tmpAppDataPath, ports)
