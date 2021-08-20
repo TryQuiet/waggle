@@ -11,7 +11,7 @@
 
 ### Changed
 
-* Mock tor in most of registrar tests
+* Mock tor in all registrar tests
 
 ## [2.1.0-0]
 

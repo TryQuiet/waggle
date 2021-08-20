@@ -11,6 +11,7 @@ import { RootCA } from '@zbayapp/identity/lib/generateRootCA'
 jest.setTimeout(50_000)
 
 async function registerUserTest(csr: string, socksPort: number, localhost: boolean = true): Promise<Response> {
+  // Connect to registration service locally or using tor
   let address = '127.0.0.1'
   let options = {
     method: 'POST',
@@ -58,7 +59,8 @@ describe('Registration service', () => {
     tmpDir.removeCallback()
   })
 
-  it('generates and saves certificate for a new user', async () => {
+  // This is skipped because test with registration service using Tor fails frequently on CI (Proxy connection timed out)
+  it.skip('generates and saves certificate for a new user using tor', async () => {
     const user = await createUserCsr({
       zbayNickname: 'userName',
       commonName: 'nqnw4kc4c77fb47lk52m5l57h4tcxceo7ymxekfn7yh5m66t4jv2olad.onion',
@@ -78,6 +80,31 @@ describe('Registration service', () => {
       { certificate: certRoot.rootCertString, privKey: certRoot.rootKeyString }
     )
     const response = await registerUserTest(user.userCsr, ports.socksPort, false)
+    const returnedUserCertificate = await response.json()
+    expect(saveCertificate).toBeCalledTimes(1)
+    const isProperUserCert = await verifyUserCert(certRoot.rootCertString, returnedUserCertificate)
+    expect(isProperUserCert.result).toBe(true)
+  })
+
+  it('generates and saves certificate for a new user', async () => {
+    const user = await createUserCsr({
+      zbayNickname: 'userName',
+      commonName: 'nqnw4kc4c77fb47lk52m5l57h4tcxceo7ymxekfn7yh5m66t4jv2olad.onion',
+      peerId: 'Qmf3ySkYqLET9xtAtDzvAr5Pp3egK1H3C5iJAZm1SpLEp6',
+      dmPublicKey: 'testdmPublicKey',
+      signAlg: configCrypto.signAlg,
+      hashAlg: configCrypto.hashAlg
+    })
+    const saveCertificate = jest.spyOn(manager.storage, 'saveCertificate')
+    await manager.initializeNode()
+    await manager.initStorage()
+    registrationService = await manager.setupRegistrationService(
+      // @ts-expect-error
+      new TorMock(),
+      'testHiddenServiceKey',
+      { certificate: certRoot.rootCertString, privKey: certRoot.rootKeyString }
+    )
+    const response = await registerUserTest(user.userCsr, ports.socksPort)
     const returnedUserCertificate = await response.json()
     expect(saveCertificate).toBeCalledTimes(1)
     const isProperUserCert = await verifyUserCert(certRoot.rootCertString, returnedUserCertificate)
