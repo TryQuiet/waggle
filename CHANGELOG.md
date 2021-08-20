@@ -1,11 +1,17 @@
 # Changelog
 
-## [unreleased]
+## [Unreleased]
 
 ### Added
 
-* Handle older pre-migration certificates (without dmPublicKey field). Generate second certificate for existing user
-* Registration - validate if csr has basic fields
+* Additional valitation to registrar - check if csr has basic fields
+* Waggle replication tests
+* Storage which can use orbitdb snapshots mechanism
+* More customizable waggle nodes
+
+### Changed
+
+* Mock tor in most of registrar tests
 
 ## [2.1.0-0]
 
