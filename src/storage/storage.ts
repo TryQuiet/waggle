@@ -328,7 +328,7 @@ export class Storage {
     }
 
     if (repo && !repo.eventsAttached) {
-      console.log('Subscribing to channel ', channelAddress)
+      log('Subscribing to channel ', channelAddress)
       if (!this.options.isWaggleMobileMode) {
         db.events.on('write', (_address, entry) => {
           log(`Writing to public channel db ${channelAddress}`)
