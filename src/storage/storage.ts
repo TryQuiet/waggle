@@ -45,8 +45,8 @@ export class Storage {
   public zbayDir: string
   public io: any
   public peerId: PeerId
-  private ipfs: IPFS.IPFS
-  private orbitdb: OrbitDB
+  protected ipfs: IPFS.IPFS
+  protected orbitdb: OrbitDB
   private channels: KeyValueStore<IZbayChannel>
   private directMessagesUsers: KeyValueStore<IPublicKey>
   private messageThreads: KeyValueStore<IMessageThread>
@@ -161,9 +161,22 @@ export class Storage {
       }
     })
 
-    this.channels.events.on('replicated', () => {
-      log('REPLICATED: CHANNELS')
-    })
+    this.channels.events.on(
+      'replicated',
+      // eslint-disable-next-line
+      async () => {
+        log('REPLICATED: CHANNELS')
+        if (this.options.isEntryNode) {
+          console.log('Entry node. Subscribing for all replicated channels')
+          await Promise.all(
+            Object.values(this.channels.all).map(async channel => {
+              if (!this.publicChannelsRepos.has(channel.address)) {
+                await this.subscribeForChannel(channel.address, channel)
+              }
+            })
+          )
+        }
+      })
 
     // @ts-expect-error - OrbitDB's type declaration of `load` lacks 'options'
     await this.channels.load({ fetchEntryTimeout: 15000 })
@@ -278,7 +291,7 @@ export class Storage {
     loadAllPublicChannels(this.io, this.getChannelsResponse())
   }
 
-  private getAllEventLogEntries(db: EventStore<any>): any[] {
+  protected getAllEventLogEntries(db: EventStore<any>): any[] {
     // TODO: fix typing
     // TODO: move to e.g custom Store
     return db

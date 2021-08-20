@@ -31,6 +31,7 @@ export interface ChannelInfoResponse {
 export class StorageOptions {
   createPaths: boolean = true
   isWaggleMobileMode: boolean
+  isEntryNode?: boolean = false
 }
 
 export interface IZbayChannel extends IChannelInfo {
@@ -50,15 +51,20 @@ export class ConnectionsManagerOptions {
   bootstrapMultiaddrs?: string[] = []
   createPaths?: boolean = true
   isWaggleMobileMode?: boolean = true
+  isEntryNode?: boolean = false
+  createSnapshot?: boolean = false
+  useSnapshot?: boolean = false
+  libp2pTransportClass?: any = null
 }
 
 export interface IConstructor {
   host: string
   port: number
-  agentPort: number
-  agentHost: string
+  agentPort?: number
+  agentHost?: string
   options?: Partial<ConnectionsManagerOptions>
   io: any
+  storageClass?: any // TODO: what type?
 }
 
 export interface ILibp2pStatus {

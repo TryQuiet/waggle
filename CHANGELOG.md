@@ -1,5 +1,51 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+* Waggle replication tests
+* Storage which can use orbitdb snapshots mechanism
+* More customizable waggle nodes
+
+## [2.1.0-0]
+
+### Changed
+
+* Use unreleased version of orbit-db and orbit-db-store 4.1.0
+
+## [2.0.15] - 2021-07-20
+
+### Added
+
+- Provided script for building project on Android
+
+### Fixed
+
+ - WebsocketOverTor - prepareListener was not called at all probably causing issue with peers not connecting to peers other than entry node
+
+## [2.0.14] - 2021-07-17
+
+### Fixed
+
+- Remove wrtc-mock - caused problems when installing waggle
+- npm-publish github workflow
+
+## [2.0.13] - 2021-07-16
+
+- Manually published npm package (previous one lacked files because of incomplete npm-publish github workflow)
+
+## [2.0.12] - 2021-07-16
+
+### Added
+
+- Publish package to npm using tags
+- Entry node - subscribe for all public channels
+
+### Fix
+
+- Conversation validator - don't assume encryptedPhrase length
+
 ## [2.0.11] - 2021-07-15
 
 ### Fixed
