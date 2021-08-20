@@ -72,7 +72,7 @@ export const tmpZbayDirPath = (name: string): string => {
   return path.join(name, Config.ZBAY_DIR)
 }
 
-export class TorMock {  // TODO: extend Tor to be sure that mocked api is correct
+export class TorMock { // TODO: extend Tor to be sure that mocked api is correct
   public async spawnHiddenService({
     virtPort,
     targetPort,
@@ -99,5 +99,6 @@ export class TorMock {  // TODO: extend Tor to be sure that mocked api is correc
 
   protected readonly spawnTor = resolve => {
     console.log('TorMock.spawnTor')
+    resolve()
   }
 }
