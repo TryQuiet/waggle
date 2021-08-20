@@ -136,17 +136,4 @@ describe('Certificate', () => {
     const usernameExists = storage.usernameExists('userName')
     expect(usernameExists).toBe(false)
   })
-
-  it('username check passes if existing user has old certificate', async () => {
-    // Old cert - with only zbayNickname, commonName and peerId fields
-    const userOldCsr = 'MIIBjDCCATICAQAwgZ8xgZwwFgYKKwYBBAGDjBsCARMIdXNlck5hbWUwRQYDVQQDEz5ucW53NGtjNGM3N2ZiNDdsazUybTVsNTdoNHRjeGNlbzd5bXhla2ZuN3loNW02NnQ0anYyb2xhZC5vbmlvbjA7BgkrBgECAQ8DAQETLlFtZjN5U2tZcUxFVDl4dEF0RHp2QXI1UHAzZWdLMUgzQzVpSkFabTFTcExFcDYwWTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAAQbZLff9f1DQ5Fl9IyExn3GfAOwaOffaOHqtck1uBwgoOoFtiSKaw5/dAO68Q4KMTyVfmy6jMfc8rKiWMascT/qoDAwLgYJKoZIhvcNAQkOMSEwHzAdBgNVHQ4EFgQU5Wob5zfKCaLUetyTskOga+TAhiEwCgYIKoZIzj0EAwIDSAAwRQIgaq+XNGrHTm7rafR2nBjbwR/nMO1BhZbGN8Wo46eZPkUCIQDQtXT7YUPuEPCipQGTmx4KbyWAemQDhG7fMDwwvFfnow=='
-    const userCert = await createUserCert(dataFromRootPems.certificate, dataFromRootPems.privKey, userOldCsr, new Date(), new Date(2030, 1, 1))
-    storage = new Storage(tmpAppDataPath, new utils.DummyIOServer(), { createPaths: false })
-    const peerId = await PeerId.create()
-    const libp2p = createLibp2p(peerId)
-    await storage.init(libp2p, peerId)
-    await storage.saveCertificate(userCert.userCertString)
-    const usernameExists = storage.usernameExists('userName')
-    expect(usernameExists).toBe(false)
-  })
 })

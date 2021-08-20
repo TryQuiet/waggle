@@ -577,12 +577,6 @@ export class Storage {
       const parsedCert = parseCertificate(cert)
       const certUsername = getCertFieldValue(parsedCert, CertFieldsTypes.nickName)
       if (certUsername.localeCompare(username, undefined, { sensitivity: 'base' }) === 0) {
-        if (!getCertFieldValue(parsedCert, CertFieldsTypes.dmPublicKey)) {
-          // Generate new cert for the same username because previous one is from before the migration (without dmPublicKey)
-          log(`Updating cert for user ${username}...`)
-          return false
-        }
-
         return true
       }
     }
