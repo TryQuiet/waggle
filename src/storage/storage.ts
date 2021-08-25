@@ -1,5 +1,6 @@
 import IPFS from 'ipfs'
 import path from 'path'
+import fs from 'fs'
 import { createPaths } from '../utils'
 import OrbitDB from 'orbit-db'
 import KeyValueStore from 'orbit-db-kvstore'
@@ -65,8 +66,8 @@ export class Storage {
       ...new StorageOptions(),
       ...options
     }
-    this.orbitDbDir = path.join(this.zbayDir, Config.ORBIT_DB_DIR)
-    this.ipfsRepoPath = path.join(this.zbayDir, Config.IPFS_REPO_PATH)
+    this.orbitDbDir = path.join(this.zbayDir, this.options.orbitDbDir || Config.ORBIT_DB_DIR)
+    this.ipfsRepoPath = path.join(this.zbayDir, this.options.ipfsDir || Config.IPFS_REPO_PATH)
   }
 
   public async init(libp2p: any, peerID: PeerId): Promise<void> {
@@ -418,6 +419,14 @@ export class Storage {
     this.publicChannelsRepos.set(channelAddress, { db, eventsAttached: false })
     // @ts-expect-error - OrbitDB's type declaration of `load` lacks 'options'
     await db.load({ fetchEntryTimeout: 2000 })
+    db.events.on('replicate.progress', (_address, _hash, _entry, progress, total) => {
+      log(`progress ${progress}/${total}`)
+      if (progress === total) {
+        // @ts-expect-error
+        const snapshot = JSON.stringify(db._oplog.toSnapshot())
+        fs.writeFileSync(`snapshot_${new Date().toISOString()}_total.json`, snapshot)
+      }
+    })
     return db
   }
 

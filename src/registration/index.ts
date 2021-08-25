@@ -9,6 +9,7 @@ import { Server } from 'http'
 import { validate, IsBase64, IsNotEmpty } from 'class-validator'
 import { DataFromPems } from '../common/types'
 import { CsrContainsFields, IsCsr } from './validators'
+import { ConnectionsManagerNew } from '../libp2p/connectionsManagerNew'
 const log = Object.assign(debug('waggle:registration'), {
   error: debug('waggle:registration:err')
 })
@@ -25,13 +26,13 @@ export class CertificateRegistration {
   private readonly _app: express.Application
   private _server: Server
   private readonly _port: number
-  private readonly _privKey: string
+  private _privKey: string
   private readonly tor: Tor
-  private readonly _connectionsManager: ConnectionsManager
+  private readonly _connectionsManager: any //ConnectionsManager | ConnectionsManagerNew
   private _onionAddress: string
   private readonly _dataFromPems: DataFromPems
 
-  constructor(hiddenServicePrivKey: string, tor: Tor, connectionsManager: ConnectionsManager, dataFromPems: DataFromPems, port?: number) {
+  constructor(tor: Tor, connectionsManager: ConnectionsManager | ConnectionsManagerNew, dataFromPems: DataFromPems, hiddenServicePrivKey?: string, port?: number) {
     this._app = express()
     this._privKey = hiddenServicePrivKey
     this._port = port || 7789
@@ -46,6 +47,14 @@ export class CertificateRegistration {
     this._app.use(express.json())
     // eslint-disable-next-line
     this._app.post('/register', async (req, res): Promise<void> => await this.registerUser(req, res))
+  }
+
+  public getHiddenServiceData() {
+    return {
+      privateKey: this._privKey,
+      onionAddress: this._onionAddress,
+      port: this._port
+    }
   }
 
   private async registerUser(req: Request, res: Response): Promise<void> {
@@ -89,11 +98,17 @@ export class CertificateRegistration {
   }
 
   public async init() {
-    this._onionAddress = await this.tor.spawnHiddenService({
-      virtPort: this._port,
-      targetPort: this._port,
-      privKey: this._privKey
-    })
+    if (this._privKey) {
+      this._onionAddress = await this.tor.spawnHiddenService({
+        virtPort: this._port,
+        targetPort: this._port,
+        privKey: this._privKey
+      })
+    } else {
+      const data = await this.tor.createNewHiddenService(this._port, this._port)
+      this._onionAddress = data.onionAddress
+      this._privKey = data.privateKey
+    }
   }
 
   public async listen(): Promise<void> {
