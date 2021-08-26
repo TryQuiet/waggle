@@ -9,7 +9,6 @@ import { Server } from 'http'
 import { validate, IsBase64, IsNotEmpty } from 'class-validator'
 import { DataFromPems } from '../common/types'
 import { CsrContainsFields, IsCsr } from './validators'
-import { ConnectionsManagerNew } from '../libp2p/connectionsManagerNew'
 const log = Object.assign(debug('waggle:registration'), {
   error: debug('waggle:registration:err')
 })
@@ -28,11 +27,11 @@ export class CertificateRegistration {
   private readonly _port: number
   private _privKey: string
   private readonly tor: Tor
-  private readonly _connectionsManager: any //ConnectionsManager | ConnectionsManagerNew
+  private readonly _connectionsManager: ConnectionsManager
   private _onionAddress: string
   private readonly _dataFromPems: DataFromPems
 
-  constructor(tor: Tor, connectionsManager: ConnectionsManager | ConnectionsManagerNew, dataFromPems: DataFromPems, hiddenServicePrivKey?: string, port?: number) {
+  constructor(tor: Tor, connectionsManager: ConnectionsManager, dataFromPems: DataFromPems, hiddenServicePrivKey?: string, port?: number) {
     this._app = express()
     this._privKey = hiddenServicePrivKey
     this._port = port || 7789

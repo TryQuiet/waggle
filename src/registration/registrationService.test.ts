@@ -76,8 +76,8 @@ describe('Registration service', () => {
     await manager.initStorage()
     registrationService = await manager.setupRegistrationService(
       tor,
-      testHiddenService,
-      { certificate: certRoot.rootCertString, privKey: certRoot.rootKeyString }
+      { certificate: certRoot.rootCertString, privKey: certRoot.rootKeyString },
+      testHiddenService
     )
     const response = await registerUserTest(user.userCsr, ports.socksPort, false)
     const returnedUserCertificate = await response.json()

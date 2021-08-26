@@ -61,7 +61,7 @@ export default class Node {
     const dataServer = await this.initDataServer()
     const connectonsManager = await this.initConnectionsManager(dataServer, onionAddress)
     await this.initListeners(dataServer, connectonsManager)
-    await connectonsManager.setupRegistrationService(this.tor, process.env.HIDDEN_SERVICE_SECRET_REGISTRATION, dataFromRootPems)
+    await connectonsManager.setupRegistrationService(this.tor, dataFromRootPems, process.env.HIDDEN_SERVICE_SECRET_REGISTRATION)
   }
 
   async spawnTor (): Promise<Tor> {
