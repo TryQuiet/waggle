@@ -28,6 +28,19 @@ import { TorControl } from '../torManager/TorControl'
 const log = Object.assign(debug('waggle:conn'), {
   error: debug('waggle:conn:err')
 })
+
+interface HiddenServiceData {
+  onionAddress: string
+  privateKey?: string
+  port?: number
+}
+
+interface CommunityData {
+  hiddenService: HiddenServiceData,
+  registrar?: HiddenServiceData,
+  peerId: JSONPeerId
+}
+
 export interface IConstructor {
   // host: string
   // port: number
@@ -65,7 +78,7 @@ export class ConnectionsManagerNew {
     this.io = io
     this.agentPort = agentPort
     this.agentHost = agentHost
-    this.socksProxyAgent = this.createAgent()  // Check if one proxy agent is fine
+    this.socksProxyAgent = this.createAgent()
     // this.localAddress = null
     this.options = {
       ...new ConnectionsManagerOptions(),
@@ -77,7 +90,7 @@ export class ConnectionsManagerNew {
     // this.peerId = null
     // this.bootstrapMultiaddrs = this.getBootstrapMultiaddrs()
     // this.listenAddrs = `/dns4/${this.host}/tcp/${this.port}/ws`
-    this.libp2pTransportClass = options.libp2pTransportClass || WebsocketsOverTor // We use tor by default
+    this.libp2pTransportClass = options.libp2pTransportClass || WebsocketsOverTor
     this.networks = new Map()
     
     process.on('unhandledRejection', error => {
@@ -144,14 +157,14 @@ export class ConnectionsManagerNew {
   }
 
   // --------------- NEW API
-  public init = async (torControlPort?: number, torPassword?: string) => {
-    const ports1 = await getPorts()
+  public init = async () => {
+    const ports = await getPorts()
     this.tor = new Tor({
       torPath: torBinForPlatform(),
       appDataPath: path.join.apply(null, [ZBAY_DIR_PATH, 'Zbay']),
-      controlPort: torControlPort || ports1.controlPort,
+      controlPort: this.options.torControlPort || ports.controlPort,
       socksPort: this.agentPort,
-      torPassword: torPassword,
+      torPassword: this.options.torPassword,
       options: {
         env: {
           LD_LIBRARY_PATH: torDirForPlatform(),
@@ -168,12 +181,12 @@ export class ConnectionsManagerNew {
     }
   }
 
-  public createCommunity = async () => {
+  public createCommunity = async (): Promise<CommunityData> => {
     // Create hidden service for user network
-    const ports1 = await getPorts()
-    const hiddenServiceData = await this.tor.createNewHiddenService(ports1.libp2pHiddenService, ports1.libp2pHiddenService)    
+    const ports = await getPorts()
+    const hiddenServiceData = await this.tor.createNewHiddenService(ports.libp2pHiddenService, ports.libp2pHiddenService)    
     const peerId = await PeerId.create()
-    await this.initNetwork(peerId, hiddenServiceData.onionAddress, ports1.libp2pHiddenService, ['whatAddress'])
+    await this.initNetwork(peerId, hiddenServiceData.onionAddress, ports.libp2pHiddenService, ['whatAddress'])
 
     // Create registrar since creator is the owner
     const registrar = await this.setupRegistrationService(this.tor, dataFromRootPems)
@@ -184,7 +197,7 @@ export class ConnectionsManagerNew {
     }
   }
 
-  public launchCommunity = async (peerId: JSONPeerId, hiddenServiceKey: string, bootstrapMultiaddrs: string[], registrarData?: any) => {
+  public launchCommunity = async (peerId: JSONPeerId, hiddenServiceKey: string, bootstrapMultiaddrs: string[], registrarData?: HiddenServiceData): Promise<string> => {
     // Start existing community (community that user is already a part of)
     const ports = await getPorts()
     const onionAddress = await this.tor.spawnHiddenService({
@@ -193,15 +206,16 @@ export class ConnectionsManagerNew {
       privKey: hiddenServiceKey
     })
     
-    await this.initNetwork(await PeerId.createFromJSON(peerId), onionAddress, ports.libp2pHiddenService, bootstrapMultiaddrs)
+    const localAddress = await this.initNetwork(await PeerId.createFromJSON(peerId), onionAddress, ports.libp2pHiddenService, bootstrapMultiaddrs)
 
-    if (Object.keys(registrarData).length !== 0) {
+    if (registrarData) {
       await this.setupRegistrationService(this.tor, dataFromRootPems, registrarData.privateKey, registrarData.port)
     }
 
+    return localAddress
   }
 
-  protected initNetwork = async (peerId: PeerId, onionAddress: string, port: number, bootstrapMultiaddrs: string[]) => {
+  protected initNetwork = async (peerId: PeerId, onionAddress: string, port: number, bootstrapMultiaddrs: string[]): Promise<string> => {
     const listenAddrs = `/dns4/${onionAddress}/tcp/${port}/ws`
     const libp2pObj = await this._initLip2p(peerId, listenAddrs, bootstrapMultiaddrs)
     const storage = new this.StorageCls(
@@ -214,7 +228,7 @@ export class ConnectionsManagerNew {
       }
     )
     await storage.init(libp2pObj.libp2p, peerId)
-    this.networks.set(peerId.toB58String(), storage)
+    this.storage = storage  // At the moment only one community is supported
     return libp2pObj.localAddress
   }
 
@@ -241,6 +255,12 @@ export class ConnectionsManagerNew {
       libp2p,
       localAddress
     }
+  }
+
+  public stop = async () => {
+    await this.stopLibp2p()
+    await this.closeStorage()
+    // Kill tor?
   }
 
   // endof new api
@@ -290,7 +310,7 @@ export class ConnectionsManagerNew {
   public askForMessages = async (channelAddress: string, ids: string[]) => {
     await this.storage.askForMessages(channelAddress, ids)
   }
-  spawnHiddenService
+
   public loadAllMessages = async (channelAddress: string) => {
     this.storage.loadAllChannelMessages(channelAddress)
   }

@@ -187,12 +187,6 @@ export class ConnectionsManager {
     })
   }
 
-  public createOnionPeerId = async (peerId: string) => {
-    const key = new TextEncoder().encode(`onion${peerId.substring(0, 10)}`)
-    const digest = await multihashing(key, 'sha2-256')
-    return digest
-  }
-
   public sendPeerId = () => {
     const payload = this.peerId?.toB58String()
     this.io.emit(EventTypesResponse.SEND_PEER_ID, payload)
