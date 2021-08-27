@@ -25,22 +25,11 @@ import initListeners from '../socket/listeners'
 import { createRootCA } from '@zbayapp/identity/lib'
 import { Time } from 'pkijs'
 import { RootCA } from '@zbayapp/identity/lib/generateRootCA'
+import IOProxy from '../IOHandler'
 
 const log = Object.assign(debug('waggle:conn'), {
   error: debug('waggle:conn:err')
 })
-
-interface HiddenServiceData {
-  onionAddress: string
-  privateKey?: string
-  port?: number
-}
-
-interface CommunityData {
-  hiddenService: HiddenServiceData,
-  peerId: JSONPeerId,
-  localAddress: string
-}
 
 export interface IConstructor {
   host?: string
@@ -72,6 +61,7 @@ export class ConnectionsManager {
   networks: Map<string, Storage>
   StorageCls: any
   tor: Tor
+  // ioProxy: any
 
   constructor({ host, port, agentHost, agentPort, options, storageClass, io }: IConstructor) {
     this.host = host
@@ -93,6 +83,7 @@ export class ConnectionsManager {
     this.listenAddrs = `/dns4/${this.host}/tcp/${this.port}/ws`
     this.libp2pTransportClass = options.libp2pTransportClass || WebsocketsOverTor
     this.networks = new Map()
+    // this.ioProxy = new IOProxy(this)
     
     process.on('unhandledRejection', error => {
       console.error(error)
@@ -161,7 +152,7 @@ export class ConnectionsManager {
 
   // --------------- NEW API (COMMUNITIES)
   public init = async () => {
-    initListeners(this.io, this)
+    initListeners(this.io, new IOProxy(this))
 
     const ports = await getPorts()
     this.tor = new Tor({
@@ -185,49 +176,49 @@ export class ConnectionsManager {
     }
   }
 
-  public createCommunity = async (): Promise<CommunityData> => {
-    const ports = await getPorts()
-    const hiddenService = await this.tor.createNewHiddenService(ports.libp2pHiddenService, ports.libp2pHiddenService)    
-    const peerId = await PeerId.create()
-    const localAddress = await this.initNetwork(peerId, hiddenService.onionAddress, ports.libp2pHiddenService, [(Math.random() + 1).toString(36)])
-    log(`Created community, ${peerId.id}`)
-    return {
-      hiddenService,
-      peerId: peerId.toJSON(),
-      localAddress
-    }
-  }
+  // public createCommunity = async (): Promise<CommunityData> => {
+  //   const ports = await getPorts()
+  //   const hiddenService = await this.tor.createNewHiddenService(ports.libp2pHiddenService, ports.libp2pHiddenService)    
+  //   const peerId = await PeerId.create()
+  //   const localAddress = await this.initNetwork(peerId, hiddenService.onionAddress, ports.libp2pHiddenService, [(Math.random() + 1).toString(36)])
+  //   log(`Created community, ${peerId.id}`)
+  //   return {
+  //     hiddenService,
+  //     peerId: peerId.toJSON(),
+  //     localAddress
+  //   }
+  // }
 
-  public launchCommunity = async (peerId: JSONPeerId, hiddenServiceKey: string, bootstrapMultiaddrs: string[]): Promise<string> => {
-    // Start existing community (community that user is already a part of)
-    const ports = await getPorts()
-    const onionAddress = await this.tor.spawnHiddenService({
-      virtPort: ports.libp2pHiddenService,
-      targetPort: ports.libp2pHiddenService,
-      privKey: hiddenServiceKey
-    })
-    log(`Launching community, ${peerId.id}`)
-    return await this.initNetwork(await PeerId.createFromJSON(peerId), onionAddress, ports.libp2pHiddenService, bootstrapMultiaddrs)
-  }
+  // public launchCommunity = async (peerId: JSONPeerId, hiddenServiceKey: string, bootstrapMultiaddrs: string[]): Promise<string> => {
+  //   // Start existing community (community that user is already a part of)
+  //   const ports = await getPorts()
+  //   const onionAddress = await this.tor.spawnHiddenService({
+  //     virtPort: ports.libp2pHiddenService,
+  //     targetPort: ports.libp2pHiddenService,
+  //     privKey: hiddenServiceKey
+  //   })
+  //   log(`Launching community, ${peerId.id}`)
+  //   return await this.initNetwork(await PeerId.createFromJSON(peerId), onionAddress, ports.libp2pHiddenService, bootstrapMultiaddrs)
+  // }
 
-  protected initNetwork = async (peerId: PeerId, onionAddress: string, port: number, bootstrapMultiaddrs: string[]): Promise<string> => {
-    const listenAddrs = `/dns4/${onionAddress}/tcp/${port}/ws`
-    const libp2pObj = await this._initLip2p(peerId, listenAddrs, bootstrapMultiaddrs)
-    const storage = new this.StorageCls(
-      this.zbayDir, 
-      this.io, 
-      { 
-        ...this.options, 
-        orbitDbDir: `OrbitDB${peerId.toB58String()}`,
-        ipfsDir: `Ipfs${peerId.toB58String()}`
-      }
-    )
-    await storage.init(libp2pObj.libp2p, peerId)
-    this.storage = storage  // At the moment only one community is supported
-    return libp2pObj.localAddress
-  }
+  // public initNetwork = async (peerId: PeerId, onionAddress: string, port: number, bootstrapMultiaddrs: string[]): Promise<string> => {
+  //   const listenAddrs = `/dns4/${onionAddress}/tcp/${port}/ws`
+  //   const libp2pObj = await this._initLip2p(peerId, listenAddrs, bootstrapMultiaddrs)
+  //   const storage = new this.StorageCls(
+  //     this.zbayDir, 
+  //     this.io, 
+  //     { 
+  //       ...this.options, 
+  //       orbitDbDir: `OrbitDB${peerId.toB58String()}`,
+  //       ipfsDir: `Ipfs${peerId.toB58String()}`
+  //     }
+  //   )
+  //   await storage.init(libp2pObj.libp2p, peerId)
+  //   this.storage = storage  // At the moment only one community is supported
+  //   return libp2pObj.localAddress
+  // }
 
-  protected _initLip2p = async (peerId: PeerId, listenAddrs: string, bootstrapMultiaddrs: string[]) => {
+  public _initLip2p = async (peerId: PeerId, listenAddrs: string, bootstrapMultiaddrs: string[]) => {
     const localAddress = `${listenAddrs}/p2p/${peerId.toB58String()}`
     const libp2p = ConnectionsManager.createBootstrapNode({
       peerId: peerId,
@@ -252,11 +243,11 @@ export class ConnectionsManager {
     }
   }
 
-  public stop = async () => {
-    await this.stopLibp2p()
-    await this.closeStorage()
-    // Kill tor?
-  }
+  // public stop = async () => {
+  //   await this.stopLibp2p()
+  //   await this.closeStorage()
+  //   // Kill tor?
+  // }
 
   // ------------- endof new api
 
@@ -281,22 +272,22 @@ export class ConnectionsManager {
     return libp2p
   }
 
-  public stopLibp2p = async () => {
-    await this.libp2p.stop()
-  }
+  // public stopLibp2p = async () => {
+  //   await this.libp2p.stop()
+  // }
 
-  public subscribeForTopic = async (channelData: IChannelInfo) => {
-    console.log('subscribeForTopic')
-    await this.storage.subscribeForChannel(channelData.address, channelData)
-  }
+  // public subscribeForTopic = async (channelData: IChannelInfo) => {
+  //   console.log('subscribeForTopic')
+  //   await this.storage.subscribeForChannel(channelData.address, channelData)
+  // }
 
-  public initStorage = async () => {
-    await this.storage.init(this.libp2p, this.peerId)
-  }
+  // public initStorage = async () => {
+  //   await this.storage.init(this.libp2p, this.peerId)
+  // }
 
-  public closeStorage = async () => {
-    await this.storage.stopOrbitDb()
-  }
+  // public closeStorage = async () => {
+  //   await this.storage.stopOrbitDb()
+  // }
 
   // public updateChannels = async () => {
   //   await this.storage.updateChannels()
@@ -322,68 +313,68 @@ export class ConnectionsManager {
     })
   }
 
-  public sendPeerId = () => {
-    const payload = this.peerId?.toB58String()
-    this.io.emit(EventTypesResponse.SEND_PEER_ID, payload)
-  }
+  // public sendPeerId = () => {
+  //   const payload = this.peerId?.toB58String()
+  //   this.io.emit(EventTypesResponse.SEND_PEER_ID, payload)
+  // }
 
-  public sendMessage = async (
-    channelAddress: string,
-    messagePayload: IMessage
-  ): Promise<void> => {
-    const { id, type, signature, createdAt, message, pubKey } = messagePayload
-    const messageToSend = {
-      id,
-      type,
-      signature,
-      createdAt,
-      message,
-      channelId: channelAddress,
-      pubKey
-    }
-    await this.storage.sendMessage(channelAddress, messageToSend)
-  }
+  // public sendMessage = async (
+  //   channelAddress: string,
+  //   messagePayload: IMessage
+  // ): Promise<void> => {
+  //   const { id, type, signature, createdAt, message, pubKey } = messagePayload
+  //   const messageToSend = {
+  //     id,
+  //     type,
+  //     signature,
+  //     createdAt,
+  //     message,
+  //     channelId: channelAddress,
+  //     pubKey
+  //   }
+  //   await this.storage.sendMessage(channelAddress, messageToSend)
+  // }
 
-  // DMs
+  // // DMs
 
-  public addUser = async (
-    publicKey: string,
-    halfKey: string
-  ): Promise<void> => {
-    log(`CONNECTIONS MANAGER: addUser - publicKey ${publicKey} and halfKey ${halfKey}`)
-    await this.storage.addUser(publicKey, halfKey)
-  }
+  // public addUser = async (
+  //   publicKey: string,
+  //   halfKey: string
+  // ): Promise<void> => {
+  //   log(`CONNECTIONS MANAGER: addUser - publicKey ${publicKey} and halfKey ${halfKey}`)
+  //   await this.storage.addUser(publicKey, halfKey)
+  // }
 
-  public initializeConversation = async (
-    address: string,
-    encryptedPhrase: string
-  ): Promise<void> => {
-    log(`INSIDE WAGGLE: ${encryptedPhrase}`)
-    await this.storage.initializeConversation(address, encryptedPhrase)
-  }
+  // public initializeConversation = async (
+  //   address: string,
+  //   encryptedPhrase: string
+  // ): Promise<void> => {
+  //   log(`INSIDE WAGGLE: ${encryptedPhrase}`)
+  //   await this.storage.initializeConversation(address, encryptedPhrase)
+  // }
 
-  public getAvailableUsers = async (): Promise<void> => {
-    await this.storage.getAvailableUsers()
-  }
+  // public getAvailableUsers = async (): Promise<void> => {
+  //   await this.storage.getAvailableUsers()
+  // }
 
-  public getPrivateConversations = async (): Promise<void> => {
-    await this.storage.getPrivateConversations()
-  }
+  // public getPrivateConversations = async (): Promise<void> => {
+  //   await this.storage.getPrivateConversations()
+  // }
 
-  public sendDirectMessage = async (
-    channelAddress: string,
-    messagePayload: string
-  ): Promise<void> => {
-    await this.storage.sendDirectMessage(channelAddress, messagePayload)
-  }
+  // public sendDirectMessage = async (
+  //   channelAddress: string,
+  //   messagePayload: string
+  // ): Promise<void> => {
+  //   await this.storage.sendDirectMessage(channelAddress, messagePayload)
+  // }
 
-  public subscribeForDirectMessageThread = async (address): Promise<void> => {
-    await this.storage.subscribeForDirectMessageThread(address)
-  }
+  // public subscribeForDirectMessageThread = async (address): Promise<void> => {
+  //   await this.storage.subscribeForDirectMessageThread(address)
+  // }
 
-  public subscribeForAllConversations = async (conversations: string[]): Promise<void> => {
-    await this.storage.subscribeForAllConversations(conversations)
-  }
+  // public subscribeForAllConversations = async (conversations: string[]): Promise<void> => {
+  //   await this.storage.subscribeForAllConversations(conversations)
+  // }
 
   public setupRegistrationService = async (dataFromPems: DataFromPems, hiddenServicePrivKey?: string, port?: number): Promise<CertificateRegistration> => {
     const certRegister = new CertificateRegistration(this.tor, this, dataFromPems, hiddenServicePrivKey, port)
@@ -401,21 +392,21 @@ export class ConnectionsManager {
     return certRegister
   }
 
-  public registerUserCertificate = async (serviceAddress: string, userCsr: string) => {
-    const response = await this.sendCertificateRegistrationRequest(serviceAddress, userCsr)
-    switch (response.status) {
-      case 200:
-        break
-      case 403:
-        this.emitCertificateRegistrationError('Username already taken.')
-        return
-      default:
-        this.emitCertificateRegistrationError('Registering username failed.')
-        return
-    }
-    const certificate: string = await response.json()
-    this.io.emit(EventTypesResponse.SEND_USER_CERTIFICATE, certificate)
-  }
+  // public registerUserCertificate = async (serviceAddress: string, userCsr: string) => {
+  //   const response = await this.sendCertificateRegistrationRequest(serviceAddress, userCsr)
+  //   switch (response.status) {
+  //     case 200:
+  //       break
+  //     case 403:
+  //       this.emitCertificateRegistrationError('Username already taken.')
+  //       return
+  //     default:
+  //       this.emitCertificateRegistrationError('Registering username failed.')
+  //       return
+  //   }
+  //   const certificate: string = await response.json()
+  //   this.io.emit(EventTypesResponse.SEND_USER_CERTIFICATE, certificate)
+  // }
 
   public sendCertificateRegistrationRequest = async (serviceAddress: string, userCsr: string): Promise<Response> => {
     const options = {
@@ -432,9 +423,9 @@ export class ConnectionsManager {
     }
   }
 
-  public emitCertificateRegistrationError(message: string) {
-    this.io.emit(EventTypesResponse.CERTIFICATE_REGISTRATION_ERROR, message)
-  }
+  // public emitCertificateRegistrationError(message: string) {
+  //   this.io.emit(EventTypesResponse.CERTIFICATE_REGISTRATION_ERROR, message)
+  // }
 
   public static readonly createBootstrapNode = ({
     peerId,
