@@ -2,6 +2,7 @@ import { EventTypesServer } from '../constants'
 import { ConnectionsManager } from '../../libp2p/connectionsManager'
 import { IChannelInfo, IMessage } from '../../common/types'
 import IOProxy from '../../IOHandler'
+import PeerId from 'peer-id'
 
 export const connections = (io, ioProxy: IOProxy) => {
   io.on(EventTypesServer.CONNECTION, socket => {
@@ -69,6 +70,15 @@ export const connections = (io, ioProxy: IOProxy) => {
     socket.on(EventTypesServer.SAVE_CERTIFICATE, async (peerId: string, certificate: string) => {
       console.log('Received saveCertificate websocket event, processing.')
       await ioProxy.saveCertificate(peerId, certificate)
+    })
+    socket.on(EventTypesServer.CREATE_COMMUNITY, async () => {
+      await ioProxy.createCommunity()
+    })
+    socket.on(EventTypesServer.LAUNCH_COMMUNITY, async (peerId: PeerId.JSONPeerId, hiddenServiceKey: string, peers: string[]) => {
+      await ioProxy.launchCommunity(peerId, hiddenServiceKey, peers)
+    })
+    socket.on(EventTypesServer.LAUNCH_REGISTRAR, async (rootCertString: string, rootKeyString: string, hiddenServicePrivKey?: string, port?: number) => {
+      await ioProxy.launchRegistrar(rootCertString, rootKeyString, hiddenServicePrivKey, port)
     })
   })
 }

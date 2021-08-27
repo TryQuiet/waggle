@@ -34,6 +34,7 @@ export default class CommunitiesManager {
       return this.networks.get(peerId)
     } catch (e) {
       log.error(`No available Storage for peer ${peerId}`)
+      throw e
     }
   }
 
@@ -66,7 +67,7 @@ export default class CommunitiesManager {
     const listenAddrs = `/dns4/${onionAddress}/tcp/${port}/ws`
     const libp2pObj = await this.connectionsManager._initLip2p(peerId, listenAddrs, bootstrapMultiaddrs)
     const storage = new this.connectionsManager.StorageCls(
-      this.connectionsManager, 
+      this.connectionsManager.zbayDir,
       this.connectionsManager.io, 
       { 
         ...this.connectionsManager.options, 

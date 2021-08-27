@@ -4,6 +4,7 @@ import { ConnectionsManager } from "./libp2p/connectionsManager"
 import { EventTypesResponse } from "./socket/constantsReponse"
 import { Storage } from "./storage"
 import debug from 'debug'
+import PeerId from "peer-id"
 
 const log = Object.assign(debug('waggle:iohandler'), {
   error: debug('waggle:iohandler:err')
@@ -130,5 +131,31 @@ export default class IOProxy {
 
   public emitCertificateRegistrationError(message: string) {
     this.io.emit(EventTypesResponse.CERTIFICATE_REGISTRATION_ERROR, message)
+  }
+
+  public async createCommunity() {
+    const communityData = await this.communities.create()
+    this.io.emit(EventTypesResponse.NEW_COMMUNITY, communityData)
+  }
+
+  public async launchCommunity(peerId: PeerId.JSONPeerId, hiddenServiceKey: string, bootstrapMultiaddress: string[]) {
+    const address = await this.communities.launch(peerId, hiddenServiceKey, bootstrapMultiaddress)
+    this.io.emit(EventTypesResponse.COMMUNITY, address)
+  }
+
+  public async launchRegistrar(rootCertString: string, rootKeyString: string, hiddenServicePrivKey?: string, port?: number) {
+    const registrar = await this.connectionsManager.setupRegistrationService(
+      {
+        certificate: rootCertString, 
+        privKey: rootKeyString
+      }, 
+      hiddenServicePrivKey,
+      port
+    )
+    if (!registrar) {
+      this.io.emit(EventTypesResponse.REGISTRAR_ERROR, 'Could not setup registrar')
+    } else {
+      this.io.emit(EventTypesResponse.REGISTRAR, registrar.getHiddenServiceData())
+    } 
   }
 }
