@@ -9,6 +9,8 @@ import { Server } from 'http'
 import { validate, IsBase64, IsNotEmpty } from 'class-validator'
 import { DataFromPems } from '../common/types'
 import { CsrContainsFields, IsCsr } from './validators'
+import fp from 'find-free-port'
+
 const log = Object.assign(debug('waggle:registration'), {
   error: debug('waggle:registration:err')
 })
@@ -24,7 +26,7 @@ class UserCsrData {
 export class CertificateRegistration {
   private readonly _app: express.Application
   private _server: Server
-  private readonly _port: number
+  private _port: number
   private _privKey: string
   private readonly tor: Tor
   private readonly _connectionsManager: ConnectionsManager
@@ -34,7 +36,7 @@ export class CertificateRegistration {
   constructor(tor: Tor, connectionsManager: ConnectionsManager, dataFromPems: DataFromPems, hiddenServicePrivKey?: string, port?: number) {
     this._app = express()
     this._privKey = hiddenServicePrivKey
-    this._port = port || 7789
+    this._port = port
     this._connectionsManager = connectionsManager
     this.tor = tor
     this._onionAddress = null
@@ -97,6 +99,10 @@ export class CertificateRegistration {
   }
 
   public async init() {
+    if (!this._port) {
+      const [port] = await fp(7789)
+      this._port = port
+    }
     if (this._privKey) {
       this._onionAddress = await this.tor.spawnHiddenService({
         virtPort: this._port,

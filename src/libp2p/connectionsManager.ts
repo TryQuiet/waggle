@@ -22,6 +22,9 @@ import { Tor } from '../torManager'
 import { CertificateRegistration } from '../registration'
 import { EventTypesResponse } from '../socket/constantsReponse'
 import initListeners from '../socket/listeners'
+import { createRootCA } from '@zbayapp/identity/lib'
+import { Time } from 'pkijs'
+import { RootCA } from '@zbayapp/identity/lib/generateRootCA'
 
 const log = Object.assign(debug('waggle:conn'), {
   error: debug('waggle:conn:err')
@@ -34,9 +37,11 @@ interface HiddenServiceData {
 }
 
 interface CommunityData {
-  hiddenService: HiddenServiceData,
+  onionAddress: string,
   registrar?: HiddenServiceData,
-  peerId: JSONPeerId
+  peerId: JSONPeerId,
+  localAddress: string,
+  rootCA: RootCA
 }
 
 export interface IConstructor {
@@ -183,18 +188,30 @@ export class ConnectionsManager {
     }
   }
 
-  public createCommunity = async (): Promise<CommunityData> => {
+  public createCommunity = async (name: string): Promise<CommunityData> => {
+    // Create root CA
+    const start = new Date()
+    let end = new Date()
+    end.setMonth(start.getMonth() + 1)
+    const rootCA = await createRootCA(
+      new Time({ type: 1, value: start }), 
+      new Time({ type: 1, value: end }), 
+      name
+    )
+
     const ports = await getPorts()
     const hiddenServiceData = await this.tor.createNewHiddenService(ports.libp2pHiddenService, ports.libp2pHiddenService)    
     const peerId = await PeerId.create()
-    await this.initNetwork(peerId, hiddenServiceData.onionAddress, ports.libp2pHiddenService, ['whatAddress'])
+    const localAddress = await this.initNetwork(peerId, hiddenServiceData.onionAddress, ports.libp2pHiddenService, [(Math.random() + 1).toString(36)])
 
     // Create registrar since creator is the owner
     const registrar = await this.setupRegistrationService(this.tor, dataFromRootPems)
     return {
-      hiddenService: hiddenServiceData,
+      onionAddress: hiddenServiceData.onionAddress,
       registrar: registrar.getHiddenServiceData(),
-      peerId: peerId.toJSON()
+      peerId: peerId.toJSON(),
+      localAddress,
+      rootCA
     }
   }
 
