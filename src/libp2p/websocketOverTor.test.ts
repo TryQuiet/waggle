@@ -15,8 +15,8 @@ import { SocksProxyAgent } from 'socks-proxy-agent'
 
 jest.mock('libp2p-websockets/src/socket-to-conn')
 jest.mock('url')
-//jest.mock('multiaddr-to-uri')
-jest.setTimeout(30000000);
+// jest.mock('multiaddr-to-uri')
+jest.setTimeout(30000000)
 
 const rawMockSocket = {
   connected: () => 'connected',
@@ -209,8 +209,6 @@ describe('websocketOverTor', () => {
     expect(maConn.close).toHaveBeenCalled()
   })
 
-
-
   it.only('prepareListener failed', async () => {
     const pems = {
       ca: fs.readFileSync('src/files/ca-certificate.pem'),
@@ -238,7 +236,7 @@ describe('websocketOverTor', () => {
       upgrader: {
         upgradeOutbound,
         upgradeInbound
-      },
+      }
     }
 
     const singal = {
@@ -247,7 +245,6 @@ describe('websocketOverTor', () => {
     }
 
     // ------------- TOR
-
 
     const ports = await getPorts()
     const torPath = utils.torBinForPlatform()
