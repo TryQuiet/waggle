@@ -37,11 +37,9 @@ interface HiddenServiceData {
 }
 
 interface CommunityData {
-  onionAddress: string,
-  registrar?: HiddenServiceData,
+  hiddenService: HiddenServiceData,
   peerId: JSONPeerId,
-  localAddress: string,
-  rootCA: RootCA
+  localAddress: string
 }
 
 export interface IConstructor {
@@ -171,7 +169,6 @@ export class ConnectionsManager {
       appDataPath: path.join.apply(null, [ZBAY_DIR_PATH, 'Zbay']),
       controlPort: this.options.torControlPort || ports.controlPort,
       socksPort: this.agentPort,
-      torPassword: this.options.torPassword,
       options: {
         env: {
           LD_LIBRARY_PATH: torDirForPlatform(),
@@ -188,34 +185,20 @@ export class ConnectionsManager {
     }
   }
 
-  public createCommunity = async (name: string): Promise<CommunityData> => {
-    // Create root CA
-    const start = new Date()
-    let end = new Date()
-    end.setMonth(start.getMonth() + 1)
-    const rootCA = await createRootCA(
-      new Time({ type: 1, value: start }), 
-      new Time({ type: 1, value: end }), 
-      name
-    )
-
+  public createCommunity = async (): Promise<CommunityData> => {
     const ports = await getPorts()
-    const hiddenServiceData = await this.tor.createNewHiddenService(ports.libp2pHiddenService, ports.libp2pHiddenService)    
+    const hiddenService = await this.tor.createNewHiddenService(ports.libp2pHiddenService, ports.libp2pHiddenService)    
     const peerId = await PeerId.create()
-    const localAddress = await this.initNetwork(peerId, hiddenServiceData.onionAddress, ports.libp2pHiddenService, [(Math.random() + 1).toString(36)])
-
-    // Create registrar since creator is the owner
-    const registrar = await this.setupRegistrationService(this.tor, dataFromRootPems)
+    const localAddress = await this.initNetwork(peerId, hiddenService.onionAddress, ports.libp2pHiddenService, [(Math.random() + 1).toString(36)])
+    log(`Created community, ${peerId.id}`)
     return {
-      onionAddress: hiddenServiceData.onionAddress,
-      registrar: registrar.getHiddenServiceData(),
+      hiddenService,
       peerId: peerId.toJSON(),
-      localAddress,
-      rootCA
+      localAddress
     }
   }
 
-  public launchCommunity = async (peerId: JSONPeerId, hiddenServiceKey: string, bootstrapMultiaddrs: string[], registrarData?: HiddenServiceData): Promise<string> => {
+  public launchCommunity = async (peerId: JSONPeerId, hiddenServiceKey: string, bootstrapMultiaddrs: string[]): Promise<string> => {
     // Start existing community (community that user is already a part of)
     const ports = await getPorts()
     const onionAddress = await this.tor.spawnHiddenService({
@@ -223,14 +206,8 @@ export class ConnectionsManager {
       targetPort: ports.libp2pHiddenService,
       privKey: hiddenServiceKey
     })
-    
-    const localAddress = await this.initNetwork(await PeerId.createFromJSON(peerId), onionAddress, ports.libp2pHiddenService, bootstrapMultiaddrs)
-
-    if (registrarData) {
-      await this.setupRegistrationService(this.tor, dataFromRootPems, registrarData.privateKey, registrarData.port)
-    }
-
-    return localAddress
+    log(`Launching community, ${peerId.id}`)
+    return await this.initNetwork(await PeerId.createFromJSON(peerId), onionAddress, ports.libp2pHiddenService, bootstrapMultiaddrs)
   }
 
   protected initNetwork = async (peerId: PeerId, onionAddress: string, port: number, bootstrapMultiaddrs: string[]): Promise<string> => {
@@ -321,21 +298,21 @@ export class ConnectionsManager {
     await this.storage.stopOrbitDb()
   }
 
-  public updateChannels = async () => {
-    await this.storage.updateChannels()
-  }
+  // public updateChannels = async () => {
+  //   await this.storage.updateChannels()
+  // }
 
-  public askForMessages = async (channelAddress: string, ids: string[]) => {
-    await this.storage.askForMessages(channelAddress, ids)
-  }
+  // public askForMessages = async (channelAddress: string, ids: string[]) => {
+  //   await this.storage.askForMessages(channelAddress, ids)
+  // }
 
-  public loadAllMessages = async (channelAddress: string) => {
-    this.storage.loadAllChannelMessages(channelAddress)
-  }
+  // public loadAllMessages = async (channelAddress: string) => {
+  //   this.storage.loadAllChannelMessages(channelAddress)
+  // }
 
-  public saveCertificate = async (certificate: string) => {
-    await this.storage.saveCertificate(certificate)
-  }
+  // public saveCertificate = async (certificate: string) => {
+  //   await this.storage.saveCertificate(certificate)
+  // }
 
   public connectToNetwork = async (target: string) => {
     log(`Attempting to dial ${target}`)
@@ -408,8 +385,8 @@ export class ConnectionsManager {
     await this.storage.subscribeForAllConversations(conversations)
   }
 
-  public setupRegistrationService = async (tor: Tor, dataFromPems: DataFromPems, hiddenServicePrivKey?: string, port?: number): Promise<CertificateRegistration> => {
-    const certRegister = new CertificateRegistration(tor, this, dataFromPems, hiddenServicePrivKey, port)
+  public setupRegistrationService = async (dataFromPems: DataFromPems, hiddenServicePrivKey?: string, port?: number): Promise<CertificateRegistration> => {
+    const certRegister = new CertificateRegistration(this.tor, this, dataFromPems, hiddenServicePrivKey, port)
     try {
       await certRegister.init()
     } catch (err) {

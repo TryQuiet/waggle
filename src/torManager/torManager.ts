@@ -18,7 +18,6 @@ interface IConstructor {
   options: child_process.SpawnOptionsWithoutStdio
   appDataPath: string
   controlPort: number
-  torPassword?: string
   socksPort: number
 }
 export class Tor {
@@ -34,13 +33,12 @@ export class Tor {
   socksPort: string
   torPassword: string
   torHashedPassword: string
-  constructor({ torPath, options, appDataPath, controlPort, socksPort, torPassword }: IConstructor) {
+  constructor({ torPath, options, appDataPath, controlPort, socksPort }: IConstructor) {
     this.torPath = path.normalize(torPath)
     this.options = options
     this.services = new Map()
     this.appDataPath = appDataPath
     this.controlPort = controlPort
-    this.torPassword = torPassword
     this.socksPort = socksPort.toString()
   }
 
