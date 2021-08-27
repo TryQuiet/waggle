@@ -61,7 +61,6 @@ export class ConnectionsManager {
   networks: Map<string, Storage>
   StorageCls: any
   tor: Tor
-  // ioProxy: any
 
   constructor({ host, port, agentHost, agentPort, options, storageClass, io }: IConstructor) {
     this.host = host
@@ -77,13 +76,12 @@ export class ConnectionsManager {
     }
     this.zbayDir = this.options.env?.appDataPath || ZBAY_DIR_PATH
     this.StorageCls = storageClass || Storage
-    this.storage = new this.StorageCls(this.zbayDir, this.io, { ...this.options })
-    this.peerId = null
-    this.bootstrapMultiaddrs = this.getBootstrapMultiaddrs()
-    this.listenAddrs = `/dns4/${this.host}/tcp/${this.port}/ws`
+    // this.storage = new this.StorageCls(this.zbayDir, this.io, { ...this.options })
+    // this.peerId = null
+    // this.bootstrapMultiaddrs = this.getBootstrapMultiaddrs()
+    // this.listenAddrs = `/dns4/${this.host}/tcp/${this.port}/ws`
     this.libp2pTransportClass = options.libp2pTransportClass || WebsocketsOverTor
-    this.networks = new Map()
-    // this.ioProxy = new IOProxy(this)
+    // this.networks = new Map()
     
     process.on('unhandledRejection', error => {
       console.error(error)
@@ -102,53 +100,53 @@ export class ConnectionsManager {
     return new SocksProxyAgent({ port: this.agentPort, host: this.agentHost })
   }
 
-  private readonly getBootstrapMultiaddrs = () => {
-    if (this.options.bootstrapMultiaddrs.length > 0) {
-      return this.options.bootstrapMultiaddrs
-    }
-    return [
-      '/dns4/2lmfmbj4ql56d55lmv7cdrhdlhls62xa4p6lzy6kymxuzjlny3vnwyqd.onion/tcp/7788/ws/p2p/Qmak8HeMad8X1HGBmz2QmHfiidvGnhu6w6ugMKtx8TFc85'
-    ]
-  }
+  // private readonly getBootstrapMultiaddrs = () => {
+  //   if (this.options.bootstrapMultiaddrs.length > 0) {
+  //     return this.options.bootstrapMultiaddrs
+  //   }
+  //   return [
+  //     '/dns4/2lmfmbj4ql56d55lmv7cdrhdlhls62xa4p6lzy6kymxuzjlny3vnwyqd.onion/tcp/7788/ws/p2p/Qmak8HeMad8X1HGBmz2QmHfiidvGnhu6w6ugMKtx8TFc85'
+  //   ]
+  // }
 
-  protected readonly getPeerId = async (): Promise<PeerId> => {
-    let peerId
-    const peerIdKeyPath = path.join(this.zbayDir, Config.PEER_ID_FILENAME)
-    if (!fs.existsSync(peerIdKeyPath)) {
-      if (this.options.createPaths) {
-        createPaths([this.zbayDir])
-      }
-      peerId = await PeerId.create()
-      fs.writeFileSync(peerIdKeyPath, peerId.toJSON().privKey)
-    } else {
-      const peerIdKey = fs.readFileSync(peerIdKeyPath, { encoding: 'utf8' })
-      peerId = PeerId.createFromPrivKey(peerIdKey)
-    }
-    return peerId
-  }
+  // protected readonly getPeerId = async (): Promise<PeerId> => {
+  //   let peerId
+  //   const peerIdKeyPath = path.join(this.zbayDir, Config.PEER_ID_FILENAME)
+  //   if (!fs.existsSync(peerIdKeyPath)) {
+  //     if (this.options.createPaths) {
+  //       createPaths([this.zbayDir])
+  //     }
+  //     peerId = await PeerId.create()
+  //     fs.writeFileSync(peerIdKeyPath, peerId.toJSON().privKey)
+  //   } else {
+  //     const peerIdKey = fs.readFileSync(peerIdKeyPath, { encoding: 'utf8' })
+  //     peerId = PeerId.createFromPrivKey(peerIdKey)
+  //   }
+  //   return peerId
+  // }
 
-  public initializeNode = async (staticPeerId?: PeerId): Promise<ILibp2pStatus> => {
-    initListeners(this.io, this)
+  // public initializeNode = async (staticPeerId?: PeerId): Promise<ILibp2pStatus> => {
+  //   initListeners(this.io, this)
 
-    if (!staticPeerId) {
-      this.peerId = await this.getPeerId()
-    } else {
-      this.peerId = staticPeerId
-    }
-    if (this.getBootstrapMultiaddrs().length === 0) {
-      console.error('Libp2p needs bootstrap multiaddress!')
-      return null
-    }
-    this.createAgent()
-    this.localAddress = `${this.listenAddrs}/p2p/${this.peerId.toB58String()}`
-    log('local address:', this.localAddress)
-    log('bootstrapMultiaddrs:', this.bootstrapMultiaddrs)
-    this.libp2p = await this.initLibp2p()
-    return {
-      address: this.localAddress,
-      peerId: this.peerId.toB58String()
-    }
-  }
+  //   if (!staticPeerId) {
+  //     this.peerId = await this.getPeerId()
+  //   } else {
+  //     this.peerId = staticPeerId
+  //   }
+  //   if (this.getBootstrapMultiaddrs().length === 0) {
+  //     console.error('Libp2p needs bootstrap multiaddress!')
+  //     return null
+  //   }
+  //   this.createAgent()
+  //   this.localAddress = `${this.listenAddrs}/p2p/${this.peerId.toB58String()}`
+  //   log('local address:', this.localAddress)
+  //   log('bootstrapMultiaddrs:', this.bootstrapMultiaddrs)
+  //   this.libp2p = await this.initLibp2p()
+  //   return {
+  //     address: this.localAddress,
+  //     peerId: this.peerId.toB58String()
+  //   }
+  // }
 
   // --------------- NEW API (COMMUNITIES)
   public init = async () => {
@@ -160,6 +158,7 @@ export class ConnectionsManager {
       appDataPath: path.join.apply(null, [ZBAY_DIR_PATH, 'Zbay']),
       controlPort: this.options.torControlPort || ports.controlPort,
       socksPort: this.agentPort,
+      torPassword: this.options.torPassword,
       options: {
         env: {
           LD_LIBRARY_PATH: torDirForPlatform(),
@@ -251,26 +250,26 @@ export class ConnectionsManager {
 
   // ------------- endof new api
 
-  public initLibp2p = async (): Promise<Libp2pType> => {
-    const libp2p = ConnectionsManager.createBootstrapNode({
-      peerId: this.peerId,
-      listenAddrs: [this.listenAddrs],
-      agent: this.socksProxyAgent,
-      localAddr: this.localAddress,
-      bootstrapMultiaddrsList: this.bootstrapMultiaddrs,
-      transportClass: this.libp2pTransportClass
-    })
-    libp2p.connectionManager.on('peer:connect', async connection => {
-      log('Connected to', connection.remotePeer.toB58String())
-    })
-    libp2p.on('peer:discovery', (peer: PeerId) => {
-      log(`Discovered ${peer.toB58String()}`)
-    })
-    libp2p.connectionManager.on('peer:disconnect', connection => {
-      log('Disconnected from', connection.remotePeer.toB58String())
-    })
-    return libp2p
-  }
+  // public initLibp2p = async (): Promise<Libp2pType> => {
+  //   const libp2p = ConnectionsManager.createBootstrapNode({
+  //     peerId: this.peerId,
+  //     listenAddrs: [this.listenAddrs],
+  //     agent: this.socksProxyAgent,
+  //     localAddr: this.localAddress,
+  //     bootstrapMultiaddrsList: this.bootstrapMultiaddrs,
+  //     transportClass: this.libp2pTransportClass
+  //   })
+  //   libp2p.connectionManager.on('peer:connect', async connection => {
+  //     log('Connected to', connection.remotePeer.toB58String())
+  //   })
+  //   libp2p.on('peer:discovery', (peer: PeerId) => {
+  //     log(`Discovered ${peer.toB58String()}`)
+  //   })
+  //   libp2p.connectionManager.on('peer:disconnect', connection => {
+  //     log('Disconnected from', connection.remotePeer.toB58String())
+  //   })
+  //   return libp2p
+  // }
 
   // public stopLibp2p = async () => {
   //   await this.libp2p.stop()
@@ -305,13 +304,13 @@ export class ConnectionsManager {
   //   await this.storage.saveCertificate(certificate)
   // }
 
-  public connectToNetwork = async (target: string) => {
-    log(`Attempting to dial ${target}`)
-    await this.libp2p.dial(target, {
-      localAddr: this.localAddress,
-      remoteAddr: new Multiaddr(target)
-    })
-  }
+  // public connectToNetwork = async (target: string) => {
+  //   log(`Attempting to dial ${target}`)
+  //   await this.libp2p.dial(target, {
+  //     localAddr: this.localAddress,
+  //     remoteAddr: new Multiaddr(target)
+  //   })
+  // }
 
   // public sendPeerId = () => {
   //   const payload = this.peerId?.toB58String()

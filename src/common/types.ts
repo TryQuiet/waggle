@@ -59,6 +59,7 @@ export class ConnectionsManagerOptions {
   libp2pTransportClass?: any = null
   spawnTor?: boolean = true
   torControlPort?: number
+  torPassword?: string
 }
 
 export interface IConstructor {
