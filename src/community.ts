@@ -1,8 +1,10 @@
-import PeerId, { JSONPeerId } from "peer-id";
-import { ConnectionsManager } from "./libp2p/connectionsManager";
-import { Storage } from "./storage";
-import { getPorts } from "./utils";
+import PeerId, { JSONPeerId } from 'peer-id'
+import { ConnectionsManager } from './libp2p/connectionsManager'
+import { Storage } from './storage'
+import { getPorts } from './utils'
 import debug from 'debug'
+import { DataFromPems } from './common/types'
+import { CertificateRegistration } from './registration'
 
 const log = Object.assign(debug('waggle:communities'), {
   error: debug('waggle:communities:err')
@@ -15,9 +17,19 @@ interface HiddenServiceData {
 }
 
 interface CommunityData {
-  hiddenService: HiddenServiceData,
-  peerId: JSONPeerId,
+  hiddenService: HiddenServiceData
+  peerId: JSONPeerId
   localAddress: string
+}
+
+class Community {
+  id: string
+  storage: Storage
+
+  constructor(storage: Storage) {
+    this.id = ''
+    this.storage = storage
+  }
 }
 
 export default class CommunitiesManager {
@@ -40,7 +52,7 @@ export default class CommunitiesManager {
 
   public create = async (): Promise<CommunityData> => {
     const ports = await getPorts()
-    const hiddenService = await this.connectionsManager.tor.createNewHiddenService(ports.libp2pHiddenService, ports.libp2pHiddenService)    
+    const hiddenService = await this.connectionsManager.tor.createNewHiddenService(ports.libp2pHiddenService, ports.libp2pHiddenService)
     const peerId = await PeerId.create()
     const localAddress = await this.initStorage(peerId, hiddenService.onionAddress, ports.libp2pHiddenService, [(Math.random() + 1).toString(36)])
     log(`Created community, ${peerId.id}`)
@@ -68,17 +80,37 @@ export default class CommunitiesManager {
     const libp2pObj = await this.connectionsManager._initLip2p(peerId, listenAddrs, bootstrapMultiaddrs)
     const storage = new this.connectionsManager.StorageCls(
       this.connectionsManager.zbayDir,
-      this.connectionsManager.io, 
-      { 
-        ...this.connectionsManager.options, 
+      this.connectionsManager.io,
+      {
+        ...this.connectionsManager.options,
         orbitDbDir: `OrbitDB${peerId.toB58String()}`,
         ipfsDir: `Ipfs${peerId.toB58String()}`
       }
     )
     await storage.init(libp2pObj.libp2p, peerId)
-    // this.storage = storage  // At the moment only one community is supported
     this.networks.set(peerId.toB58String(), storage)
     return libp2pObj.localAddress
   }
 
+  public setupRegistrationService = async (storage: Storage, dataFromPems: DataFromPems, hiddenServicePrivKey?: string, port?: number): Promise<CertificateRegistration> => {
+    const certRegister = new CertificateRegistration(
+      this.connectionsManager.tor, 
+      storage, 
+      dataFromPems, 
+      hiddenServicePrivKey, 
+      port
+    )
+    try {
+      await certRegister.init()
+    } catch (err) {
+      log.error(`Couldn't initialize certificate registration service: ${err as string}`)
+      return
+    }
+    try {
+      await certRegister.listen()
+    } catch (err) {
+      log.error(`Certificate registration service couldn't start listening: ${err as string}`)
+    }
+    return certRegister
+  }
 }

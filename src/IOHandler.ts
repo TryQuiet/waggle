@@ -1,10 +1,10 @@
-import { IChannelInfo, IMessage } from "./common/types"
-import CommunitiesManager from "./community"
-import { ConnectionsManager } from "./libp2p/connectionsManager"
-import { EventTypesResponse } from "./socket/constantsReponse"
-import { Storage } from "./storage"
+import { IChannelInfo, IMessage } from './common/types'
+import CommunitiesManager from './community'
+import { ConnectionsManager } from './libp2p/connectionsManager'
+import { EventTypesResponse } from './socket/constantsReponse'
+import { Storage } from './storage'
 import debug from 'debug'
-import PeerId from "peer-id"
+import PeerId from 'peer-id'
 
 const log = Object.assign(debug('waggle:iohandler'), {
   error: debug('waggle:iohandler:err')
@@ -98,7 +98,7 @@ export default class IOProxy {
   }
 
   public sendDirectMessage = async (
-    peerId: string, 
+    peerId: string,
     channelAddress: string,
     messagePayload: string
   ): Promise<void> => {
@@ -143,12 +143,13 @@ export default class IOProxy {
     this.io.emit(EventTypesResponse.COMMUNITY, address)
   }
 
-  public async launchRegistrar(rootCertString: string, rootKeyString: string, hiddenServicePrivKey?: string, port?: number) {
-    const registrar = await this.connectionsManager.setupRegistrationService(
+  public async launchRegistrar(peerId: string, rootCertString: string, rootKeyString: string, hiddenServicePrivKey?: string, port?: number) {
+    const registrar = await this.communities.setupRegistrationService(
+      this.getStorage(peerId),
       {
-        certificate: rootCertString, 
+        certificate: rootCertString,
         privKey: rootKeyString
-      }, 
+      },
       hiddenServicePrivKey,
       port
     )
@@ -156,6 +157,6 @@ export default class IOProxy {
       this.io.emit(EventTypesResponse.REGISTRAR_ERROR, 'Could not setup registrar')
     } else {
       this.io.emit(EventTypesResponse.REGISTRAR, registrar.getHiddenServiceData())
-    } 
+    }
   }
 }

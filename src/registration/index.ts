@@ -2,7 +2,7 @@ import express, { Request, Response } from 'express'
 import { Tor } from '../torManager'
 import { Certificate } from 'pkijs'
 import debug from 'debug'
-import { ConnectionsManager } from '../libp2p/connectionsManager'
+// import { ConnectionsManager } from '../libp2p/connectionsManager'
 import { createUserCert, loadCSR } from '@zbayapp/identity'
 import { CertFieldsTypes, getCertFieldValue } from '@zbayapp/identity/lib/common'
 import { Server } from 'http'
@@ -10,6 +10,7 @@ import { validate, IsBase64, IsNotEmpty } from 'class-validator'
 import { DataFromPems } from '../common/types'
 import { CsrContainsFields, IsCsr } from './validators'
 import fp from 'find-free-port'
+import { Storage } from '../storage'
 
 const log = Object.assign(debug('waggle:registration'), {
   error: debug('waggle:registration:err')
@@ -29,15 +30,15 @@ export class CertificateRegistration {
   private _port: number
   private _privKey: string
   private readonly tor: Tor
-  private readonly _connectionsManager: ConnectionsManager
+  private readonly _storage: Storage
   private _onionAddress: string
   private readonly _dataFromPems: DataFromPems
 
-  constructor(tor: Tor, connectionsManager: ConnectionsManager, dataFromPems: DataFromPems, hiddenServicePrivKey?: string, port?: number) {
+  constructor(tor: Tor, storage: Storage, dataFromPems: DataFromPems, hiddenServicePrivKey?: string, port?: number) {
     this._app = express()
     this._privKey = hiddenServicePrivKey
     this._port = port
-    this._connectionsManager = connectionsManager
+    this._storage = storage
     this.tor = tor
     this._onionAddress = null
     this._dataFromPems = dataFromPems
@@ -70,7 +71,7 @@ export class CertificateRegistration {
 
     const parsedCsr = await loadCSR(userData.csr)
     const username = getCertFieldValue(parsedCsr, CertFieldsTypes.nickName)
-    const usernameExists = this._connectionsManager.storage.usernameExists(username)
+    const usernameExists = this._storage.usernameExists(username)
     if (usernameExists) {
       log(`Username ${username} is taken`)
       res.status(403).send()
@@ -90,7 +91,7 @@ export class CertificateRegistration {
 
   private async registerCertificate(userCsr: string): Promise<Certificate> {
     const userCert = await createUserCert(this._dataFromPems.certificate, this._dataFromPems.privKey, userCsr, new Date(), new Date(2030, 1, 1))
-    const certSaved = await this._connectionsManager.storage.saveCertificate(userCert.userCertString, this._dataFromPems)
+    const certSaved = await this._storage.saveCertificate(userCert.userCertString, this._dataFromPems)
     if (!certSaved) {
       throw new Error('Could not save certificate')
     }

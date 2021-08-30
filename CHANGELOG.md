@@ -1,5 +1,18 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+--- BREAKING CHANGES --- 
+* ConnectionsManager api changed
+* Refactor responsibilities into separate classes
+* Many websocket events need peerId now; Socket responses contain peerId
+
+### Added
+
+* Creating and relaunching community; launching registrar (via websockets)
+
 ## [2.1.0]
 
 ### Added

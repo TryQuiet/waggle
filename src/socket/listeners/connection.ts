@@ -77,8 +77,8 @@ export const connections = (io, ioProxy: IOProxy) => {
     socket.on(EventTypesServer.LAUNCH_COMMUNITY, async (peerId: PeerId.JSONPeerId, hiddenServiceKey: string, peers: string[]) => {
       await ioProxy.launchCommunity(peerId, hiddenServiceKey, peers)
     })
-    socket.on(EventTypesServer.LAUNCH_REGISTRAR, async (rootCertString: string, rootKeyString: string, hiddenServicePrivKey?: string, port?: number) => {
-      await ioProxy.launchRegistrar(rootCertString, rootKeyString, hiddenServicePrivKey, port)
+    socket.on(EventTypesServer.LAUNCH_REGISTRAR, async (peerId: string, rootCertString: string, rootKeyString: string, hiddenServicePrivKey?: string, port?: number) => {
+      await ioProxy.launchRegistrar(peerId, rootCertString, rootKeyString, hiddenServicePrivKey, port)
     })
   })
 }
