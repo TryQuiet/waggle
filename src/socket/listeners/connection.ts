@@ -1,5 +1,4 @@
 import { EventTypesServer } from '../constants'
-import { ConnectionsManager } from '../../libp2p/connectionsManager'
 import { IChannelInfo, IMessage } from '../../common/types'
 import IOProxy from '../../IOHandler'
 import PeerId from 'peer-id'
@@ -55,9 +54,6 @@ export const connections = (io, ioProxy: IOProxy) => {
     socket.on(EventTypesServer.SUBSCRIBE_FOR_ALL_CONVERSATIONS, async (peerId: string, conversations: string[]) => {
       await ioProxy.subscribeForAllConversations(peerId, conversations)
     })
-    // socket.on(EventTypesServer.REQUEST_PEER_ID, () => {
-    //   ioProxy.sendPeerId()
-    // })
     socket.on(
       EventTypesServer.ASK_FOR_MESSAGES,
       async (peerId: string, { channelAddress, ids }: { channelAddress: string, ids: string[] }) => {

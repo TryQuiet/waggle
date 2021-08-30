@@ -1,6 +1,5 @@
 import IPFS from 'ipfs'
 import path from 'path'
-import fs from 'fs'
 import { createPaths } from '../utils'
 import OrbitDB from 'orbit-db'
 import KeyValueStore from 'orbit-db-kvstore'
@@ -419,13 +418,8 @@ export class Storage {
     this.publicChannelsRepos.set(channelAddress, { db, eventsAttached: false })
     // @ts-expect-error - OrbitDB's type declaration of `load` lacks 'options'
     await db.load({ fetchEntryTimeout: 2000 })
-    db.events.on('replicate.progress', (_address, _hash, _entry, progress, total) => {
-      log(`progress ${progress}/${total}`)
-      if (progress === total) {
-        // @ts-expect-error
-        const snapshot = JSON.stringify(db._oplog.toSnapshot())
-        fs.writeFileSync(`snapshot_${new Date().toISOString()}_total.json`, snapshot)
-      }
+    db.events.on('replicate.progress', (address, _hash, _entry, progress, total) => {
+      log(`progress ${progress as string}/${total as string}. Address: ${address as string}`)
     })
     return db
   }

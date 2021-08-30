@@ -1,23 +1,16 @@
 import { ConnectionsManager } from './connectionsManager'
-import { DataServer } from '../socket/DataServer'
-import { Config } from '../constants'
 import { DummyIOServer, getPorts } from '../utils'
-import path from 'path'
 import { createTmpDir, testBootstrapMultiaddrs, TmpDir, tmpZbayDirPath } from '../testUtils'
 
 let tmpDir: TmpDir
 let tmpAppDataPath: string
-let tmpPeerIdPath: string
 let connectionsManager: ConnectionsManager
-let dataServer: DataServer
 
 beforeEach(() => {
   jest.clearAllMocks()
   tmpDir = createTmpDir()
   tmpAppDataPath = tmpZbayDirPath(tmpDir.name)
-  tmpPeerIdPath = path.join(tmpAppDataPath, Config.PEER_ID_FILENAME)
   connectionsManager = null
-  dataServer = null
 })
 
 describe('Connections manager', () => {
@@ -38,7 +31,7 @@ describe('Connections manager', () => {
     expect(connectionsManager.tor.process).not.toBeNull()
     await connectionsManager.tor.kill()
   })
-  
+
   it('inits only tor control if spawnTor is set to false', async () => {
     const torControlPort = 9090
     const torPassword = 'testTorPassword'
@@ -54,7 +47,7 @@ describe('Connections manager', () => {
         bootstrapMultiaddrs: testBootstrapMultiaddrs,
         spawnTor: false,
         torControlPort,
-        torPassword,
+        torPassword
       }
     })
     await connectionsManager.init()

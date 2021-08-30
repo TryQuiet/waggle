@@ -22,16 +22,6 @@ interface CommunityData {
   localAddress: string
 }
 
-class Community {
-  id: string
-  storage: Storage
-
-  constructor(storage: Storage) {
-    this.id = ''
-    this.storage = storage
-  }
-}
-
 export default class CommunitiesManager {
   connectionsManager: ConnectionsManager
   networks: Map<string, Storage>
@@ -54,8 +44,8 @@ export default class CommunitiesManager {
     const ports = await getPorts()
     const hiddenService = await this.connectionsManager.tor.createNewHiddenService(ports.libp2pHiddenService, ports.libp2pHiddenService)
     const peerId = await PeerId.create()
-    const localAddress = await this.initStorage(peerId, hiddenService.onionAddress, ports.libp2pHiddenService, [(Math.random() + 1).toString(36)])
-    log(`Created community, ${peerId.id}`)
+    const localAddress = await this.initStorage(peerId, hiddenService.onionAddress, ports.libp2pHiddenService, [peerId.toB58String()])
+    log(`Created community, ${peerId.toB58String()}`)
     return {
       hiddenService,
       peerId: peerId.toJSON(),
@@ -94,10 +84,10 @@ export default class CommunitiesManager {
 
   public setupRegistrationService = async (storage: Storage, dataFromPems: DataFromPems, hiddenServicePrivKey?: string, port?: number): Promise<CertificateRegistration> => {
     const certRegister = new CertificateRegistration(
-      this.connectionsManager.tor, 
-      storage, 
-      dataFromPems, 
-      hiddenServicePrivKey, 
+      this.connectionsManager.tor,
+      storage,
+      dataFromPems,
+      hiddenServicePrivKey,
       port
     )
     try {

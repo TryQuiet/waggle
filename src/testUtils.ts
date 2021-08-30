@@ -58,10 +58,10 @@ export const createLibp2p = async (peerId: PeerId): Promise<Libp2pType> => {
   const [port] = await fp(1111)
   return ConnectionsManager.createBootstrapNode({
     peerId,
-    listenAddrs: [`/dns4/localhost/tcp/${port}/ws`],
+    listenAddrs: [`/dns4/localhost/tcp/${port as string}/ws`],
     bootstrapMultiaddrsList: testBootstrapMultiaddrs,
     agent: new SocksProxyAgent({ port: 1234, host: 'localhost' }),
-    localAddr: `/dns4/localhost/tcp/${port}/ws/p2p/${peerId.toB58String()}`,
+    localAddr: `/dns4/localhost/tcp/${port as string}/ws/p2p/${peerId.toB58String()}`,
     transportClass: WebsocketsOverTor
   })
 }

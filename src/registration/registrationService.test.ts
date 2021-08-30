@@ -29,10 +29,10 @@ async function registerUserTest(csr: string, socksPort: number, localhost: boole
 
 async function setupRegistrar(tor: Tor, storage: Storage, dataFromPems: DataFromPems, hiddenServiceKey?: string, port?: number) {
   const certRegister = new CertificateRegistration(
-    tor, 
-    storage, 
-    dataFromPems, 
-    hiddenServiceKey, 
+    tor,
+    storage,
+    dataFromPems,
+    hiddenServiceKey,
     port
   )
   try {
