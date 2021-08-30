@@ -46,11 +46,6 @@ export default class IOProxy {
     await this.getStorage(peerId).saveCertificate(certificate)
   }
 
-  // public sendPeerId = () => {
-  //   const payload = this.peerId?.toB58String()
-  //   this.io.emit(EventTypesResponse.SEND_PEER_ID, payload)
-  // }
-
   public sendMessage = async (
     peerId: string,
     channelAddress: string,
@@ -126,21 +121,21 @@ export default class IOProxy {
         return
     }
     const certificate: string = await response.json()
-    this.io.emit(EventTypesResponse.SEND_USER_CERTIFICATE, certificate)
+    this.io.emit(EventTypesResponse.SEND_USER_CERTIFICATE, {payload: certificate})
   }
 
   public emitCertificateRegistrationError(message: string) {
-    this.io.emit(EventTypesResponse.CERTIFICATE_REGISTRATION_ERROR, message)
+    this.io.emit(EventTypesResponse.CERTIFICATE_REGISTRATION_ERROR, {payload: message})
   }
 
   public async createCommunity() {
     const communityData = await this.communities.create()
-    this.io.emit(EventTypesResponse.NEW_COMMUNITY, communityData)
+    this.io.emit(EventTypesResponse.NEW_COMMUNITY, {payload: communityData})
   }
 
   public async launchCommunity(peerId: PeerId.JSONPeerId, hiddenServiceKey: string, bootstrapMultiaddress: string[]) {
     const address = await this.communities.launch(peerId, hiddenServiceKey, bootstrapMultiaddress)
-    this.io.emit(EventTypesResponse.COMMUNITY, address)
+    this.io.emit(EventTypesResponse.COMMUNITY, {peerId, payload: address})
   }
 
   public async launchRegistrar(peerId: string, rootCertString: string, rootKeyString: string, hiddenServicePrivKey?: string, port?: number) {
@@ -154,9 +149,9 @@ export default class IOProxy {
       port
     )
     if (!registrar) {
-      this.io.emit(EventTypesResponse.REGISTRAR_ERROR, 'Could not setup registrar')
+      this.io.emit(EventTypesResponse.REGISTRAR_ERROR, {peerId, payload: 'Could not setup registrar'})
     } else {
-      this.io.emit(EventTypesResponse.REGISTRAR, registrar.getHiddenServiceData())
+      this.io.emit(EventTypesResponse.REGISTRAR, {peerId, payload: registrar.getHiddenServiceData()})
     }
   }
 }

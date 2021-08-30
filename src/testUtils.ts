@@ -1,4 +1,5 @@
 import tmp from 'tmp'
+import fp from 'find-free-port'
 import { SocksProxyAgent } from 'socks-proxy-agent'
 import { Config } from './constants'
 import { DummyIOServer, getPorts, Ports, torBinForPlatform, torDirForPlatform } from './utils'
@@ -53,13 +54,14 @@ export const createMinConnectionManager = (options: ConnectionsManagerOptions): 
   })
 }
 
-export const createLibp2p = (peerId: PeerId = null): Libp2pType => {
+export const createLibp2p = async (peerId: PeerId): Promise<Libp2pType> => {
+  const [port] = await fp(1111)
   return ConnectionsManager.createBootstrapNode({
     peerId,
-    listenAddrs: ['/dns4/localhost/tcp/1111/ws'],
+    listenAddrs: [`/dns4/localhost/tcp/${port}/ws`],
     bootstrapMultiaddrsList: testBootstrapMultiaddrs,
     agent: new SocksProxyAgent({ port: 1234, host: 'localhost' }),
-    localAddr: `/dns4/localhost/tcp/1111/ws/p2p/${peerId.toB58String()}`,
+    localAddr: `/dns4/localhost/tcp/${port}/ws/p2p/${peerId.toB58String()}`,
     transportClass: WebsocketsOverTor
   })
 }
