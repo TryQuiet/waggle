@@ -5,6 +5,7 @@ import WebsocketsOverTor from '../libp2p/websocketOverTor'
 import Websockets from 'libp2p-websockets'
 import { DataServer } from '../socket/DataServer'
 import { ConnectionsManager } from '../libp2p/connectionsManager'
+import CommunitiesManager from '../community'
 /**
  * More customizable version of Node (entry node), mainly for testing purposes
  */
@@ -59,7 +60,6 @@ export class NodeWithoutTor extends LocalNode {
     const dataServer = await this.initDataServer()
     const connectonsManager = await this.initConnectionsManager(
       dataServer,
-      '0.0.0.0',
       StorageTestSnapshot,
       {
         bootstrapMultiaddrs: this.bootstrapMultiaddrs,
@@ -70,16 +70,20 @@ export class NodeWithoutTor extends LocalNode {
         libp2pTransport: Websockets
       }
     )
-    this.storage = connectonsManager.storage
-    this.localAddress = connectonsManager.localAddress
-    await this.initListeners(dataServer, connectonsManager)
+    const communities = new CommunitiesManager(connectonsManager)
+    const peerId = await this.getPeer()
+    await communities.initStorage(
+      peerId,
+      '0.0.0.0',
+      this.port,
+      this.bootstrapMultiaddrs
+    )
+    this.storage = communities.getStorage(peerId.toB58String())
+    this.localAddress = 'todo'
   }
 
-  async initConnectionsManager(dataServer: DataServer, host: string, storageClass?: any, options?: any): Promise<ConnectionsManager> {
-    const peer = await this.getPeer()
+  async initConnectionsManager(dataServer: DataServer, storageClass?: any, options?: any): Promise<ConnectionsManager> {
     const connectonsManager = new ConnectionsManager({
-      port: this.port,
-      host: host,
       io: dataServer.io,
       storageClass,
       options: {
@@ -88,9 +92,7 @@ export class NodeWithoutTor extends LocalNode {
         ...options
       }
     })
-    const node = await connectonsManager.initializeNode(peer)
-    console.log(node)
-    await connectonsManager.initStorage()
+    await connectonsManager.init()
     return connectonsManager
   }
 }
@@ -104,7 +106,6 @@ export class NodeWithTor extends LocalNode {
     const dataServer = await this.initDataServer()
     const connectonsManager = await this.initConnectionsManager(
       dataServer,
-      onionAddress,
       StorageTestSnapshot,
       {
         bootstrapMultiaddrs: this.bootstrapMultiaddrs,
@@ -115,8 +116,15 @@ export class NodeWithTor extends LocalNode {
         libp2pTransport: WebsocketsOverTor
       }
     )
-    this.storage = connectonsManager.storage
-    this.localAddress = connectonsManager.localAddress
-    await this.initListeners(dataServer, connectonsManager)
+    const communities = new CommunitiesManager(connectonsManager)
+    const peerId = await this.getPeer()
+    await communities.initStorage(
+      peerId,
+      onionAddress,
+      this.port,
+      this.bootstrapMultiaddrs
+    )
+    this.storage = communities.getStorage(peerId.toB58String())
+    this.localAddress = 'todo'
   }
 }
