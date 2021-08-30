@@ -21,9 +21,9 @@ class Discovery extends EventEmitter {
     this.tag = 'channel_18'
   }
 
-  stop() {}
-  start() {}
-  end() {}
+  stop() { }
+  start() { }
+  end() { }
 }
 
 class WebsocketsOverTor extends WebSockets {
@@ -79,6 +79,7 @@ class WebsocketsOverTor extends WebSockets {
     const cOpts = ma.toOptions()
     log('dialing %s:%s', cOpts.host, cOpts.port)
     const myUri = `${toUri(ma) as string}/?remoteAddress=${encodeURIComponent(this.localAddress)}`
+    console.log('connect', options)
     const rawSocket = connect(myUri, Object.assign({ binary: true }, options))
     if (!options.signal) {
       await rawSocket.connected()
@@ -116,6 +117,7 @@ class WebsocketsOverTor extends WebSockets {
     const trackConn = (server, maConn) => {
       server.__connections.push(maConn)
     }
+    console.log('server', options)
     const server = createServer(options, async (stream, request) => {
       let maConn, conn
       // eslint-disable-next-line
@@ -160,14 +162,12 @@ class WebsocketsOverTor extends WebSockets {
 
     listener.listen = (ma: multiaddr) => {
       listeningMultiaddr = ma
-
       return server.listen(ma.toOptions())
     }
 
     listener.getAddrs = () => {
       const multiaddrs = []
       const address = server.address()
-
       if (!address) {
         throw new Error('Listener is not ready yet')
       }
@@ -204,7 +204,7 @@ class WebsocketsOverTor extends WebSockets {
   }
 
   // eslint-disable-next-line
-  createListener (options = {}, handler) {
+  createListener(options = {}, handler) {
     if (typeof options === 'function') {
       handler = options
       options = {}

@@ -14,7 +14,7 @@ import https from 'https'
 import { SocksProxyAgent } from 'socks-proxy-agent'
 
 jest.mock('libp2p-websockets/src/socket-to-conn')
-jest.mock('url')
+// jest.mock('url')
 // jest.mock('multiaddr-to-uri')
 jest.setTimeout(30000000)
 
@@ -48,7 +48,9 @@ const urlParse = url.parse as jest.Mock<UrlWithStringQuery & Url>
 describe('websocketOverTor', () => {
   const mockLocalAddress = 'localAddressTest'
   const mockWebSocket = {
-    agent: new SocksProxyAgent({ host: 'localhost', port: 9052 })
+    agent: {
+      ...new SocksProxyAgent({ host: 'localhost', port: 9052 })
+    }
   }
   const upgradeOutbound = jest.fn()
   const upgradeInbound = jest.fn()
@@ -209,6 +211,8 @@ describe('websocketOverTor', () => {
     expect(maConn.close).toHaveBeenCalled()
   })
 
+  // ----------------
+
   it.only('prepareListener failed', async () => {
     const pems = {
       ca: fs.readFileSync('src/files/ca-certificate.pem'),
@@ -264,8 +268,8 @@ describe('websocketOverTor', () => {
     })
     await tor.init()
 
-    const service1 = await tor.createNewHiddenService(9799, 9799)
-    const service2 = await tor.createNewHiddenService(9799, 9799)
+    const service1 = await tor.createNewHiddenService(8080, 8080)
+    const service2 = await tor.createNewHiddenService(8081, 8081)
 
     const peerId1 = 'Qme5NiSQ6V3cc3nyfYVtkkXDPGBSYEVUNCN5sM4DbyYc7s'
     const peerId2 = 'QmeCWxba5Yk1ZAKogQJsaHXoAermE7PgFZqpqyKNg65cSN'
@@ -275,8 +279,14 @@ describe('websocketOverTor', () => {
         upgradeOutbound,
         upgradeInbound
       },
-      websocket: mockWebSocket,
-      localAddr: `/dns4/${service1.onionAddress}.onion/tcp/7788/wss/p2p/${peerId1}`
+      websocket: {
+        ...mockWebSocket,
+        cert: pems.servCert,
+        key: pems.servKey,
+        ca: [pems.ca],
+        rejectUnauthorized: false
+      },
+      localAddr: `/dns4/${service1.onionAddress}.onion/tcp/8080/wss/p2p/${peerId1}`
     }
 
     const websocketsOverTorData2 = {
@@ -284,24 +294,26 @@ describe('websocketOverTor', () => {
         upgradeOutbound,
         upgradeInbound
       },
-      websocket: mockWebSocket,
-      localAddr: `/dns4/${service2.onionAddress}.onion/tcp/7788/wss/p2p/${peerId2}`
-    }
-    const multiAddress = new Multiaddr(`/dns4/${service1.onionAddress}.onion/tcp/7788/wss/p2p/${peerId1}`)
-
-    const ws1 = new WebsocketsOverTor(websocketsOverTorData1)
-    const ws2 = new WebsocketsOverTor(websocketsOverTorData2)
-
-    await ws1.prepareListener(prepareListenerArg, { options })
-
-    await ws2.dial(multiAddress, {
-      signal: singal,
       websocket: {
+        ...mockWebSocket,
         cert: pems.userCert,
         key: pems.userKey,
         ca: [pems.ca],
         rejectUnauthorized: false
-      }
+      },
+      localAddr: `/dns4/${service2.onionAddress}.onion/tcp/8081/wss/p2p/${peerId2}`
+    }
+    const multiAddress = new Multiaddr(`/dns4/${service1.onionAddress}.onion/tcp/8080/wss/p2p/${peerId1}`)
+
+    const ws1 = new WebsocketsOverTor(websocketsOverTorData1)
+    const ws2 = new WebsocketsOverTor(websocketsOverTorData2)
+
+    const listen = await ws1.prepareListener(prepareListenerArg, { options })
+
+    await listen.listen(multiAddress)
+
+    await ws2.dial(multiAddress, {
+      signal: singal
     })
   })
 })
