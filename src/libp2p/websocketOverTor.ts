@@ -79,7 +79,6 @@ class WebsocketsOverTor extends WebSockets {
     const cOpts = ma.toOptions()
     log('dialing %s:%s', cOpts.host, cOpts.port)
     const myUri = `${toUri(ma) as string}/?remoteAddress=${encodeURIComponent(this.localAddress)}`
-    console.log('connect', options)
     const rawSocket = connect(myUri, Object.assign({ binary: true }, options))
     if (!options.signal) {
       await rawSocket.connected()
@@ -117,7 +116,6 @@ class WebsocketsOverTor extends WebSockets {
     const trackConn = (server, maConn) => {
       server.__connections.push(maConn)
     }
-    console.log('server', options)
     const server = createServer(options, async (stream, request) => {
       let maConn, conn
       // eslint-disable-next-line
@@ -149,6 +147,7 @@ class WebsocketsOverTor extends WebSockets {
       .on('listening', () => listener.emit('listening'))
       .on('error', err => listener.emit('error', err))
       .on('close', () => listener.emit('close'))
+      .on('connection', function connection() { console.log('client connected') })
 
     // Keep track of open connections to destroy in case of timeout
     server.__connections = []
