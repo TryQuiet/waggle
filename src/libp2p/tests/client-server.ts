@@ -17,7 +17,7 @@ function dumpPEM(tag: string, body, path: string) {
     `${formatPEM(Buffer.from(body).toString('base64'))}\n` +
     `-----END ${tag}-----\n`
   )
-  fs.writeFileSync(`src/files2/${path}`, result)
+  fs.writeFileSync(`testingFixtures/certificates/files2/${path}`, result)
   return Buffer.from(result)
 }
 
@@ -92,12 +92,12 @@ const createPems = async () => {
 }
 
 // const sanityCheck = {
-//   ca: fs.readFileSync('src/files/ca-certificate.pem'),
-//   ca_key: fs.readFileSync('src/files/ca-key.pem'),
-//   servKey: fs.readFileSync('src/files/key.pem'),
-//   servCert: fs.readFileSync('src/files/certificate.pem'),
-//   userKey: fs.readFileSync('src/files/client-key.pem'),
-//   userCert: fs.readFileSync('src/files/client-certificate.pem')
+//   ca: fs.readFileSync('testingFixtures/certificates/files/ca-certificate.pem'),
+//   ca_key: fs.readFileSync('testingFixtures/certificates/files/ca-key.pem'),
+//   servKey: fs.readFileSync('testingFixtures/certificates/files/key.pem'),
+//   servCert: fs.readFileSync('testingFixtures/certificates/files/certificate.pem'),
+//   userKey: fs.readFileSync('testingFixtures/certificates/files/client-key.pem'),
+//   userCert: fs.readFileSync('testingFixtures/certificates/files/client-certificate.pem')
 // }
 
 // --------------------------------- section with client-server connection

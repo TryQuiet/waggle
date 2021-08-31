@@ -147,7 +147,6 @@ class WebsocketsOverTor extends WebSockets {
       .on('listening', () => listener.emit('listening'))
       .on('error', err => listener.emit('error', err))
       .on('close', () => listener.emit('close'))
-      .on('connection', function connection() { console.log('client connected') })
 
     // Keep track of open connections to destroy in case of timeout
     server.__connections = []
@@ -196,7 +195,6 @@ class WebsocketsOverTor extends WebSockets {
           multiaddrs.push(m)
         }
       }
-
       return multiaddrs
     }
     return listener
