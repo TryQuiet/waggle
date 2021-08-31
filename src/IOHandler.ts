@@ -5,6 +5,7 @@ import { EventTypesResponse } from './socket/constantsReponse'
 import { Storage } from './storage'
 import debug from 'debug'
 import PeerId from 'peer-id'
+import { loadAllMessages } from './socket/events/messages'
 
 const log = Object.assign(debug('waggle:iohandler'), {
   error: debug('waggle:iohandler:err')
@@ -26,23 +27,25 @@ export default class IOProxy {
   }
 
   public subscribeForTopic = async (peerId: string, channelData: IChannelInfo) => {
-    console.log('subscribeForTopic')
+    log(`${peerId} is subscribing for channel ${channelData.address}`)
     await this.getStorage(peerId).subscribeForChannel(channelData.address, channelData)
   }
 
-  public updateChannels = async (peerId) => {
-    await this.getStorage(peerId).updateChannels()
+  public updateChannels = async (peerId: string) => {
+    const channels = await this.getStorage(peerId).updateChannels()
+    this.io.emit(EventTypesResponse.RESPONSE_GET_PUBLIC_CHANNELS, channels)
   }
 
-  public askForMessages = async (peerId, channelAddress: string, ids: string[]) => {
-    await this.getStorage(peerId).askForMessages(channelAddress, ids)
+  public askForMessages = async (peerId: string, channelAddress: string, ids: string[]) => {
+    const messages = await this.getStorage(peerId).askForMessages(channelAddress, ids)
+    loadAllMessages(this.io, messages.filteredMessages, messages.channelAddress)
   }
 
-  public loadAllMessages = async (peerId, channelAddress: string) => {
+  public loadAllMessages = async (peerId: string, channelAddress: string) => {
     this.getStorage(peerId).loadAllChannelMessages(channelAddress)
   }
 
-  public saveCertificate = async (peerId, certificate: string) => {
+  public saveCertificate = async (peerId: string, certificate: string) => {
     await this.getStorage(peerId).saveCertificate(certificate)
   }
 
@@ -120,8 +123,9 @@ export default class IOProxy {
         this.emitCertificateRegistrationError('Registering username failed.')
         return
     }
-    const certificate: string = await response.json()
-    this.io.emit(EventTypesResponse.SEND_USER_CERTIFICATE, { payload: certificate })
+    const registrarResponse: { certificate: string, peers: string[] } = await response.json()
+    log(`Sending certificate with ${registrarResponse.peers.length} peers`)
+    this.io.emit(EventTypesResponse.SEND_USER_CERTIFICATE, { payload: registrarResponse })
   }
 
   public emitCertificateRegistrationError(message: string) {

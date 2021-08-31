@@ -39,11 +39,9 @@ export class ConnectionsManager {
   agentHost: string
   agentPort: number
   socksProxyAgent: any
-  storage: Storage
   options: ConnectionsManagerOptions
   zbayDir: string
   io: SocketIO.Server
-  bootstrapMultiaddrs: string[]
   libp2pTransportClass: any
   StorageCls: any
   tor: Tor

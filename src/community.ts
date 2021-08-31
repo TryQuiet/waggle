@@ -24,16 +24,16 @@ interface CommunityData {
 
 export default class CommunitiesManager {
   connectionsManager: ConnectionsManager
-  networks: Map<string, Storage>
+  communities: Map<string, Storage>
 
   constructor(connectionsManager: ConnectionsManager) {
     this.connectionsManager = connectionsManager
-    this.networks = new Map()
+    this.communities = new Map()
   }
 
   public getStorage(peerId: string): Storage {
     try {
-      return this.networks.get(peerId)
+      return this.communities.get(peerId)
     } catch (e) {
       log.error(`No available Storage for peer ${peerId}`)
       throw e
@@ -67,18 +67,20 @@ export default class CommunitiesManager {
 
   public initStorage = async (peerId: PeerId, onionAddress: string, port: number, bootstrapMultiaddrs: string[]): Promise<string> => {
     const listenAddrs = `/dns4/${onionAddress}/tcp/${port}/ws`
+    const peerIdB58string = peerId.toB58String()
     const libp2pObj = await this.connectionsManager._initLip2p(peerId, listenAddrs, bootstrapMultiaddrs)
     const storage = new this.connectionsManager.StorageCls(
       this.connectionsManager.zbayDir,
       this.connectionsManager.io,
       {
         ...this.connectionsManager.options,
-        orbitDbDir: `OrbitDB${peerId.toB58String()}`,
-        ipfsDir: `Ipfs${peerId.toB58String()}`
+        orbitDbDir: `OrbitDB${peerIdB58string}`,
+        ipfsDir: `Ipfs${peerIdB58string}`
       }
     )
     await storage.init(libp2pObj.libp2p, peerId)
-    this.networks.set(peerId.toB58String(), storage)
+    this.communities.set(peerIdB58string, storage)
+    log(`Initialized storage for peer ${peerIdB58string}`)
     return libp2pObj.localAddress
   }
 

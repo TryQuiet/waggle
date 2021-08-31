@@ -30,6 +30,7 @@ export const runWaggle = async (): Promise<any> => {
       },
       createPaths: false,
       isWaggleMobileMode: false,
+      spawnTor: false,
       torControlPort: options.torControl,
       torPassword: options.torPassword
     }

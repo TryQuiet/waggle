@@ -277,7 +277,7 @@ export class Storage {
     return channels
   }
 
-  public async updateChannels() {
+  public async updateChannels(): Promise<ChannelInfoResponse> {
     /** Update list of available public channels */
     if (!this.publicChannelsEventsAttached) {
       this.channels.events.on('replicated', () => {
@@ -288,7 +288,7 @@ export class Storage {
       })
       this.publicChannelsEventsAttached = true
     }
-    loadAllPublicChannels(this.io, this.getChannelsResponse())
+    return this.getChannelsResponse()
   }
 
   protected getAllEventLogEntries(db: EventStore<any>): any[] {
@@ -363,7 +363,7 @@ export class Storage {
     }
   }
 
-  public async askForMessages(channelAddress: string, ids: string[]) {
+  public async askForMessages(channelAddress: string, ids: string[]): Promise<{filteredMessages: IMessage[], channelAddress: string}> {
     const repo = this.publicChannelsRepos.get(channelAddress)
     if (!repo) return
     const messages = this.getAllEventLogEntries(repo.db)
@@ -372,7 +372,7 @@ export class Storage {
     for (let id of ids) {
       filteredMessages.push(...messages.filter(i => i.id === id))
     }
-    loadAllMessages(this.io, filteredMessages, channelAddress)
+    return { filteredMessages, channelAddress }
   }
 
   public async sendMessage(channelAddress: string, message: IMessage) {
@@ -569,6 +569,18 @@ export class Storage {
     log('Saving certificate...')
     await this.certificates.add(certificate)
     return true
+  }
+
+  public getAllUsers() {
+    const certs = this.getAllEventLogEntries(this.certificates)
+    const allUsers = []
+    for (const cert of certs) {
+      const parsedCert = parseCertificate(cert)
+      const onionAddress = getCertFieldValue(parsedCert, CertFieldsTypes.commonName)
+      const peerId = getCertFieldValue(parsedCert, CertFieldsTypes.peerId)
+      allUsers.push({ onionAddress, peerId })
+    }
+    return allUsers
   }
 
   public usernameExists(username: string): boolean {

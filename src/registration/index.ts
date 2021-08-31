@@ -59,6 +59,16 @@ export class CertificateRegistration {
     }
   }
 
+  public async getPeers (): Promise<string[]> {
+    const users = this._storage.getAllUsers()
+    const peers = users.map(async (userData: {onionAddress: string, peerId: string}) => {
+      const [port] = await fp(1234) // port probably does not matter - to be checked
+      return `/dns4/${userData.onionAddress}/tcp/${port as string}/ws/p2p/${userData.peerId}`
+    })
+
+    return await Promise.all(peers)
+  }
+
   private async registerUser(req: Request, res: Response): Promise<void> {
     const userData = new UserCsrData()
     userData.csr = req.body.data
@@ -86,7 +96,10 @@ export class CertificateRegistration {
       res.status(400).send()
       return
     }
-    res.send(JSON.stringify(cert.userCertString))
+    res.send({
+      certificate: JSON.stringify(cert.userCertString),
+      peers: await this.getPeers()
+    })
   }
 
   private async registerCertificate(userCsr: string): Promise<Certificate> {
