@@ -1,10 +1,10 @@
 import PeerId, { JSONPeerId } from 'peer-id'
-import { ConnectionsManager } from './libp2p/connectionsManager'
-import { Storage } from './storage'
-import { getPorts } from './utils'
+import { ConnectionsManager } from '../libp2p/connectionsManager'
+import { Storage } from '../storage'
+import { getPorts } from '../utils'
 import debug from 'debug'
-import { DataFromPems } from './common/types'
-import { CertificateRegistration } from './registration'
+import { DataFromPems } from '../common/types'
+import { CertificateRegistration } from '../registration'
 
 const log = Object.assign(debug('waggle:communities'), {
   error: debug('waggle:communities:err')
@@ -82,6 +82,12 @@ export default class CommunitiesManager {
     this.communities.set(peerIdB58string, storage)
     log(`Initialized storage for peer ${peerIdB58string}`)
     return libp2pObj.localAddress
+  }
+
+  public closeStorages = async () => {
+    for (const storage of this.communities.values()) {
+      await storage.stopOrbitDb()
+    }
   }
 
   public setupRegistrationService = async (storage: Storage, dataFromPems: DataFromPems, hiddenServicePrivKey?: string, port?: number): Promise<CertificateRegistration> => {

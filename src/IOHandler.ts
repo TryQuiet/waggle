@@ -1,5 +1,5 @@
 import { IChannelInfo, IMessage } from './common/types'
-import CommunitiesManager from './community'
+import CommunitiesManager from './communities/manager'
 import { ConnectionsManager } from './libp2p/connectionsManager'
 import { EventTypesResponse } from './socket/constantsReponse'
 import { Storage } from './storage'

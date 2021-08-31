@@ -6,7 +6,7 @@ import * as os from 'os'
 import fs from 'fs'
 import PeerId from 'peer-id'
 import { getPorts, torBinForPlatform, torDirForPlatform } from './utils'
-import CommunitiesManager from './community'
+import CommunitiesManager from './communities/manager'
 
 export default class Node {
   tor: Tor

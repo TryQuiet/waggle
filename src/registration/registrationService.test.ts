@@ -140,10 +140,12 @@ describe('Registration service', () => {
     )
     const saveCertificate = jest.spyOn(storage, 'saveCertificate')
     const response = await registerUserTest(user.userCsr, ports.socksPort)
-    const returnedUserCertificate = await response.json()
+    const responseData = await response.json()
+    console.log(responseData)
     expect(saveCertificate).toBeCalledTimes(1)
-    const isProperUserCert = await verifyUserCert(certRoot.rootCertString, returnedUserCertificate)
+    const isProperUserCert = await verifyUserCert(certRoot.rootCertString, responseData.certificate)
     expect(isProperUserCert.result).toBe(true)
+    expect(responseData.peers.length).toBe(1)
   })
 
   it('returns 403 if username already exists', async () => {

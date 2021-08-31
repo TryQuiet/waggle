@@ -97,7 +97,7 @@ export class CertificateRegistration {
       return
     }
     res.send({
-      certificate: JSON.stringify(cert.userCertString),
+      certificate: cert.userCertString,
       peers: await this.getPeers()
     })
   }

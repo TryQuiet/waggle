@@ -5,7 +5,7 @@ import WebsocketsOverTor from '../libp2p/websocketOverTor'
 import Websockets from 'libp2p-websockets'
 import { DataServer } from '../socket/DataServer'
 import { ConnectionsManager } from '../libp2p/connectionsManager'
-import CommunitiesManager from '../community'
+import CommunitiesManager from '../communities/manager'
 /**
  * More customizable version of Node (entry node), mainly for testing purposes
  */
