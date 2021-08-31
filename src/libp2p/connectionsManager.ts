@@ -189,7 +189,7 @@ export class ConnectionsManager {
             enabled: true,
             list: bootstrapMultiaddrsList // provide array of multiaddrs
           },
-          autoDial: true
+          autoDial: false
         },
         relay: {
           enabled: true,
