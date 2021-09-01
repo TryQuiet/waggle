@@ -42,8 +42,6 @@ export const spawnTorProcess = async (zbayDirPath: string, ports?: Ports): Promi
 export const createMinConnectionManager = (options: ConnectionsManagerOptions): ConnectionsManager => {
   if (!options.env?.appDataPath) throw new Error('Test connection manager is lacking appDataPath!')
   return new ConnectionsManager({
-    port: 1111,
-    host: 'abcd.onion',
     agentHost: 'localhost',
     agentPort: 2222,
     io: new DummyIOServer(),
