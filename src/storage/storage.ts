@@ -329,37 +329,22 @@ export class Storage {
 
     if (repo && !repo.eventsAttached) {
       log('Subscribing to channel ', channelAddress)
-      if (!this.options.isWaggleMobileMode) {
-        db.events.on('write', (_address, entry) => {
-          log(`Writing to public channel db ${channelAddress}`)
-          socketMessage(this.io, { message: entry.payload.value, channelAddress })
-        })
-        db.events.on('replicated', () => {
-          const ids = this.getAllEventLogEntries(db).map(msg => msg.id)
-          console.log('Message replicated')
-          sendIdsToZbay(this.io, ids, channelAddress)
-        })
-        db.events.on('ready', () => {
-          const ids = this.getAllEventLogEntries(db).map(msg => msg.id)
-          sendIdsToZbay(this.io, ids, channelAddress)
-        })
-        repo.eventsAttached = true
+      db.events.on('write', (_address, entry) => {
+        log(`Writing to public channel db ${channelAddress}`)
+        socketMessage(this.io, { message: entry.payload.value, channelAddress })
+      })
+      db.events.on('replicated', () => {
+        const ids = this.getAllEventLogEntries(db).map(msg => msg.id)
+        console.log('Message replicated')
+        sendIdsToZbay(this.io, ids, channelAddress)
+      })
+      db.events.on('ready', () => {
         const ids = this.getAllEventLogEntries(db).map(msg => msg.id)
         sendIdsToZbay(this.io, ids, channelAddress)
-      } else {
-        db.events.on('write', (_address, entry) => {
-          log(`Writing to messages db ${channelAddress}`)
-          log(entry.payload.value)
-          socketMessage(this.io, { message: entry.payload.value, channelAddress })
-        })
-        db.events.on('replicated', () => {
-          log('Message replicated')
-          loadAllMessages(this.io, this.getAllEventLogEntries(db), channelAddress)
-        })
-        repo.eventsAttached = true
-        loadAllMessages(this.io, this.getAllEventLogEntries(db), channelAddress)
-        log('Subscription to channel ready', channelAddress)
-      }
+      })
+      repo.eventsAttached = true
+      const ids = this.getAllEventLogEntries(db).map(msg => msg.id)
+      sendIdsToZbay(this.io, ids, channelAddress)
     }
   }
 

@@ -29,7 +29,6 @@ export const runWaggle = async (): Promise<any> => {
         appDataPath: options.directory
       },
       createPaths: false,
-      isWaggleMobileMode: false,
       spawnTor: false,
       torControlPort: options.torControl,
       torPassword: options.torPassword

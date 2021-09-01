@@ -13,6 +13,10 @@
 
 * Creating and relaunching community; launching registrar (via websockets)
 
+### Removed
+
+* isWaggleMobileMode option
+
 ## [2.1.0]
 
 ### Added
