@@ -10,7 +10,6 @@ import Bootstrap from 'libp2p-bootstrap'
 import { Storage } from '../storage'
 import { getPorts, torBinForPlatform, torDirForPlatform } from '../utils'
 import { ZBAY_DIR_PATH } from '../constants'
-import path from 'path'
 import { ConnectionsManagerOptions } from '../common/types'
 import fetch, { Response } from 'node-fetch'
 import debug from 'debug'
@@ -84,7 +83,7 @@ export class ConnectionsManager {
     const ports = await getPorts()
     this.tor = new Tor({
       torPath: torBinForPlatform(),
-      appDataPath: path.join.apply(null, [ZBAY_DIR_PATH, 'Zbay']),
+      appDataPath: this.zbayDir,
       controlPort: this.options.torControlPort || ports.controlPort,
       socksPort: this.agentPort,
       torPassword: this.options.torPassword,
