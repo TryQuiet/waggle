@@ -34,10 +34,10 @@ function formatPEM(pemString: string) {
   return resultString
 }
 
-const createPems = async () => {
+export const createPems = async (onion1, onion2) => {
   const userData = {
     zbayNickname: 'dev99damian1',
-    commonName: 'nqnw4kc4c77fb47lk52m5l57h4tcxceo7ymxekfn7yh5m66t4jv2olad',
+    commonName: onion1,
     peerId: 'Qmf3ySkYqLET9xtAtDzvAr5Pp3egK1H3C5iJAZm1SpLert',
     dmPublicKey: 'dmPublicKey1',
     signAlg: configCrypto.signAlg,
@@ -46,7 +46,7 @@ const createPems = async () => {
 
   const userData2 = {
     zbayNickname: 'dev99damian2',
-    commonName: 'afjhsdkhfhksb47lk52m5l57h4tcxceo7ymxekfn7sdfsdfgsjdgfeia',
+    commonName: onion2,
     peerId: 'Qmf3ySkYqLET9xtAtDzvAr5Pp3egK1H3C5iJAZm1SpLEp6',
     dmPublicKey: 'dmPublicKey2',
     signAlg: configCrypto.signAlg,
@@ -91,14 +91,14 @@ const createPems = async () => {
   return pems
 }
 
-// const sanityCheck = {
-//   ca: fs.readFileSync('testingFixtures/certificates/files/ca-certificate.pem'),
-//   ca_key: fs.readFileSync('testingFixtures/certificates/files/ca-key.pem'),
-//   servKey: fs.readFileSync('testingFixtures/certificates/files/key.pem'),
-//   servCert: fs.readFileSync('testingFixtures/certificates/files/certificate.pem'),
-//   userKey: fs.readFileSync('testingFixtures/certificates/files/client-key.pem'),
-//   userCert: fs.readFileSync('testingFixtures/certificates/files/client-certificate.pem')
-// }
+const sanityCheck = {
+  ca: fs.readFileSync('testingFixtures/certificates/files/ca-certificate.pem'),
+  ca_key: fs.readFileSync('testingFixtures/certificates/files/ca-key.pem'),
+  servKey: fs.readFileSync('testingFixtures/certificates/files/key.pem'),
+  servCert: fs.readFileSync('testingFixtures/certificates/files/certificate.pem'),
+  userKey: fs.readFileSync('testingFixtures/certificates/files/client-key.pem'),
+  userCert: fs.readFileSync('testingFixtures/certificates/files/client-certificate.pem')
+}
 
 // --------------------------------- section with client-server connection
 
@@ -140,9 +140,9 @@ const start = async () => {
     subtle: webcrypto.subtle
   }))
 
-  const pems = await createPems()
-  await server(pems)
-  await client(pems)
+  //const pems = await createPems()
+  await server(sanityCheck)
+  await client(sanityCheck)
 }
 /* eslint-disable */
 start()
