@@ -56,13 +56,12 @@ export class LocalNode extends Node {
 
 export class NodeWithoutTor extends LocalNode {
   public async init(): Promise<void> {
-    console.log('USING NodeWithoutTor')
+    console.log('Using NodeWithoutTor')
     const dataServer = await this.initDataServer()
     const connectonsManager = await this.initConnectionsManager(
       dataServer,
       StorageTestSnapshot,
       {
-        bootstrapMultiaddrs: this.bootstrapMultiaddrs,
         ...this.storageOptions,
         env: {
           appDataPath: this.appDataPath
@@ -72,34 +71,27 @@ export class NodeWithoutTor extends LocalNode {
     )
     const communities = new CommunitiesManager(connectonsManager)
     const peerId = await this.getPeer()
-    await communities.initStorage(
+    this.localAddress = await communities.initStorage(
       peerId,
       '0.0.0.0',
       this.port,
       this.bootstrapMultiaddrs
     )
     this.storage = communities.getStorage(peerId.toB58String())
-    this.localAddress = 'todo'
   }
 
   async initConnectionsManager(dataServer: DataServer, storageClass?: any, options?: any): Promise<ConnectionsManager> {
-    const connectonsManager = new ConnectionsManager({
+    return new ConnectionsManager({
       io: dataServer.io,
       storageClass,
-      options: {
-        bootstrapMultiaddrs: process.env.BOOTSTRAP_ADDRS ? [process.env.BOOTSTRAP_ADDRS] : [],
-        isEntryNode: true,
-        ...options
-      }
+      options
     })
-    await connectonsManager.init()
-    return connectonsManager
   }
 }
 
 export class NodeWithTor extends LocalNode {
   public async init(): Promise<void> {
-    console.log('USING NodeWithTor')
+    console.log('Using NodeWithTor')
     this.tor = await this.spawnTor()
     const onionAddress = await this.spawnService()
     console.log('onion', onionAddress)
@@ -108,7 +100,6 @@ export class NodeWithTor extends LocalNode {
       dataServer,
       StorageTestSnapshot,
       {
-        bootstrapMultiaddrs: this.bootstrapMultiaddrs,
         ...this.storageOptions,
         env: {
           appDataPath: this.appDataPath
@@ -118,13 +109,12 @@ export class NodeWithTor extends LocalNode {
     )
     const communities = new CommunitiesManager(connectonsManager)
     const peerId = await this.getPeer()
-    await communities.initStorage(
+    this.localAddress = await communities.initStorage(
       peerId,
       onionAddress,
       this.port,
       this.bootstrapMultiaddrs
     )
     this.storage = communities.getStorage(peerId.toB58String())
-    this.localAddress = 'todo'
   }
 }

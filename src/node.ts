@@ -47,9 +47,9 @@ export default class Node {
     return await PeerId.createFromJSON(parsedId)
   }
 
-  async getPeer(): Promise<PeerId | null> {
+  async getPeer(): Promise<PeerId> {
     if (!this.peerIdFileName) {
-      return null
+      return await PeerId.create()
     }
     return await this.getStaticPeer()
   }
@@ -128,10 +128,10 @@ export default class Node {
       io: dataServer.io,
       storageClass,
       options: {
-        bootstrapMultiaddrs: process.env.BOOTSTRAP_ADDRS ? [process.env.BOOTSTRAP_ADDRS] : [],
         isEntryNode: true,
         torControlPort: this.torControlPort,
         torPassword: this.tor.torPassword,
+        spawnTor: false,
         ...options
       }
     })

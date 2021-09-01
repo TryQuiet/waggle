@@ -8,7 +8,7 @@ import PeerId from 'peer-id'
 import WebsocketsOverTor from './websocketOverTor'
 import Bootstrap from 'libp2p-bootstrap'
 import { Storage } from '../storage'
-import { getPorts, torBinForPlatform, torDirForPlatform } from '../utils'
+import { torBinForPlatform, torDirForPlatform } from '../utils'
 import { ZBAY_DIR_PATH } from '../constants'
 import { ConnectionsManagerOptions } from '../common/types'
 import fetch, { Response } from 'node-fetch'
@@ -17,6 +17,7 @@ import CustomLibp2p, { Libp2pType } from './customLibp2p'
 import { Tor } from '../torManager'
 import initListeners from '../socket/listeners'
 import IOProxy from '../IOHandler'
+import { Connection } from 'libp2p-gossipsub/src/interfaces'
 
 const log = Object.assign(debug('waggle:conn'), {
   error: debug('waggle:conn:err')
@@ -33,8 +34,6 @@ export interface IConstructor {
 }
 
 export class ConnectionsManager {
-  host: string
-  port: number
   agentHost: string
   agentPort: number
   socksProxyAgent: any
@@ -45,9 +44,7 @@ export class ConnectionsManager {
   StorageCls: any
   tor: Tor
 
-  constructor({ host, port, agentHost, agentPort, options, storageClass, io }: IConstructor) {
-    this.host = host
-    this.port = port
+  constructor({ agentHost, agentPort, options, storageClass, io }: IConstructor) {
     this.io = io
     this.agentPort = agentPort
     this.agentHost = agentHost
@@ -77,14 +74,17 @@ export class ConnectionsManager {
     return new SocksProxyAgent({ port: this.agentPort, host: this.agentHost })
   }
 
-  public init = async () => {
+  public initListeners = () => {
     initListeners(this.io, new IOProxy(this))
+  }
 
-    const ports = await getPorts()
+  public init = async () => {
+    this.initListeners()
+
     this.tor = new Tor({
       torPath: torBinForPlatform(),
       appDataPath: this.zbayDir,
-      controlPort: this.options.torControlPort || ports.controlPort,
+      controlPort: this.options.torControlPort,
       socksPort: this.agentPort,
       torPassword: this.options.torPassword,
       options: {
@@ -103,7 +103,7 @@ export class ConnectionsManager {
     }
   }
 
-  public _initLip2p = async (peerId: PeerId, listenAddrs: string, bootstrapMultiaddrs: string[]) => {
+  public initLibp2p = async (peerId: PeerId, listenAddrs: string, bootstrapMultiaddrs: string[]): Promise<{libp2p: Libp2pType, localAddress: string}> => {
     const localAddress = `${listenAddrs}/p2p/${peerId.toB58String()}`
     const libp2p = ConnectionsManager.createBootstrapNode({
       peerId: peerId,
@@ -113,14 +113,14 @@ export class ConnectionsManager {
       bootstrapMultiaddrsList: bootstrapMultiaddrs,
       transportClass: this.libp2pTransportClass
     })
-    libp2p.connectionManager.on('peer:connect', async connection => {
-      log('Connected to', connection.remotePeer.toB58String())
+    libp2p.connectionManager.on('peer:connect', async (connection: Connection) => {
+      log(`${peerId.toB58String()} connected to ${connection.remotePeer.toB58String()}`)
     })
     libp2p.on('peer:discovery', (peer: PeerId) => {
-      log(`Discovered ${peer.toB58String()}`)
+      log(`${peerId.toB58String()} discovered ${peer.toB58String()}`)
     })
-    libp2p.connectionManager.on('peer:disconnect', connection => {
-      log('Disconnected from', connection.remotePeer.toB58String())
+    libp2p.connectionManager.on('peer:disconnect', (connection: Connection) => {
+      log(`${peerId.toB58String()} disconnected from ${connection.remotePeer.toB58String()}`)
     })
     return {
       libp2p,
@@ -188,7 +188,7 @@ export class ConnectionsManager {
             enabled: true,
             list: bootstrapMultiaddrsList // provide array of multiaddrs
           },
-          autoDial: false
+          autoDial: true
         },
         relay: {
           enabled: true,

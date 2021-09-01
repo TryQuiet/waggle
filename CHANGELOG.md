@@ -8,7 +8,6 @@
 * ConnectionsManager api changed
 * Refactor responsibilities into separate classes
 * Many websocket events need peerId now; Socket responses contain peerId
-* Disabled autoDial in libp2p peer discovery
 
 ### Added
 
