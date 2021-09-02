@@ -68,7 +68,7 @@ export default class CommunitiesManager {
   public initStorage = async (peerId: PeerId, onionAddress: string, port: number, bootstrapMultiaddrs: string[]): Promise<string> => {
     const listenAddrs = `/dns4/${onionAddress}/tcp/${port}/ws`
     const peerIdB58string = peerId.toB58String()
-    const libp2pObj = await this.connectionsManager._initLip2p(peerId, listenAddrs, bootstrapMultiaddrs)
+    const libp2pObj = await this.connectionsManager.initLibp2p(peerId, listenAddrs, bootstrapMultiaddrs)
     const storage = new this.connectionsManager.StorageCls(
       this.connectionsManager.zbayDir,
       this.connectionsManager.io,

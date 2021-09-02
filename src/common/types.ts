@@ -32,7 +32,6 @@ export class StorageOptions {
   orbitDbDir?: string
   ipfsDir?: string
   createPaths: boolean = true
-  isWaggleMobileMode: boolean
   isEntryNode?: boolean = false
 }
 
@@ -52,13 +51,12 @@ export class ConnectionsManagerOptions {
 
   bootstrapMultiaddrs?: string[] = []
   createPaths?: boolean = true
-  isWaggleMobileMode?: boolean = true
   isEntryNode?: boolean = false
   createSnapshot?: boolean = false
   useSnapshot?: boolean = false
   libp2pTransportClass?: any = null
   spawnTor?: boolean = true
-  torControlPort?: number
+  torControlPort: number
   torPassword?: string
 }
 

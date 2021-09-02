@@ -1,6 +1,6 @@
 import { ConnectionsManager } from './connectionsManager'
 import { DummyIOServer, getPorts } from '../utils'
-import { createTmpDir, testBootstrapMultiaddrs, TmpDir, tmpZbayDirPath } from '../testUtils'
+import { createTmpDir, TmpDir, tmpZbayDirPath } from '../testUtils'
 
 let tmpDir: TmpDir
 let tmpAppDataPath: string
@@ -24,7 +24,7 @@ describe('Connections manager', () => {
         env: {
           appDataPath: tmpAppDataPath
         },
-        bootstrapMultiaddrs: testBootstrapMultiaddrs
+        torControlPort: ports.controlPort
       }
     })
     await connectionsManager.init()
@@ -33,7 +33,6 @@ describe('Connections manager', () => {
   })
 
   it('inits only tor control if spawnTor is set to false', async () => {
-    const torControlPort = 9090
     const torPassword = 'testTorPassword'
     const ports = await getPorts()
     connectionsManager = new ConnectionsManager({
@@ -44,9 +43,8 @@ describe('Connections manager', () => {
         env: {
           appDataPath: tmpAppDataPath
         },
-        bootstrapMultiaddrs: testBootstrapMultiaddrs,
         spawnTor: false,
-        torControlPort,
+        torControlPort: ports.controlPort,
         torPassword
       }
     })
@@ -54,6 +52,6 @@ describe('Connections manager', () => {
     expect(connectionsManager.tor.process).toBeNull()
     const torControl = connectionsManager.tor.torControl
     expect(torControl.password).toEqual(torPassword)
-    expect(torControl.params.port).toEqual(torControlPort)
+    expect(torControl.params.port).toEqual(ports.controlPort)
   })
 })

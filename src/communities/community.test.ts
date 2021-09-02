@@ -1,7 +1,8 @@
 import CommunitiesManager from './manager'
 import { ConnectionsManager } from '../libp2p/connectionsManager'
-import { createMinConnectionManager, createTmpDir } from '../testUtils'
+import { createMinConnectionManager, createTmpDir, tmpZbayDirPath } from '../testUtils'
 import PeerId from 'peer-id'
+import { getPorts } from '../utils'
 
 describe('Community manager', () => {
   let connectionsManager: ConnectionsManager
@@ -9,7 +10,11 @@ describe('Community manager', () => {
 
   beforeEach(async () => {
     const appDataPath = createTmpDir()
-    connectionsManager = createMinConnectionManager({ env: { appDataPath: appDataPath.name } })
+    const ports = await getPorts()
+    connectionsManager = createMinConnectionManager({
+      env: { appDataPath: tmpZbayDirPath(appDataPath.name) },
+      torControlPort: ports.controlPort
+    })
     await connectionsManager.init()
   })
 

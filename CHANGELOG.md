@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [3.0.0]
 
 ### Changed
 
@@ -12,6 +12,10 @@
 ### Added
 
 * Creating and relaunching community; launching registrar (via websockets)
+
+### Removed
+
+* isWaggleMobileMode option
 
 ## [2.1.0]
 
