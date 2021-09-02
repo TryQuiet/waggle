@@ -20,6 +20,7 @@ interface IConstructor {
   controlPort: number
   socksPort: number
   httpTunnelPort?: number
+  torPassword?: string
 }
 export class Tor {
   process: child_process.ChildProcessWithoutNullStreams | any = null
@@ -35,12 +36,13 @@ export class Tor {
   httpTunnelPort: string
   torPassword: string
   torHashedPassword: string
-  constructor({ torPath, options, appDataPath, controlPort, socksPort, httpTunnelPort }: IConstructor) {
+  constructor({ torPath, options, appDataPath, controlPort, socksPort, httpTunnelPort, torPassword }: IConstructor) {
     this.torPath = path.normalize(torPath)
     this.options = options
     this.services = new Map()
     this.appDataPath = appDataPath
     this.controlPort = controlPort
+    this.torPassword = torPassword
     this.socksPort = socksPort.toString()
     this.httpTunnelPort = httpTunnelPort ? httpTunnelPort.toString() : null
   }
@@ -51,11 +53,7 @@ export class Tor {
         throw new Error('Tor already initialized')
       }
       this.generateHashedPassword()
-      this.torControl = new TorControl({
-        port: this.controlPort,
-        host: 'localhost',
-        password: this.torPassword
-      })
+      this.initTorControl()
       const dirPath = this.appDataPath || ZBAY_DIR_PATH
 
       if (!fs.existsSync(dirPath)) {
@@ -86,6 +84,14 @@ export class Tor {
       } else {
         this.spawnTor(resolve)
       }
+    })
+  }
+
+  public initTorControl = () => {
+    this.torControl = new TorControl({
+      port: this.controlPort,
+      host: 'localhost',
+      password: this.torPassword
     })
   }
 
@@ -130,7 +136,7 @@ export class Tor {
     virtPort: number
     targetPort: number
     privKey: string
-  }): Promise<any> {
+  }): Promise<string> {
     const status = await this.torControl.sendCommand(
       `ADD_ONION ${privKey} Flags=Detach Port=${virtPort},127.0.0.1:${targetPort}`
     )

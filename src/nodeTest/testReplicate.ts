@@ -138,7 +138,7 @@ const runTest = async () => {
   }
 
   // Launch entry node
-  bootstrapNode = await launchNode(0, 'mockBootstrapMultiaddress', true, false)
+  bootstrapNode = await launchNode(0, '/mockBootstrapMultiaddress', true, false)
 
   // Launch other nodes
   const numbers = [...Array(nodesCount + 1).keys()].splice(1)

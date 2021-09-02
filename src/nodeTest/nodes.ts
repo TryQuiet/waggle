@@ -5,6 +5,7 @@ import WebsocketsOverTor from '../libp2p/websocketOverTor'
 import Websockets from 'libp2p-websockets'
 import { DataServer } from '../socket/DataServer'
 import { ConnectionsManager } from '../libp2p/connectionsManager'
+import CommunitiesManager from '../communities/manager'
 /**
  * More customizable version of Node (entry node), mainly for testing purposes
  */
@@ -56,14 +57,12 @@ export class LocalNode extends Node {
 
 export class NodeWithoutTor extends LocalNode {
   public async init(): Promise<void> {
-    console.log('USING NodeWithoutTor')
+    console.log('Using NodeWithoutTor')
     const dataServer = await this.initDataServer()
     const connectonsManager = await this.initConnectionsManager(
       dataServer,
-      '0.0.0.0',
       StorageTestSnapshot,
       {
-        bootstrapMultiaddrs: this.bootstrapMultiaddrs,
         ...this.storageOptions,
         env: {
           appDataPath: this.appDataPath
@@ -71,45 +70,39 @@ export class NodeWithoutTor extends LocalNode {
         libp2pTransport: Websockets
       }
     )
-    this.storage = connectonsManager.storage
-    this.localAddress = connectonsManager.localAddress
-    await this.initListeners(dataServer, connectonsManager)
+    const certs = {} as { cert: string; key: string; ca: string[]; }
+    const communities = new CommunitiesManager(connectonsManager)
+    const peerId = await this.getPeer()
+    this.localAddress = await communities.initStorage(
+      peerId,
+      '0.0.0.0',
+      this.port,
+      this.bootstrapMultiaddrs,
+      certs,
+    )
+    this.storage = communities.getStorage(peerId.toB58String())
   }
 
-  async initConnectionsManager(dataServer: DataServer, host: string, storageClass?: any, options?: any): Promise<ConnectionsManager> {
-    const peer = await this.getPeer()
-    const connectonsManager = new ConnectionsManager({
-      port: this.port,
-      httpTunnelPort: this.httpTunnelPort,
-      host: host,
+  async initConnectionsManager(dataServer: DataServer, storageClass?: any, options?: any): Promise<ConnectionsManager> {
+    return new ConnectionsManager({
       io: dataServer.io,
       storageClass,
-      options: {
-        bootstrapMultiaddrs: process.env.BOOTSTRAP_ADDRS ? [process.env.BOOTSTRAP_ADDRS] : [],
-        isEntryNode: true,
-        ...options
-      }
+      options
     })
-    const node = await connectonsManager.initializeNode(peer)
-    console.log(node)
-    await connectonsManager.initStorage()
-    return connectonsManager
   }
 }
 
 export class NodeWithTor extends LocalNode {
   public async init(): Promise<void> {
-    console.log('USING NodeWithTor')
+    console.log('Using NodeWithTor')
     this.tor = await this.spawnTor()
     const onionAddress = await this.spawnService()
     console.log('onion', onionAddress)
     const dataServer = await this.initDataServer()
     const connectonsManager = await this.initConnectionsManager(
       dataServer,
-      onionAddress,
       StorageTestSnapshot,
       {
-        bootstrapMultiaddrs: this.bootstrapMultiaddrs,
         ...this.storageOptions,
         env: {
           appDataPath: this.appDataPath
@@ -117,8 +110,16 @@ export class NodeWithTor extends LocalNode {
         libp2pTransport: WebsocketsOverTor
       }
     )
-    this.storage = connectonsManager.storage
-    this.localAddress = connectonsManager.localAddress
-    await this.initListeners(dataServer, connectonsManager)
+    const certs = {} as { cert: string; key: string; ca: string[]; }
+    const communities = new CommunitiesManager(connectonsManager)
+    const peerId = await this.getPeer()
+    this.localAddress = await communities.initStorage(
+      peerId,
+      onionAddress,
+      this.port,
+      this.bootstrapMultiaddrs,
+      certs
+    )
+    this.storage = communities.getStorage(peerId.toB58String())
   }
 }
