@@ -6,6 +6,7 @@ import Websockets from 'libp2p-websockets'
 import { DataServer } from '../socket/DataServer'
 import { ConnectionsManager } from '../libp2p/connectionsManager'
 import CommunitiesManager from '../communities/manager'
+import { CertsData } from '../common/types'
 /**
  * More customizable version of Node (entry node), mainly for testing purposes
  */
@@ -70,7 +71,8 @@ export class NodeWithoutTor extends LocalNode {
         libp2pTransport: Websockets
       }
     )
-    const certs = {} as { cert: string; key: string; ca: string[]; }
+    // eslint-disable-next-line
+    const certs = {} as CertsData
     const communities = new CommunitiesManager(connectonsManager)
     const peerId = await this.getPeer()
     this.localAddress = await communities.initStorage(
@@ -78,7 +80,7 @@ export class NodeWithoutTor extends LocalNode {
       '0.0.0.0',
       this.port,
       this.bootstrapMultiaddrs,
-      certs,
+      certs
     )
     this.storage = communities.getStorage(peerId.toB58String())
   }
@@ -110,7 +112,8 @@ export class NodeWithTor extends LocalNode {
         libp2pTransport: WebsocketsOverTor
       }
     )
-    const certs = {} as { cert: string; key: string; ca: string[]; }
+    // eslint-disable-next-line
+    const certs = {} as CertsData
     const communities = new CommunitiesManager(connectonsManager)
     const peerId = await this.getPeer()
     this.localAddress = await communities.initStorage(

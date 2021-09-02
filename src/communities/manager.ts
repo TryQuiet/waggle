@@ -3,7 +3,7 @@ import { ConnectionsManager } from '../libp2p/connectionsManager'
 import { Storage } from '../storage'
 import { getPorts } from '../utils'
 import debug from 'debug'
-import { DataFromPems } from '../common/types'
+import { CertsData, DataFromPems } from '../common/types'
 import { CertificateRegistration } from '../registration'
 
 const log = Object.assign(debug('waggle:communities'), {
@@ -40,7 +40,7 @@ export default class CommunitiesManager {
     }
   }
 
-  public create = async (certs: { cert: string; key: string; ca: string[]; }): Promise<CommunityData> => {
+  public create = async (certs: CertsData): Promise<CommunityData> => {
     const ports = await getPorts()
     const hiddenService = await this.connectionsManager.tor.createNewHiddenService(ports.libp2pHiddenService, ports.libp2pHiddenService)
     const peerId = await PeerId.create()
@@ -65,7 +65,7 @@ export default class CommunitiesManager {
     return await this.initStorage(await PeerId.createFromJSON(peerId), onionAddress, ports.libp2pHiddenService, bootstrapMultiaddrs, certs)
   }
 
-  public initStorage = async (peerId: PeerId, onionAddress: string, port: number, bootstrapMultiaddrs: string[], certs: { cert: string, key: string, ca: Array<string> }): Promise<string> => {
+  public initStorage = async (peerId: PeerId, onionAddress: string, port: number, bootstrapMultiaddrs: string[], certs: CertsData): Promise<string> => {
     const listenAddrs = `/dns4/${onionAddress}/tcp/${port}/ws`
     const peerIdB58string = peerId.toB58String()
     const libp2pObj = await this.connectionsManager.initLibp2p(peerId, listenAddrs, bootstrapMultiaddrs, certs)

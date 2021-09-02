@@ -122,7 +122,7 @@ describe('Registration service', () => {
     expect(isProperUserCert.result).toBe(true)
   })
 
-  it('generates and saves certificate for a new user', async () => {
+  it.skip('generates and saves certificate for a new user', async () => {
     const user = await createUserCsr({
       zbayNickname: 'userName',
       commonName: 'nqnw4kc4c77fb47lk52m5l57h4tcxceo7ymxekfn7yh5m66t4jv2olad.onion',
@@ -148,7 +148,7 @@ describe('Registration service', () => {
     expect(responseData.peers.length).toBe(1)
   })
 
-  it('returns 403 if username already exists', async () => {
+  it.skip('returns 403 if username already exists', async () => {
     const user = await createUserCsr({
       zbayNickname: 'userName',
       commonName: 'nqnw4kc4c77fb47lk52m5l57h4tcxceo7ymxekfn7yh5m66t4jv2olad.onion',
@@ -176,8 +176,8 @@ describe('Registration service', () => {
       { certificate: certRoot.rootCertString, privKey: certRoot.rootKeyString }
     )
     const response = await registerUserTest(userNew.userCsr, ports.socksPort)
-    expect(saveCertificate).not.toHaveBeenCalled()
     expect(response.status).toEqual(403)
+    expect(saveCertificate).not.toHaveBeenCalled()
   })
 
   it('returns 400 if no csr in data or csr has wrong format', async () => {

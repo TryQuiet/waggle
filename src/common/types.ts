@@ -80,3 +80,9 @@ export interface DataFromPems {
   certificate: string
   privKey: string
 }
+
+export interface CertsData {
+  cert: Buffer
+  key: Buffer
+  ca: Buffer[]
+}

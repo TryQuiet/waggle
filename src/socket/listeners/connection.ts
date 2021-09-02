@@ -1,5 +1,5 @@
 import { EventTypesServer } from '../constants'
-import { IChannelInfo, IMessage } from '../../common/types'
+import { CertsData, IChannelInfo, IMessage } from '../../common/types'
 import IOProxy from '../IOProxy'
 import PeerId from 'peer-id'
 
@@ -70,8 +70,8 @@ export const connections = (io, ioProxy: IOProxy) => {
     socket.on(EventTypesServer.CREATE_COMMUNITY, async (payload) => {
       await ioProxy.createCommunity(payload.id, payload.rootCertString, payload.rootCertKey)
     })
-    socket.on(EventTypesServer.LAUNCH_COMMUNITY, async (peerId: PeerId.JSONPeerId, hiddenServiceKey: string, peers: string[]) => {
-      await ioProxy.launchCommunity(peerId, hiddenServiceKey, peers)
+    socket.on(EventTypesServer.LAUNCH_COMMUNITY, async (peerId: PeerId.JSONPeerId, hiddenServiceKey: string, peers: string[], certs: CertsData) => {
+      await ioProxy.launchCommunity(peerId, hiddenServiceKey, peers, certs)
     })
     socket.on(EventTypesServer.LAUNCH_REGISTRAR, async (id: string, peerId: string, rootCertString: string, rootKeyString: string, hiddenServicePrivKey?: string, port?: number) => {
       await ioProxy.launchRegistrar(id, peerId, rootCertString, rootKeyString, hiddenServicePrivKey, port)

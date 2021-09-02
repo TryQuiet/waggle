@@ -7,6 +7,7 @@ import fs from 'fs'
 import PeerId from 'peer-id'
 import { getPorts, torBinForPlatform, torDirForPlatform } from './utils'
 import CommunitiesManager from './communities/manager'
+import { CertsData } from './common/types'
 
 export default class Node {
   tor: Tor
@@ -64,11 +65,14 @@ export default class Node {
     const connectonsManager = await this.initConnectionsManager(dataServer)
     const communities = new CommunitiesManager(connectonsManager)
     const peerId = await this.getPeer()
+    // eslint-disable-next-line
+    const certs = {} as CertsData // todo
     await communities.initStorage(
       peerId,
       onionAddress,
       this.port,
-      ['/dns4/2lmfmbj4ql56d55lmv7cdrhdlhls62xa4p6lzy6kymxuzjlny3vnwyqd.onion/tcp/7788/ws/p2p/Qmak8HeMad8X1HGBmz2QmHfiidvGnhu6w6ugMKtx8TFc85']
+      ['/dns4/2lmfmbj4ql56d55lmv7cdrhdlhls62xa4p6lzy6kymxuzjlny3vnwyqd.onion/tcp/7788/ws/p2p/Qmak8HeMad8X1HGBmz2QmHfiidvGnhu6w6ugMKtx8TFc85'],
+      certs
     )
     await communities.setupRegistrationService(
       communities.getStorage(peerId.toB58String()),

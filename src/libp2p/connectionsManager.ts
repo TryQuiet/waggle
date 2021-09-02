@@ -10,7 +10,7 @@ import Bootstrap from 'libp2p-bootstrap'
 import { Storage } from '../storage'
 import { torBinForPlatform, torDirForPlatform } from '../utils'
 import { ZBAY_DIR_PATH } from '../constants'
-import { ConnectionsManagerOptions } from '../common/types'
+import { CertsData, ConnectionsManagerOptions } from '../common/types'
 import fetch, { Response } from 'node-fetch'
 import debug from 'debug'
 import CustomLibp2p, { Libp2pType } from './customLibp2p'
@@ -19,7 +19,6 @@ import initListeners from '../socket/listeners'
 import IOProxy from '../socket/IOProxy'
 import { Connection } from 'libp2p-gossipsub/src/interfaces'
 import { HttpsProxyAgent } from 'https-proxy-agent'
-
 
 const log = Object.assign(debug('waggle:conn'), {
   error: debug('waggle:conn:err')
@@ -108,7 +107,7 @@ export class ConnectionsManager {
     }
   }
 
-  public initLibp2p = async (peerId: PeerId, listenAddrs: string, bootstrapMultiaddrs: string[], certs: { cert: string, key: string, ca: Array<string> }): Promise<{ libp2p: Libp2pType, localAddress: string }> => {
+  public initLibp2p = async (peerId: PeerId, listenAddrs: string, bootstrapMultiaddrs: string[], certs: CertsData): Promise<{ libp2p: Libp2pType, localAddress: string }> => {
     const localAddress = `${listenAddrs}/p2p/${peerId.toB58String()}`
     const libp2p = ConnectionsManager.createBootstrapNode({
       peerId: peerId,

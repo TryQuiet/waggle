@@ -59,9 +59,9 @@ export class CertificateRegistration {
     }
   }
 
-  public async getPeers (): Promise<string[]> {
+  public async getPeers(): Promise<string[]> {
     const users = this._storage.getAllUsers()
-    const peers = users.map(async (userData: {onionAddress: string, peerId: string}) => {
+    const peers = users.map(async (userData: { onionAddress: string, peerId: string }) => {
       const [port] = await fp(1234) // port probably does not matter - to be checked
       return `/dns4/${userData.onionAddress}/tcp/${port as string}/ws/p2p/${userData.peerId}`
     })
