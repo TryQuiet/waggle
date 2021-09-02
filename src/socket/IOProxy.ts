@@ -1,14 +1,14 @@
-import { IChannelInfo, IMessage } from './common/types'
-import CommunitiesManager from './communities/manager'
-import { ConnectionsManager } from './libp2p/connectionsManager'
-import { EventTypesResponse } from './socket/constantsReponse'
-import { Storage } from './storage'
+import { IChannelInfo, IMessage } from '../common/types'
+import CommunitiesManager from '../communities/manager'
+import { ConnectionsManager } from '../libp2p/connectionsManager'
+import { EventTypesResponse } from './constantsReponse'
+import { Storage } from '../storage'
 import debug from 'debug'
 import PeerId from 'peer-id'
-import { loadAllMessages } from './socket/events/messages'
+import { loadAllMessages } from './events/messages'
 
-const log = Object.assign(debug('waggle:iohandler'), {
-  error: debug('waggle:iohandler:err')
+const log = Object.assign(debug('waggle:io'), {
+  error: debug('waggle:io:err')
 })
 
 export default class IOProxy {
@@ -132,12 +132,12 @@ export default class IOProxy {
     this.io.emit(EventTypesResponse.CERTIFICATE_REGISTRATION_ERROR, { payload: message })
   }
 
-  public async createCommunity(id, rootCert?, rootKey?) {
+  public async createCommunity(communityId: string, rootCert?: string, rootKey?: string) {
     const communityData = await this.communities.create()
     if (rootCert && rootKey) {
-      await this.launchRegistrar(id, communityData.peerId.id, rootCert, rootKey)
+      await this.launchRegistrar(communityId, communityData.peerId.id, rootCert, rootKey)
     }
-    this.io.emit(EventTypesResponse.NEW_COMMUNITY, { id, payload: communityData })
+    this.io.emit(EventTypesResponse.NEW_COMMUNITY, { id: communityId, payload: communityData })
   }
 
   public async launchCommunity(peerId: PeerId.JSONPeerId, hiddenServiceKey: string, bootstrapMultiaddress: string[]) {
@@ -145,7 +145,7 @@ export default class IOProxy {
     this.io.emit(EventTypesResponse.COMMUNITY, { peerId, payload: address })
   }
 
-  public async launchRegistrar(id: string, peerId: string, rootCertString: string, rootKeyString: string, hiddenServicePrivKey?: string, port?: number) {
+  public async launchRegistrar(communityId: string, peerId: string, rootCertString: string, rootKeyString: string, hiddenServicePrivKey?: string, port?: number) {
     const registrar = await this.communities.setupRegistrationService(
       this.getStorage(peerId),
       {
@@ -158,7 +158,7 @@ export default class IOProxy {
     if (!registrar) {
       this.io.emit(EventTypesResponse.REGISTRAR_ERROR, { peerId, payload: 'Could not setup registrar' })
     } else {
-      this.io.emit(EventTypesResponse.REGISTRAR, { id, peerId, payload: registrar.getHiddenServiceData() })
+      this.io.emit(EventTypesResponse.REGISTRAR, { id: communityId, peerId, payload: registrar.getHiddenServiceData() })
     }
   }
 }

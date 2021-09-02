@@ -1,6 +1,6 @@
 import { EventTypesServer } from '../constants'
 import { IChannelInfo, IMessage } from '../../common/types'
-import IOProxy from '../../IOHandler'
+import IOProxy from '../IOProxy'
 import PeerId from 'peer-id'
 
 export const connections = (io, ioProxy: IOProxy) => {

@@ -1,4 +1,4 @@
-import IOProxy from '../../IOHandler'
+import IOProxy from '../IOProxy'
 import { connections } from './connection'
 
 const initListeners = (io: SocketIO.Server, ioProxy: IOProxy) => {
