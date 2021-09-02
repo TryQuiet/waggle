@@ -132,9 +132,12 @@ export default class IOProxy {
     this.io.emit(EventTypesResponse.CERTIFICATE_REGISTRATION_ERROR, { payload: message })
   }
 
-  public async createCommunity() {
+  public async createCommunity(id, rootCert?, rootKey?) {
     const communityData = await this.communities.create()
-    this.io.emit(EventTypesResponse.NEW_COMMUNITY, { payload: communityData })
+    if (rootCert && rootKey) {
+      await this.launchRegistrar(id, communityData.peerId.id, rootCert, rootKey)
+    }
+    this.io.emit(EventTypesResponse.NEW_COMMUNITY, { id, payload: communityData })
   }
 
   public async launchCommunity(peerId: PeerId.JSONPeerId, hiddenServiceKey: string, bootstrapMultiaddress: string[]) {
@@ -142,7 +145,7 @@ export default class IOProxy {
     this.io.emit(EventTypesResponse.COMMUNITY, { peerId, payload: address })
   }
 
-  public async launchRegistrar(peerId: string, rootCertString: string, rootKeyString: string, hiddenServicePrivKey?: string, port?: number) {
+  public async launchRegistrar(id: string, peerId: string, rootCertString: string, rootKeyString: string, hiddenServicePrivKey?: string, port?: number) {
     const registrar = await this.communities.setupRegistrationService(
       this.getStorage(peerId),
       {
@@ -155,7 +158,7 @@ export default class IOProxy {
     if (!registrar) {
       this.io.emit(EventTypesResponse.REGISTRAR_ERROR, { peerId, payload: 'Could not setup registrar' })
     } else {
-      this.io.emit(EventTypesResponse.REGISTRAR, { peerId, payload: registrar.getHiddenServiceData() })
+      this.io.emit(EventTypesResponse.REGISTRAR, { id, peerId, payload: registrar.getHiddenServiceData() })
     }
   }
 }
