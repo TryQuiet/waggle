@@ -18,26 +18,28 @@ export default class Node {
   peerIdFileName: string | null
   port: number
   socksProxyPort: number
+  httpTunnelPort: number
   torControlPort: number
   hiddenServicePort: number
 
-  constructor(torPath?: string, pathDevLib?: string, peerIdFileName?: string, port = 7788, socksProxyPort = 9050, torControlPort = 9051, hiddenServicePort = 7788, torAppDataPath = ZBAY_DIR_PATH, hiddenServiceSecret?: string) {
+  constructor(torPath?: string, pathDevLib?: string, peerIdFileName?: string, port = 7788, socksProxyPort = 9050, httpTunnelPort = 9052, torControlPort = 9051, hiddenServicePort = 7788, torAppDataPath = ZBAY_DIR_PATH, hiddenServiceSecret?: string) {
     this.torPath = torPath || torBinForPlatform()
     this.torAppDataPath = torAppDataPath
     this.pathDevLib = pathDevLib || torDirForPlatform()
     this.peerIdFileName = peerIdFileName || this.getPeerIdFileName()
     this.port = port
     this.socksProxyPort = socksProxyPort
+    this.httpTunnelPort = httpTunnelPort
     this.torControlPort = torControlPort
     this.hiddenServicePort = hiddenServicePort
     this.hiddenServiceSecret = hiddenServiceSecret
   }
 
-  public getHiddenServiceSecret (): string {
+  public getHiddenServiceSecret(): string {
     return this.hiddenServiceSecret || process.env.HIDDEN_SERVICE_SECRET
   }
 
-  public getPeerIdFileName (): string {
+  public getPeerIdFileName(): string {
     return process.env.PEERID_FILE
   }
 
@@ -64,12 +66,13 @@ export default class Node {
     await connectonsManager.setupRegistrationService(this.tor, process.env.HIDDEN_SERVICE_SECRET_REGISTRATION, dataFromRootPems)
   }
 
-  async spawnTor (): Promise<Tor> {
+  async spawnTor(): Promise<Tor> {
     const tor = new Tor({
       torPath: this.torPath,
       appDataPath: this.torAppDataPath,
       controlPort: this.torControlPort,
       socksPort: this.socksProxyPort,
+      httpTunnelPort: this.httpTunnelPort,
       options: {
         env: {
           LD_LIBRARY_PATH: this.pathDevLib,
@@ -82,7 +85,7 @@ export default class Node {
     return tor
   }
 
-  async spawnService (): Promise<string> {
+  async spawnService(): Promise<string> {
     console.log('Spawning service')
     let service: any
     try {

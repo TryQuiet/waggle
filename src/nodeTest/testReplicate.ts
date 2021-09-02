@@ -63,6 +63,8 @@ const launchNode = async (i: number, bootstrapAddress?: string, createMessages: 
   const [port] = await fp(7788 + i)
   const [socksProxyPort] = await fp(1234 + i)
   const [torControlPort] = await fp(9051 + i)
+  const [httpTunnelPort] = await fp(9052 + i)
+
   const node = new NodeType(
     undefined,
     undefined,
@@ -71,6 +73,7 @@ const launchNode = async (i: number, bootstrapAddress?: string, createMessages: 
     socksProxyPort,
     torControlPort,
     port,
+    httpTunnelPort,
     torDir,
     undefined,
     {
@@ -114,7 +117,7 @@ const runTest = async () => {
   // Run second node connecting to entry node
   // Check if the second node replicated all messages within a set time range
 
-  process.on('SIGINT', function() {
+  process.on('SIGINT', function () {
     log('Caught interrupt signal')
     log(`Removing tmp dir: ${tmpDir.name}`)
     tmpDir.removeCallback()

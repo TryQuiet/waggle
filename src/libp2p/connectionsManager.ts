@@ -20,6 +20,8 @@ import CustomLibp2p, { Libp2pType } from './customLibp2p'
 import { Tor } from '../torManager'
 import { CertificateRegistration } from '../registration'
 import { EventTypesResponse } from '../socket/constantsReponse'
+import { Buffer } from 'buffer'
+import { HttpsProxyAgent } from 'https-proxy-agent'
 
 const log = Object.assign(debug('waggle:conn'), {
   error: debug('waggle:conn:err')
@@ -30,6 +32,7 @@ export class ConnectionsManager {
   port: number
   agentHost: string
   agentPort: number
+  httpTunnelPort: number
   socksProxyAgent: any
   libp2p: null | CustomLibp2p
   localAddress: string | null
@@ -42,12 +45,16 @@ export class ConnectionsManager {
   bootstrapMultiaddrs: string[]
   libp2pTransportClass: any
   trackerApi: any
+  cert: Buffer
+  key: Buffer
+  ca: Buffer[]
 
-  constructor({ host, port, agentHost, agentPort, options, io, storageClass }: IConstructor) {
+  constructor({ host, port, agentHost, agentPort, httpTunnelPort, options, io, storageClass }: IConstructor) {
     this.host = host
     this.port = port
     this.io = io
     this.agentPort = agentPort
+    this.httpTunnelPort = httpTunnelPort
     this.agentHost = agentHost
     this.localAddress = null
     this.options = {
@@ -61,6 +68,11 @@ export class ConnectionsManager {
     this.bootstrapMultiaddrs = this.getBootstrapMultiaddrs()
     this.listenAddrs = `/dns4/${this.host}/tcp/${this.port}/ws`
     this.libp2pTransportClass = options.libp2pTransportClass || WebsocketsOverTor // We use tor by default
+
+    // chwilowo
+    this.cert = Buffer.alloc(5)
+    this.key = Buffer.alloc(5)
+    this.ca = [Buffer.alloc(5)]
 
     process.on('unhandledRejection', error => {
       console.error(error)
@@ -76,7 +88,8 @@ export class ConnectionsManager {
     if (!this.agentPort || !this.agentHost) return
 
     log('Creating socks proxy agent')
-    this.socksProxyAgent = new SocksProxyAgent({ port: this.agentPort, host: this.agentHost })
+
+    this.socksProxyAgent = new HttpsProxyAgent({ port: this.httpTunnelPort, host: this.agentHost })
   }
 
   private readonly getBootstrapMultiaddrs = () => {
@@ -130,6 +143,9 @@ export class ConnectionsManager {
       peerId: this.peerId,
       listenAddrs: [this.listenAddrs],
       agent: this.socksProxyAgent,
+      cert: this.cert,
+      key: this.key,
+      ca: this.ca,
       localAddr: this.localAddress,
       bootstrapMultiaddrsList: this.bootstrapMultiaddrs,
       transportClass: this.libp2pTransportClass
@@ -311,6 +327,9 @@ export class ConnectionsManager {
     peerId,
     listenAddrs,
     agent,
+    cert,
+    key,
+    ca,
     localAddr,
     bootstrapMultiaddrsList,
     transportClass
@@ -319,6 +338,9 @@ export class ConnectionsManager {
       peerId,
       listenAddrs,
       agent,
+      cert,
+      key,
+      ca,
       localAddr,
       bootstrapMultiaddrsList,
       transportClass
@@ -329,6 +351,9 @@ export class ConnectionsManager {
     peerId,
     listenAddrs,
     agent,
+    cert,
+    key,
+    ca,
     localAddr,
     bootstrapMultiaddrsList,
     transportClass
@@ -370,7 +395,10 @@ export class ConnectionsManager {
         transport: {
           [transportClass.name]: {
             websocket: {
-              agent
+              agent,
+              cert,
+              key,
+              ca
             },
             localAddr
           }

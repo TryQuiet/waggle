@@ -37,15 +37,20 @@ afterEach(async () => {
 
 test('start and close connectionsManager', async () => {
   const ports = await getPorts()
+
+  const [controlPort] = await fp(9051)
+  const httpTunnelPort = (await fp(controlPort as number + 1)).shift()
+  const socksPort = (await fp(httpTunnelPort as number + 1)).shift()
+
   const torPath = utils.torBinForPlatform()
   dataServer = new DataServer(ports.dataServer)
   await dataServer.listen()
-  const [controlPort] = await fp(9051)
   const tor = new Tor({
-    socksPort: ports.socksPort,
+    socksPort,
     torPath,
     appDataPath: tmpAppDataPath,
-    controlPort: controlPort,
+    controlPort,
+    httpTunnelPort,
     options: {
       env: {
         LD_LIBRARY_PATH: utils.torDirForPlatform(),
@@ -61,7 +66,7 @@ test('start and close connectionsManager', async () => {
     port: ports.libp2pHiddenService,
     host: `${service1.onionAddress}.onion`,
     agentHost: 'localhost',
-    agentPort: ports.socksPort,
+    agentPort: socksPort,
     io: dataServer.io,
     options: {
       env: {

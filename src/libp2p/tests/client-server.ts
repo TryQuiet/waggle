@@ -7,7 +7,7 @@ import WebSocketServer from 'it-ws/server'
 import fs from 'fs'
 import { Crypto } from '@peculiar/webcrypto'
 
-import { createUserCert, createUserCsr, createRootCA, verifyUserCert, configCrypto } from '@zbayapp/identity'
+import { createUserCert, createUserCsr, createRootCA, configCrypto } from '@zbayapp/identity'
 
 // ---------------------------- section with creating pems
 
@@ -75,19 +75,6 @@ export const createPems = async (onion1, onion2) => {
     userCert: dumpPEM('CERTIFICATE', userCert2.userCertObject.certificate.toSchema(true).toBER(false), 'userCert.pem')
   }
 
-  const result1 = await verifyUserCert(
-    rootCert.rootCertString,
-    userCert.userCertString
-  )
-
-  const result2 = await verifyUserCert(
-    rootCert.rootCertString,
-    userCert2.userCertString
-  )
-
-  console.log('cert 1 valid ', result1.result)
-  console.log('cert 2 valid ', result2.result)
-
   return pems
 }
 
@@ -107,9 +94,16 @@ const server = async (pems) => {
     cert: pems.servCert,
     key: pems.servKey,
     ca: [pems.ca],
-    requestCert: false
+    requestCert: true
+
   })
-  const wss = WebSocketServer({ server: server, verifyClient: () => true })
+  const wss = WebSocketServer({
+    server: server,
+    // eslint-disable-next-line
+    verifyClient: function (info, done) {
+      done(true)
+    }
+  })
   await wss.listen(8081)
   wss.on('connection', function connection() {
     console.log('client connected')
@@ -132,6 +126,7 @@ const client = async (pems) => {
   pipe(stream, stream, stream)
 }
 
+// eslint-disable-next-line
 const start = async () => {
   const webcrypto = new Crypto()
   setEngine('newEngine', webcrypto, new CryptoEngine({
@@ -140,9 +135,10 @@ const start = async () => {
     subtle: webcrypto.subtle
   }))
 
-  //const pems = await createPems()
+  // const pems = await createPems()
   await server(sanityCheck)
   await client(sanityCheck)
 }
-/* eslint-disable */
-start()
+
+// eslint-disable-next-line
+//start()

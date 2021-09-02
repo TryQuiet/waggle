@@ -11,6 +11,8 @@ import os from 'os'
 import multiaddr from 'multiaddr'
 import debug from 'debug'
 import PeerId from 'peer-id'
+import https from 'https'
+
 const log: any = debug('libp2p:websockets:listener:waggle')
 log.error = debug('libp2p:websockets:listener:waggle:error')
 
@@ -79,7 +81,6 @@ class WebsocketsOverTor extends WebSockets {
     const cOpts = ma.toOptions()
     log('dialing %s:%s', cOpts.host, cOpts.port)
     const myUri = `${toUri(ma) as string}/?remoteAddress=${encodeURIComponent(this.localAddress)}`
-    console.log('connect options', options)
     const rawSocket = connect(myUri, Object.assign({ binary: true }, options))
     if (!options.signal) {
       await rawSocket.connected()
@@ -112,12 +113,28 @@ class WebsocketsOverTor extends WebSockets {
     return rawSocket
   }
 
-  prepareListener = ({ handler, upgrader }, options = {}) => {
+  prepareListener = ({ handler, upgrader }) => {
     const listener: any = new EventEmitter()
     const trackConn = (server, maConn) => {
       server.__connections.push(maConn)
     }
-    const server = createServer(options, async (stream, request) => {
+
+    const serverHttps = https.createServer({
+      cert: this._websocketOpts.cert,
+      key: this._websocketOpts.key,
+      ca: [this._websocketOpts.ca[0]],
+      requestCert: true
+    })
+
+    const optionsServ = {
+      server: serverHttps,
+      // eslint-disable-next-line
+      verifyClient: function (info, done) {
+        done(true)
+      }
+    }
+
+    const server = createServer(optionsServ, async (stream, request) => {
       let maConn, conn
       // eslint-disable-next-line
       const query = url.parse(request.url, true).query
@@ -208,7 +225,7 @@ class WebsocketsOverTor extends WebSockets {
       options = {}
     }
 
-    return this.prepareListener({ handler, upgrader: this._upgrader }, options)
+    return this.prepareListener({ handler, upgrader: this._upgrader })
   }
 }
 

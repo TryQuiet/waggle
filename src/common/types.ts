@@ -61,6 +61,7 @@ export interface IConstructor {
   host: string
   port: number
   agentPort?: number
+  httpTunnelPort?: number
   agentHost?: string
   options?: Partial<ConnectionsManagerOptions>
   io: any

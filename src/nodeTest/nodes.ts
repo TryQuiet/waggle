@@ -29,6 +29,7 @@ export class LocalNode extends Node {
     port = 7788,
     socksProxyPort = 9050,
     torControlPort = 9051,
+    httpTunnelPort = 9052,
     hiddenServicePort = 7788,
     torAppDataPath = ZBAY_DIR_PATH,
     hiddenServiceSecret?: string,
@@ -40,7 +41,7 @@ export class LocalNode extends Node {
     if (process.env.TOR_PORT) {
       _port = Number(process.env.TOR_PORT)
     }
-    super(torPath, pathDevLib, peerIdFileName, _port, socksProxyPort, torControlPort, hiddenServicePort, torAppDataPath, hiddenServiceSecret)
+    super(torPath, pathDevLib, peerIdFileName, _port, socksProxyPort, torControlPort, hiddenServicePort, httpTunnelPort, torAppDataPath, hiddenServiceSecret)
     this.storageOptions = storageOptions
     this.appDataPath = appDataPath
     this.bootstrapMultiaddrs = bootstrapMultiaddrs
@@ -79,6 +80,7 @@ export class NodeWithoutTor extends LocalNode {
     const peer = await this.getPeer()
     const connectonsManager = new ConnectionsManager({
       port: this.port,
+      httpTunnelPort: this.httpTunnelPort,
       host: host,
       io: dataServer.io,
       storageClass,

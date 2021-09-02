@@ -19,6 +19,7 @@ interface IConstructor {
   appDataPath: string
   controlPort: number
   socksPort: number
+  httpTunnelPort?: number
 }
 export class Tor {
   process: child_process.ChildProcessWithoutNullStreams | any = null
@@ -31,15 +32,17 @@ export class Tor {
   torDataDirectory: string
   torPidPath: string
   socksPort: string
+  httpTunnelPort: string
   torPassword: string
   torHashedPassword: string
-  constructor({ torPath, options, appDataPath, controlPort, socksPort }: IConstructor) {
+  constructor({ torPath, options, appDataPath, controlPort, socksPort, httpTunnelPort }: IConstructor) {
     this.torPath = path.normalize(torPath)
     this.options = options
     this.services = new Map()
     this.appDataPath = appDataPath
     this.controlPort = controlPort
     this.socksPort = socksPort.toString()
+    this.httpTunnelPort = httpTunnelPort ? httpTunnelPort.toString() : null
   }
 
   public init = async (): Promise<void> => {
@@ -100,6 +103,7 @@ export class Tor {
       [
         '--SocksPort',
         this.socksPort,
+        ...(this.httpTunnelPort ? ['--HTTPTunnelPort', this.httpTunnelPort] : []),
         '--ControlPort',
         this.controlPort.toString(),
         '--PidFile',
