@@ -34,14 +34,17 @@ describe('websocketOverTor connection test', () => {
 
   beforeAll(async () => {
     jest.clearAllMocks()
-    port1 = await fp(8080)
-    port2 = await fp(8081)
+    const [port1Arr] = await fp(8080)
+    const [port2Arr] = await fp(8081)
+    port1 = port1Arr
+    port2 = port2Arr
     console.log(port1, port2)
     tmpDir = createTmpDir()
     tmpAppDataPath = tmpZbayDirPath(tmpDir.name)
 
     const torPath = utils.torBinForPlatform()
     const [controlPort] = await fp(9051)
+    console.log(controlPort)
     httpTunnelPort = (await fp(controlPort as number + 1)).shift()
     const socksPort = (await fp(httpTunnelPort + 1)).shift()
     tor = new Tor({
