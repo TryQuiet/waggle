@@ -34,7 +34,7 @@ describe('websocketOverTor connection test', () => {
 
   beforeAll(async () => {
     jest.clearAllMocks()
-    const [port1Arr] = await fp(8080)
+    const [port1Arr] = await fp(8090)
     const [port2Arr] = await fp(port1Arr as number + 1)
     port1 = port1Arr
     port2 = port2Arr
