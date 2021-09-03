@@ -29,10 +29,14 @@ describe('websocketOverTor connection test', () => {
   }
   let tor: Tor
   let httpTunnelPort: number
+  let port1: number
+  let port2: number
 
   beforeAll(async () => {
     jest.clearAllMocks()
-
+    port1 = await fp(8080)
+    port2 = await fp(8081)
+    console.log(port1, port2)
     tmpDir = createTmpDir()
     tmpAppDataPath = tmpZbayDirPath(tmpDir.name)
 
@@ -56,8 +60,8 @@ describe('websocketOverTor connection test', () => {
     })
     await tor.init()
 
-    service1 = await tor.createNewHiddenService(8080, 8080)
-    service2 = await tor.createNewHiddenService(8081, 8081)
+    service1 = await tor.createNewHiddenService(port1, port1)
+    service2 = await tor.createNewHiddenService(port2, port2)
   })
 
   afterAll(async () => {
@@ -99,7 +103,7 @@ describe('websocketOverTor connection test', () => {
         key: pems.servKey,
         ca: [pems.ca]
       },
-      localAddr: `/dns4/${service1.onionAddress}.onion/tcp/8080/wss/p2p/${peerId1}`
+      localAddr: `/dns4/${service1.onionAddress}.onion/tcp/${port1}/wss/p2p/${peerId1}`
     }
 
     const websocketsOverTorData2 = {
@@ -113,12 +117,12 @@ describe('websocketOverTor connection test', () => {
         key: pems.userKey,
         ca: [pems.ca]
       },
-      localAddr: `/dns4/${service2.onionAddress}.onion/tcp/8081/wss/p2p/${peerId2}`,
+      localAddr: `/dns4/${service2.onionAddress}.onion/tcp/${port2}/wss/p2p/${peerId2}`,
       serverOpts: {}
     }
-    const multiAddress = new Multiaddr(`/dns4/${service1.onionAddress}.onion/tcp/8080/wss/p2p/${peerId1}`)
+    const multiAddress = new Multiaddr(`/dns4/${service1.onionAddress}.onion/tcp/${port1}/wss/p2p/${peerId1}`)
 
-    const remoteAddress = new Multiaddr(`/dns4/${service2.onionAddress}.onion/tcp/8081/wss/p2p/${peerId2}`)
+    const remoteAddress = new Multiaddr(`/dns4/${service2.onionAddress}.onion/tcp/${port2}/wss/p2p/${peerId2}`)
 
     const ws1 = new WebsocketsOverTor(websocketsOverTorData1)
     const ws2 = new WebsocketsOverTor(websocketsOverTorData2)
@@ -175,7 +179,7 @@ describe('websocketOverTor connection test', () => {
         key: pems.servKey,
         ca: [pems.ca]
       },
-      localAddr: `/dns4/${service1.onionAddress}.onion/tcp/8080/wss/p2p/${peerId1}`
+      localAddr: `/dns4/${service1.onionAddress}.onion/tcp/${port1}/wss/p2p/${peerId1}`
     }
 
     const websocketsOverTorData2 = {
@@ -189,10 +193,10 @@ describe('websocketOverTor connection test', () => {
         key: anotherPems.userKey,
         ca: [pems.ca]
       },
-      localAddr: `/dns4/${service2.onionAddress}.onion/tcp/8081/wss/p2p/${peerId2}`,
+      localAddr: `/dns4/${service2.onionAddress}.onion/tcp/${port2}/wss/p2p/${peerId2}`,
       serverOpts: {}
     }
-    const multiAddress = new Multiaddr(`/dns4/${service1.onionAddress}.onion/tcp/8080/wss/p2p/${peerId1}`)
+    const multiAddress = new Multiaddr(`/dns4/${service1.onionAddress}.onion/tcp/${port1}/wss/p2p/${peerId1}`)
 
     const ws1 = new WebsocketsOverTor(websocketsOverTorData1)
     const ws2 = new WebsocketsOverTor(websocketsOverTorData2)
@@ -246,7 +250,7 @@ describe('websocketOverTor connection test', () => {
         key: anotherPems.servKey,
         ca: [pems.ca]
       },
-      localAddr: `/dns4/${service1.onionAddress}.onion/tcp/8080/wss/p2p/${peerId1}`
+      localAddr: `/dns4/${service1.onionAddress}.onion/tcp/${port1}/wss/p2p/${peerId1}`
     }
 
     const websocketsOverTorData2 = {
@@ -260,10 +264,10 @@ describe('websocketOverTor connection test', () => {
         key: pems.userKey,
         ca: [pems.ca]
       },
-      localAddr: `/dns4/${service2.onionAddress}.onion/tcp/8081/wss/p2p/${peerId2}`,
+      localAddr: `/dns4/${service2.onionAddress}.onion/tcp/${port2}/wss/p2p/${peerId2}`,
       serverOpts: {}
     }
-    const multiAddress = new Multiaddr(`/dns4/${service1.onionAddress}.onion/tcp/8080/wss/p2p/${peerId1}`)
+    const multiAddress = new Multiaddr(`/dns4/${service1.onionAddress}.onion/tcp/${port1}/wss/p2p/${peerId1}`)
 
     const ws1 = new WebsocketsOverTor(websocketsOverTorData1)
     const ws2 = new WebsocketsOverTor(websocketsOverTorData2)
