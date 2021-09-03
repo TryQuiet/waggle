@@ -31,6 +31,7 @@ describe('websocketOverTor connection test', () => {
   let httpTunnelPort: number
   let port1: number
   let port2: number
+  let listen
 
   beforeAll(async () => {
     jest.clearAllMocks()
@@ -70,6 +71,12 @@ describe('websocketOverTor connection test', () => {
   afterAll(async () => {
     await tor.kill()
     tmpDir.removeCallback()
+  })
+
+  afterEach(async () => {
+    if (listen) {
+      await listen.close()
+    }
   })
 
   it('websocketOverTor https connection', async () => {
@@ -130,7 +137,7 @@ describe('websocketOverTor connection test', () => {
     const ws1 = new WebsocketsOverTor(websocketsOverTorData1)
     const ws2 = new WebsocketsOverTor(websocketsOverTorData2)
 
-    const listen = await ws1.prepareListener(prepareListenerArg)
+    listen = await ws1.prepareListener(prepareListenerArg)
 
     await listen.listen(multiAddress)
 
@@ -143,8 +150,6 @@ describe('websocketOverTor connection test', () => {
 
     expect(onConnection).toBeCalled()
     expect(onConnection.mock.calls[0][0].remoteAddr).toEqual(remoteAddress)
-
-    await listen.close()
   })
 
   it('websocketOverTor invalid user cert', async () => {
@@ -204,7 +209,7 @@ describe('websocketOverTor connection test', () => {
     const ws1 = new WebsocketsOverTor(websocketsOverTorData1)
     const ws2 = new WebsocketsOverTor(websocketsOverTorData2)
 
-    const listen = await ws1.prepareListener(prepareListenerArg)
+    listen = await ws1.prepareListener(prepareListenerArg)
 
     await listen.listen(multiAddress)
 
@@ -214,8 +219,6 @@ describe('websocketOverTor connection test', () => {
     await expect(ws2.dial(multiAddress, {
       signal: singal
     })).rejects.toBeTruthy()
-
-    await listen.close()
   })
 
   it('websocketOverTor invalid server cert', async () => {
@@ -275,7 +278,7 @@ describe('websocketOverTor connection test', () => {
     const ws1 = new WebsocketsOverTor(websocketsOverTorData1)
     const ws2 = new WebsocketsOverTor(websocketsOverTorData2)
 
-    const listen = await ws1.prepareListener(prepareListenerArg)
+    listen = await ws1.prepareListener(prepareListenerArg)
 
     await listen.listen(multiAddress)
 
@@ -285,7 +288,5 @@ describe('websocketOverTor connection test', () => {
     await expect(ws2.dial(multiAddress, {
       signal: singal
     })).rejects.toBeTruthy()
-
-    await listen.close()
   })
 })
