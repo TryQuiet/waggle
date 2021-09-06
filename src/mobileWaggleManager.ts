@@ -6,10 +6,10 @@ export const runWaggle = async (): Promise<any> => {
   const program = new Command()
 
   program
-  .requiredOption('-d, --appDataPath <appDataPath>', 'app data path')
-  .requiredOption('-s, --socksPort <socksPort>', 'socks port')
-  .requiredOption('-c, --controlPort <controlPort>', 'control port')
-  .requiredOption('-a, --authCookie <authCookie>', 'control port authentication cookie')
+    .requiredOption('-d, --appDataPath <appDataPath>', 'app data path')
+    .requiredOption('-s, --socksPort <socksPort>', 'socks port')
+    .requiredOption('-c, --controlPort <controlPort>', 'control port')
+    .requiredOption('-a, --authCookie <authCookie>', 'control port authentication cookie')
 
   program.parse(process.argv)
 

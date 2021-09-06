@@ -44,9 +44,9 @@ export class TorControl {
           reject(new Error(`TOR: Control port error: ${data.toString() as string}`))
         }
       })
-      if(this.password) {
+      if (this.password) {
         this.connection.write('AUTHENTICATE "' + this.password + '"\r\n')
-      } else if(this.cookie) {
+      } else if (this.cookie) {
         // Cookie authentication must be invoked as a hexadecimal string passed without double quotes
         this.connection.write('AUTHENTICATE ' + this.cookie + '\r\n')
       }

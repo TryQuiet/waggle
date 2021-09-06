@@ -92,7 +92,7 @@ export class Tor {
       port: this.controlPort,
       host: 'localhost',
       password: this.torPassword,
-      cookie: this.torAuthCookie,
+      cookie: this.torAuthCookie
     })
   }
 
