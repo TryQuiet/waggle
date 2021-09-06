@@ -16,7 +16,7 @@ import debug from 'debug'
 import CustomLibp2p, { Libp2pType } from './customLibp2p'
 import { Tor } from '../torManager'
 import initListeners from '../socket/listeners'
-import IOProxy from '../IOHandler'
+import IOProxy from '../socket/IOProxy'
 import { Connection } from 'libp2p-gossipsub/src/interfaces'
 
 const log = Object.assign(debug('waggle:conn'), {
