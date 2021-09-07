@@ -67,8 +67,8 @@ export const connections = (io, ioProxy: IOProxy) => {
       console.log('Received saveCertificate websocket event, processing.')
       await ioProxy.saveCertificate(peerId, certificate)
     })
-    socket.on(EventTypesServer.CREATE_COMMUNITY, async (payload) => {
-      await ioProxy.createCommunity(payload.id, payload.rootCertString, payload.rootCertKey)
+    socket.on(EventTypesServer.CREATE_COMMUNITY, async (payload, certs: CertsData) => {
+      await ioProxy.createCommunity(payload.id, certs, payload.rootCertString, payload.rootCertKey)
     })
     socket.on(EventTypesServer.LAUNCH_COMMUNITY, async (peerId: PeerId.JSONPeerId, hiddenServiceKey: string, peers: string[], certs: CertsData) => {
       await ioProxy.launchCommunity(peerId, hiddenServiceKey, peers, certs)
