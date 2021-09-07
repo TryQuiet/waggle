@@ -1,5 +1,11 @@
 # Changelog
 
+## [3.1.1]
+
+### Changed
+
+* Registrar Api
+
 ## [3.1.0]
 
 ### Added
