@@ -111,7 +111,7 @@ export default class IOProxy {
     await this.getStorage(peerId).subscribeForAllConversations(conversations)
   }
 
-  public registerUserCertificate = async (serviceAddress: string, userCsr: string,id: string) => {
+  public registerUserCertificate = async (serviceAddress: string, userCsr: string, id: string) => {
     console.log('userCsr isnide IO', userCsr)
     const response = await this.connectionsManager.sendCertificateRegistrationRequest(serviceAddress, userCsr)
     switch (response.status) {
