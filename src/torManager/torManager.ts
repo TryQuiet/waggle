@@ -21,6 +21,7 @@ interface IConstructor {
   socksPort: number
   httpTunnelPort?: number
   torPassword?: string
+  torAuthCookie?: string
 }
 export class Tor {
   process: child_process.ChildProcessWithoutNullStreams | any = null
@@ -36,13 +37,15 @@ export class Tor {
   httpTunnelPort: string
   torPassword: string
   torHashedPassword: string
-  constructor({ torPath, options, appDataPath, controlPort, socksPort, httpTunnelPort, torPassword }: IConstructor) {
+  torAuthCookie: string
+  constructor({ torPath, options, appDataPath, controlPort, socksPort, httpTunnelPort, torPassword, torAuthCookie }: IConstructor) {
     this.torPath = path.normalize(torPath)
     this.options = options
     this.services = new Map()
     this.appDataPath = appDataPath
     this.controlPort = controlPort
     this.torPassword = torPassword
+    this.torAuthCookie = torAuthCookie
     this.socksPort = socksPort.toString()
     this.httpTunnelPort = httpTunnelPort ? httpTunnelPort.toString() : null
   }
@@ -91,7 +94,8 @@ export class Tor {
     this.torControl = new TorControl({
       port: this.controlPort,
       host: 'localhost',
-      password: this.torPassword
+      password: this.torPassword,
+      cookie: this.torAuthCookie
     })
   }
 
