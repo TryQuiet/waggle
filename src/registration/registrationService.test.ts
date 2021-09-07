@@ -122,7 +122,7 @@ describe('Registration service', () => {
     expect(isProperUserCert.result).toBe(true)
   })
 
-  it.skip('generates and saves certificate for a new user', async () => {
+  it('generates and saves certificate for a new user', async () => {
     const user = await createUserCsr({
       zbayNickname: 'userName',
       commonName: 'nqnw4kc4c77fb47lk52m5l57h4tcxceo7ymxekfn7yh5m66t4jv2olad.onion',
@@ -148,7 +148,7 @@ describe('Registration service', () => {
     expect(responseData.peers.length).toBe(1)
   })
 
-  it.skip('returns 403 if username already exists', async () => {
+  it('returns 403 if username already exists', async () => {
     const user = await createUserCsr({
       zbayNickname: 'userName',
       commonName: 'nqnw4kc4c77fb47lk52m5l57h4tcxceo7ymxekfn7yh5m66t4jv2olad.onion',

@@ -34,7 +34,7 @@ function formatPEM(pemString: string) {
   return resultString
 }
 
-export const createPems = async (onion1, onion2) => {
+export const createCertificatesTestHelper = async (onion1, onion2) => {
   const userData = {
     zbayNickname: 'dev99damian1',
     commonName: onion1,
@@ -76,15 +76,6 @@ export const createPems = async (onion1, onion2) => {
   }
 
   return pems
-}
-
-const sanityCheck = {
-  ca: fs.readFileSync('testingFixtures/certificates/files/ca-certificate.pem'),
-  ca_key: fs.readFileSync('testingFixtures/certificates/files/ca-key.pem'),
-  servKey: fs.readFileSync('testingFixtures/certificates/files/key.pem'),
-  servCert: fs.readFileSync('testingFixtures/certificates/files/certificate.pem'),
-  userKey: fs.readFileSync('testingFixtures/certificates/files/client-key.pem'),
-  userCert: fs.readFileSync('testingFixtures/certificates/files/client-certificate.pem')
 }
 
 // --------------------------------- section with client-server connection
@@ -135,10 +126,7 @@ const start = async () => {
     subtle: webcrypto.subtle
   }))
 
-  // const pems = await createPems()
-  await server(sanityCheck)
-  await client(sanityCheck)
+  const pems = await createCertificatesTestHelper('onion1.onion', 'onion2.onion')
+  await server(pems)
+  await client(pems)
 }
-
-// eslint-disable-next-line
-//start()

@@ -7,7 +7,7 @@ import * as utils from '../utils'
 // import SocksProxyAgent from './socksProxyAgent'
 import HttpsProxyAgent from 'https-proxy-agent'
 import { createTmpDir, TmpDir, tmpZbayDirPath } from '../testUtils'
-import { createPems } from './tests/client-server'
+import { createCertificatesTestHelper } from './tests/client-server'
 
 jest.setTimeout(120000)
 
@@ -80,7 +80,7 @@ describe('websocketOverTor connection test', () => {
   })
 
   it('websocketOverTor https connection', async () => {
-    const pems = await createPems(`${service1.onionAddress}.onion`, `${service2.onionAddress}.onion`)
+    const pems = await createCertificatesTestHelper(`${service1.onionAddress}.onion`, `${service2.onionAddress}.onion`)
 
     const prepareListenerArg = {
       handler: (x) => x,
@@ -98,9 +98,8 @@ describe('websocketOverTor connection test', () => {
     const peerId1 = 'Qme5NiSQ6V3cc3nyfYVtkkXDPGBSYEVUNCN5sM4DbyYc7s'
     const peerId2 = 'QmeCWxba5Yk1ZAKogQJsaHXoAermE7PgFZqpqyKNg65cSN'
 
-    const mockWebSocket = {
-      agent: HttpsProxyAgent({ host: 'localhost', port: httpTunnelPort })
-    }
+    const agent = HttpsProxyAgent({ host: 'localhost', port: httpTunnelPort })
+
     console.log(pems)
     const websocketsOverTorData1 = {
       upgrader: {
@@ -108,7 +107,7 @@ describe('websocketOverTor connection test', () => {
         upgradeInbound
       },
       websocket: {
-        ...mockWebSocket,
+        agent,
         cert: pems.servCert,
         key: pems.servKey,
         ca: [pems.ca]
@@ -122,7 +121,7 @@ describe('websocketOverTor connection test', () => {
         upgradeInbound
       },
       websocket: {
-        ...mockWebSocket,
+        agent,
         cert: pems.userCert,
         key: pems.userKey,
         ca: [pems.ca]
@@ -153,8 +152,8 @@ describe('websocketOverTor connection test', () => {
   })
 
   it('websocketOverTor invalid user cert', async () => {
-    const pems = await createPems(`${service1.onionAddress}.onion`, `${service2.onionAddress}.onion`)
-    const anotherPems = await createPems(`${service1.onionAddress}.onion`, `${service2.onionAddress}.onion`)
+    const pems = await createCertificatesTestHelper(`${service1.onionAddress}.onion`, `${service2.onionAddress}.onion`)
+    const anotherPems = await createCertificatesTestHelper(`${service1.onionAddress}.onion`, `${service2.onionAddress}.onion`)
 
     const prepareListenerArg = {
       handler: (x) => x,
@@ -172,9 +171,7 @@ describe('websocketOverTor connection test', () => {
     const peerId1 = 'Qme5NiSQ6V3cc3nyfYVtkkXDPGBSYEVUNCN5sM4DbyYc7s'
     const peerId2 = 'QmeCWxba5Yk1ZAKogQJsaHXoAermE7PgFZqpqyKNg65cSN'
 
-    const mockWebSocket = {
-      agent: HttpsProxyAgent({ host: 'localhost', port: httpTunnelPort })
-    }
+    const agent = HttpsProxyAgent({ host: 'localhost', port: httpTunnelPort })
 
     const websocketsOverTorData1 = {
       upgrader: {
@@ -182,7 +179,7 @@ describe('websocketOverTor connection test', () => {
         upgradeInbound
       },
       websocket: {
-        ...mockWebSocket,
+        agent,
         cert: pems.servCert,
         key: pems.servKey,
         ca: [pems.ca]
@@ -196,7 +193,7 @@ describe('websocketOverTor connection test', () => {
         upgradeInbound
       },
       websocket: {
-        ...mockWebSocket,
+        agent,
         cert: anotherPems.userCert,
         key: anotherPems.userKey,
         ca: [pems.ca]
@@ -222,8 +219,8 @@ describe('websocketOverTor connection test', () => {
   })
 
   it('websocketOverTor invalid server cert', async () => {
-    const pems = await createPems(`${service1.onionAddress}.onion`, `${service2.onionAddress}.onion`)
-    const anotherPems = await createPems(`${service1.onionAddress}.onion`, `${service2.onionAddress}.onion`)
+    const pems = await createCertificatesTestHelper(`${service1.onionAddress}.onion`, `${service2.onionAddress}.onion`)
+    const anotherPems = await createCertificatesTestHelper(`${service1.onionAddress}.onion`, `${service2.onionAddress}.onion`)
 
     const prepareListenerArg = {
       handler: (x) => x,
@@ -241,9 +238,7 @@ describe('websocketOverTor connection test', () => {
     const peerId1 = 'Qme5NiSQ6V3cc3nyfYVtkkXDPGBSYEVUNCN5sM4DbyYc7s'
     const peerId2 = 'QmeCWxba5Yk1ZAKogQJsaHXoAermE7PgFZqpqyKNg65cSN'
 
-    const mockWebSocket = {
-      agent: HttpsProxyAgent({ host: 'localhost', port: httpTunnelPort })
-    }
+    const agent = HttpsProxyAgent({ host: 'localhost', port: httpTunnelPort })
 
     const websocketsOverTorData1 = {
       upgrader: {
@@ -251,7 +246,7 @@ describe('websocketOverTor connection test', () => {
         upgradeInbound
       },
       websocket: {
-        ...mockWebSocket,
+        agent,
         cert: anotherPems.servCert,
         key: anotherPems.servKey,
         ca: [pems.ca]
@@ -265,7 +260,7 @@ describe('websocketOverTor connection test', () => {
         upgradeInbound
       },
       websocket: {
-        ...mockWebSocket,
+        agent,
         cert: pems.userCert,
         key: pems.userKey,
         ca: [pems.ca]

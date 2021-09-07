@@ -3,7 +3,7 @@ import { ConnectionsManager } from '../libp2p/connectionsManager'
 import { createMinConnectionManager, createTmpDir, tmpZbayDirPath } from '../testUtils'
 import PeerId from 'peer-id'
 import { getPorts } from '../utils'
-import { createPems } from '../libp2p/tests/client-server'
+import { createCertificatesTestHelper } from '../libp2p/tests/client-server'
 
 describe('Community manager', () => {
   let connectionsManager: ConnectionsManager
@@ -27,7 +27,7 @@ describe('Community manager', () => {
   it('creates new community', async () => {
     manager = new CommunitiesManager(connectionsManager)
     expect(manager.communities.size).toBe(0)
-    const pems = await createPems('address1.onion', 'address2.onion')
+    const pems = await createCertificatesTestHelper('address1.onion', 'address2.onion')
     const certs = {
       cert: pems.userCert,
       key: pems.userKey,
@@ -42,7 +42,7 @@ describe('Community manager', () => {
     manager = new CommunitiesManager(connectionsManager)
     expect(manager.communities.size).toBe(0)
     const peerId = await PeerId.create()
-    const pems = await createPems('address1.onion', 'address2.onion')
+    const pems = await createCertificatesTestHelper('address1.onion', 'address2.onion')
     const certs = {
       cert: pems.userCert,
       key: pems.userKey,

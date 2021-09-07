@@ -22,8 +22,9 @@ export default class Node {
   httpTunnelPort: number
   torControlPort: number
   hiddenServicePort: number
+  certificates: CertsData
 
-  constructor(torPath?: string, pathDevLib?: string, peerIdFileName?: string, port = 7788, socksProxyPort = 9050, httpTunnelPort = 9052, torControlPort = 9051, hiddenServicePort = 7788, torAppDataPath = ZBAY_DIR_PATH, hiddenServiceSecret?: string) {
+  constructor(torPath?: string, pathDevLib?: string, peerIdFileName?: string, port = 7788, socksProxyPort = 9050, httpTunnelPort = 9052, torControlPort = 9051, hiddenServicePort = 7788, torAppDataPath = ZBAY_DIR_PATH, hiddenServiceSecret?: string, certificates?: CertsData) {
     this.torPath = torPath || torBinForPlatform()
     this.torAppDataPath = torAppDataPath
     this.pathDevLib = pathDevLib || torDirForPlatform()
@@ -34,6 +35,7 @@ export default class Node {
     this.torControlPort = torControlPort
     this.hiddenServicePort = hiddenServicePort
     this.hiddenServiceSecret = hiddenServiceSecret
+    this.certificates = certificates
   }
 
   public getHiddenServiceSecret(): string {
@@ -66,7 +68,7 @@ export default class Node {
     const communities = new CommunitiesManager(connectonsManager)
     const peerId = await this.getPeer()
     // eslint-disable-next-line
-    const certs = {} as CertsData // todo
+    const certs = this.certificates
     await communities.initStorage(
       peerId,
       onionAddress,
