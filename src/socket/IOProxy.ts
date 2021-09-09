@@ -111,7 +111,7 @@ export default class IOProxy {
     await this.getStorage(peerId).subscribeForAllConversations(conversations)
   }
 
-  public registerUserCertificate = async (serviceAddress: string, userCsr: string, id: string) => {
+  public registerUserCertificate = async (serviceAddress: string, userCsr: string, communityId: string) => {
     const response = await this.connectionsManager.sendCertificateRegistrationRequest(serviceAddress, userCsr)
     switch (response.status) {
       case 200:
@@ -125,7 +125,7 @@ export default class IOProxy {
     }
     const registrarResponse: { certificate: string, peers: string[] } = await response.json()
     log(`Sending certificate with ${registrarResponse.peers.length} peers`)
-    this.io.emit(EventTypesResponse.SEND_USER_CERTIFICATE, { id, payload: registrarResponse })
+    this.io.emit(EventTypesResponse.SEND_USER_CERTIFICATE, { id: communityId, payload: registrarResponse })
   }
 
   public emitCertificateRegistrationError(message: string) {
@@ -140,9 +140,9 @@ export default class IOProxy {
     this.io.emit(EventTypesResponse.NEW_COMMUNITY, { id: communityId, payload: communityData })
   }
 
-  public async launchCommunity(id: string, peerId: PeerId.JSONPeerId, hiddenService: {address: string, privateKey: string}, bootstrapMultiaddress: string[]) {
+  public async launchCommunity(communityId: string, peerId: PeerId.JSONPeerId, hiddenService: {address: string, privateKey: string}, bootstrapMultiaddress: string[]) {
     const address = await this.communities.launch(peerId, hiddenService.privateKey, bootstrapMultiaddress)
-    this.io.emit(EventTypesResponse.COMMUNITY, { id })
+    this.io.emit(EventTypesResponse.COMMUNITY, { id: communityId })
   }
 
   public async launchRegistrar(communityId: string, peerId: string, rootCertString: string, rootKeyString: string, hiddenServicePrivKey?: string, port?: number) {
@@ -156,7 +156,7 @@ export default class IOProxy {
       port
     )
     if (!registrar) {
-      this.io.emit(EventTypesResponse.REGISTRAR_ERROR, { peerId, payload: 'Could not sidetup registrar' })
+      this.io.emit(EventTypesResponse.REGISTRAR_ERROR, { peerId, payload: 'Could not setup registrar' })
     } else {
       this.io.emit(EventTypesResponse.REGISTRAR, { id: communityId, peerId, payload: registrar.getHiddenServiceData() })
     }
