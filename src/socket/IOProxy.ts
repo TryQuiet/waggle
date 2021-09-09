@@ -141,7 +141,7 @@ export default class IOProxy {
   }
 
   public async launchCommunity(communityId: string, peerId: PeerId.JSONPeerId, hiddenService: {address: string, privateKey: string}, bootstrapMultiaddress: string[]) {
-    const address = await this.communities.launch(peerId, hiddenService.privateKey, bootstrapMultiaddress)
+    await this.communities.launch(peerId, hiddenService.privateKey, bootstrapMultiaddress)
     this.io.emit(EventTypesResponse.COMMUNITY, { id: communityId })
   }
 
