@@ -6,7 +6,7 @@ import Websockets from 'libp2p-websockets'
 import { DataServer } from '../socket/DataServer'
 import { ConnectionsManager } from '../libp2p/connectionsManager'
 import CommunitiesManager from '../communities/manager'
-import { CertsData } from '../common/types'
+import { createUsersCerts, dumpPEM } from '../libp2p/tests/client-server'
 /**
  * More customizable version of Node (entry node), mainly for testing purposes
  */
@@ -23,6 +23,7 @@ export class LocalNode extends Node {
   storage: any // Storage | StorageTestSnapshot
   localAddress: string
   bootstrapMultiaddrs: string[]
+  rootCa
 
   constructor(
     torPath?: string,
@@ -37,7 +38,8 @@ export class LocalNode extends Node {
     hiddenServiceSecret?: string,
     storageOptions?: TestStorageOptions,
     appDataPath?: string,
-    bootstrapMultiaddrs?: string[]
+    bootstrapMultiaddrs?: string[],
+    rootCa?
   ) {
     let _port: number = port
     if (process.env.TOR_PORT) {
@@ -47,6 +49,7 @@ export class LocalNode extends Node {
     this.storageOptions = storageOptions
     this.appDataPath = appDataPath
     this.bootstrapMultiaddrs = bootstrapMultiaddrs
+    this.rootCa = rootCa
   }
 
   async initDataServer(): Promise<DataServer> {
@@ -71,10 +74,9 @@ export class NodeWithoutTor extends LocalNode {
         libp2pTransport: Websockets
       }
     )
-    // eslint-disable-next-line
-    const certs = {} as CertsData
     const communities = new CommunitiesManager(connectonsManager)
     const peerId = await this.getPeer()
+    let certs // ------------------------------------------------------------- to do
     this.localAddress = await communities.initStorage(
       peerId,
       '0.0.0.0',
@@ -101,6 +103,7 @@ export class NodeWithTor extends LocalNode {
     const onionAddress = await this.spawnService()
     console.log('onion', onionAddress)
     const dataServer = await this.initDataServer()
+    console.log(this.storageOptions)
     const connectonsManager = await this.initConnectionsManager(
       dataServer,
       StorageTestSnapshot,
@@ -113,7 +116,13 @@ export class NodeWithTor extends LocalNode {
       }
     )
     // eslint-disable-next-line
-    const certs = {} as CertsData
+    const userCert = await createUsersCerts(onionAddress, this.rootCa)
+
+    const certs = {
+      cert: userCert.userCert,
+      key: userCert.userKey,
+      ca: [dumpPEM('CERTIFICATE', this.rootCa.rootObject.certificate.toSchema(true).toBER(false), 'ca.pem')]
+    }
     const communities = new CommunitiesManager(connectonsManager)
     const peerId = await this.getPeer()
     this.localAddress = await communities.initStorage(

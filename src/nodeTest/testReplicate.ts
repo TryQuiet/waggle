@@ -5,6 +5,10 @@ import fp from 'find-free-port'
 import debug from 'debug'
 import Table from 'cli-table'
 import yargs, { Argv } from 'yargs'
+import { createRootCA } from '@zbayapp/identity'
+import { Time, setEngine, CryptoEngine } from 'pkijs'
+import { Crypto } from '@peculiar/webcrypto'
+
 const log = Object.assign(debug('localTest'), {
   error: debug('localTest:err')
 })
@@ -63,7 +67,19 @@ const launchNode = async (i: number, bootstrapAddress?: string, createMessages: 
   const [port] = await fp(7788 + i)
   const [socksProxyPort] = await fp(1234 + i)
   const [torControlPort] = await fp(9051 + i)
-  const [httpTunnelPort] = await fp(9052 + i)
+  const [httpTunnelPort] = await fp(8052 + i)
+
+  const webcrypto = new Crypto()
+  setEngine('newEngine', webcrypto, new CryptoEngine({
+    name: '',
+    crypto: webcrypto,
+    subtle: webcrypto.subtle
+  }))
+
+  const notBeforeDate = new Date(Date.UTC(2010, 11, 28, 10, 10, 10))
+  const notAfterDate = new Date(Date.UTC(2030, 11, 28, 10, 10, 10))
+
+  const rootCa = await createRootCA(new Time({ type: 0, value: notBeforeDate }), new Time({ type: 0, value: notAfterDate }))
 
   const node = new NodeType(
     undefined,
@@ -82,7 +98,8 @@ const launchNode = async (i: number, bootstrapAddress?: string, createMessages: 
       messagesCount: argv.entriesCount
     },
     tmpAppDataPath,
-    bootstrapAddress ? [bootstrapAddress] : [bootstrapNode.localAddress]
+    bootstrapAddress ? [bootstrapAddress] : [bootstrapNode.localAddress],
+    rootCa
   )
   await node.init()
   node.storage.setName(`Node${i}`)

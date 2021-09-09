@@ -100,7 +100,6 @@ describe('websocketOverTor connection test', () => {
 
     const agent = HttpsProxyAgent({ host: 'localhost', port: httpTunnelPort })
 
-    console.log(pems)
     const websocketsOverTorData1 = {
       upgrader: {
         upgradeOutbound,

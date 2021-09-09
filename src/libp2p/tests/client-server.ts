@@ -11,7 +11,7 @@ import { createUserCert, createUserCsr, createRootCA, configCrypto } from '@zbay
 
 // ---------------------------- section with creating pems
 
-function dumpPEM(tag: string, body, path: string) {
+export function dumpPEM(tag: string, body, path: string) {
   const result = (
     `-----BEGIN ${tag}-----\n` +
     `${formatPEM(Buffer.from(body).toString('base64'))}\n` +
@@ -34,21 +34,12 @@ function formatPEM(pemString: string) {
   return resultString
 }
 
-export const createCertificatesTestHelper = async (onion1, onion2) => {
+export const createUsersCerts = async (onion, rootCert) => {
   const userData = {
     zbayNickname: 'dev99damian1',
-    commonName: onion1,
+    commonName: onion,
     peerId: 'Qmf3ySkYqLET9xtAtDzvAr5Pp3egK1H3C5iJAZm1SpLert',
     dmPublicKey: 'dmPublicKey1',
-    signAlg: configCrypto.signAlg,
-    hashAlg: configCrypto.hashAlg
-  }
-
-  const userData2 = {
-    zbayNickname: 'dev99damian2',
-    commonName: onion2,
-    peerId: 'Qmf3ySkYqLET9xtAtDzvAr5Pp3egK1H3C5iJAZm1SpLEp6',
-    dmPublicKey: 'dmPublicKey2',
     signAlg: configCrypto.signAlg,
     hashAlg: configCrypto.hashAlg
   }
@@ -56,23 +47,32 @@ export const createCertificatesTestHelper = async (onion1, onion2) => {
   const notBeforeDate = new Date(Date.UTC(2010, 11, 28, 10, 10, 10))
   const notAfterDate = new Date(Date.UTC(2030, 11, 28, 10, 10, 10))
 
-  const rootCert = await createRootCA(new Time({ type: 0, value: notBeforeDate }), new Time({ type: 0, value: notAfterDate }))
-
   const user = await createUserCsr(userData)
   const userCert = await createUserCert(rootCert.rootCertString, rootCert.rootKeyString, user.userCsr, notBeforeDate, notAfterDate)
 
-  const user2 = await createUserCsr(userData2)
-  const userCert2 = await createUserCert(rootCert.rootCertString, rootCert.rootKeyString, user2.userCsr, notBeforeDate, notAfterDate)
+  return {
+    userCert: dumpPEM('CERTIFICATE', userCert.userCertObject.certificate.toSchema(true).toBER(false), 'servCert.pem'),
+    userKey: dumpPEM('PRIVATE KEY', await getCrypto().exportKey('pkcs8', user.pkcs10.privateKey), 'servKey.pem')
+  }
+}
+
+export const createCertificatesTestHelper = async (onion1, onion2) => {
+  const notBeforeDate = new Date(Date.UTC(2010, 11, 28, 10, 10, 10))
+  const notAfterDate = new Date(Date.UTC(2030, 11, 28, 10, 10, 10))
+  const rootCert = await createRootCA(new Time({ type: 0, value: notBeforeDate }), new Time({ type: 0, value: notAfterDate }))
+
+  const userData1 = await createUsersCerts(onion1, rootCert)
+  const userData2 = await createUsersCerts(onion2, rootCert)
 
   const pems = {
     ca: dumpPEM('CERTIFICATE', rootCert.rootObject.certificate.toSchema(true).toBER(false), 'ca.pem'),
     ca_key: dumpPEM('PRIVATE KEY', await getCrypto().exportKey('pkcs8', rootCert.rootObject.privateKey), 'ca_key.pem'),
 
-    servKey: dumpPEM('PRIVATE KEY', await getCrypto().exportKey('pkcs8', user.pkcs10.privateKey), 'servKey.pem'),
-    servCert: dumpPEM('CERTIFICATE', userCert.userCertObject.certificate.toSchema(true).toBER(false), 'servCert.pem'),
+    servCert: userData1.userCert,
+    servKey: userData1.userKey,
 
-    userKey: dumpPEM('PRIVATE KEY', await getCrypto().exportKey('pkcs8', user2.pkcs10.privateKey), 'userKey.pem'),
-    userCert: dumpPEM('CERTIFICATE', userCert2.userCertObject.certificate.toSchema(true).toBER(false), 'userCert.pem')
+    userCert: userData2.userCert,
+    userKey: userData2.userKey
   }
 
   return pems
