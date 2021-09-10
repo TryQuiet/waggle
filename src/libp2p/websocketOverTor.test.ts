@@ -39,13 +39,11 @@ describe('websocketOverTor connection test', () => {
     const [port2Arr] = await fp(port1Arr as number + 1)
     port1 = port1Arr
     port2 = port2Arr
-    console.log(port1, port2)
     tmpDir = createTmpDir()
     tmpAppDataPath = tmpZbayDirPath(tmpDir.name)
 
     const torPath = utils.torBinForPlatform()
     const [controlPort] = await fp(9051)
-    console.log(controlPort)
     httpTunnelPort = (await fp(controlPort as number + 1)).shift()
     const socksPort = (await fp(httpTunnelPort + 1)).shift()
     tor = new Tor({

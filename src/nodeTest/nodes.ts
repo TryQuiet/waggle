@@ -7,6 +7,7 @@ import { DataServer } from '../socket/DataServer'
 import { ConnectionsManager } from '../libp2p/connectionsManager'
 import CommunitiesManager from '../communities/manager'
 import { createUsersCerts, dumpPEM } from '../libp2p/tests/client-server'
+
 /**
  * More customizable version of Node (entry node), mainly for testing purposes
  */
@@ -71,17 +72,27 @@ export class NodeWithoutTor extends LocalNode {
         env: {
           appDataPath: this.appDataPath
         },
-        libp2pTransport: Websockets
+        libp2pTransportClass: Websockets
       }
     )
     const communities = new CommunitiesManager(connectonsManager)
     const peerId = await this.getPeer()
-    let certs // ------------------------------------------------------------- to do
+
+    const userCert = await createUsersCerts('0.0.0.0', this.rootCa)
+
+    const bootstrapAddressArrayWs = this.bootstrapMultiaddrs.map((address) => address.replace('wss', 'ws'))
+
+    const certs = {
+      cert: userCert.userCert,
+      key: userCert.userKey,
+      ca: [dumpPEM('CERTIFICATE', this.rootCa.rootObject.certificate.toSchema(true).toBER(false), 'ca2.pem')]
+    }
+
     this.localAddress = await communities.initStorage(
       peerId,
       '0.0.0.0',
       this.port,
-      this.bootstrapMultiaddrs,
+      bootstrapAddressArrayWs,
       certs
     )
     this.storage = communities.getStorage(peerId.toB58String())
@@ -112,7 +123,7 @@ export class NodeWithTor extends LocalNode {
         env: {
           appDataPath: this.appDataPath
         },
-        libp2pTransport: WebsocketsOverTor
+        libp2pTransportClass: WebsocketsOverTor
       }
     )
     // eslint-disable-next-line
@@ -121,8 +132,9 @@ export class NodeWithTor extends LocalNode {
     const certs = {
       cert: userCert.userCert,
       key: userCert.userKey,
-      ca: [dumpPEM('CERTIFICATE', this.rootCa.rootObject.certificate.toSchema(true).toBER(false), 'ca.pem')]
+      ca: [dumpPEM('CERTIFICATE', this.rootCa.rootObject.certificate.toSchema(true).toBER(false), 'ca2.pem')]
     }
+
     const communities = new CommunitiesManager(connectonsManager)
     const peerId = await this.getPeer()
     this.localAddress = await communities.initStorage(

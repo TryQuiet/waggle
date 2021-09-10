@@ -62,7 +62,6 @@ export default class Node {
   public async init(): Promise<void> { // TODO: Check if this is working
     this.tor = await this.spawnTor()
     const onionAddress = await this.spawnService()
-    console.log('onion', onionAddress)
     const dataServer = await this.initDataServer()
     const connectonsManager = await this.initConnectionsManager(dataServer)
     const communities = new CommunitiesManager(connectonsManager)
@@ -132,6 +131,7 @@ export default class Node {
   async initConnectionsManager(dataServer: DataServer, storageClass?: any, options?: any): Promise<ConnectionsManager> {
     console.log('initStorage.storageClass:->', storageClass)
     const connectonsManager = new ConnectionsManager({
+      httpTunnelPort: this.httpTunnelPort,
       agentHost: 'localhost',
       agentPort: this.socksProxyPort,
       io: dataServer.io,

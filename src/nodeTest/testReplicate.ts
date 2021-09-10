@@ -61,7 +61,7 @@ class NodeData {
   actualReplicationTime?: number
 }
 
-const launchNode = async (i: number, bootstrapAddress?: string, createMessages: boolean = false, useSnapshot: boolean = false) => {
+const launchNode = async (i: number, rootCa, bootstrapAddress?: string, createMessages: boolean = false, useSnapshot: boolean = false) => {
   const torDir = path.join(tmpDir.name, `tor${i}`)
   const tmpAppDataPath = path.join(tmpDir.name, `.zbayTmp${i}`)
   const [port] = await fp(7788 + i)
@@ -75,11 +75,6 @@ const launchNode = async (i: number, bootstrapAddress?: string, createMessages: 
     crypto: webcrypto,
     subtle: webcrypto.subtle
   }))
-
-  const notBeforeDate = new Date(Date.UTC(2010, 11, 28, 10, 10, 10))
-  const notAfterDate = new Date(Date.UTC(2030, 11, 28, 10, 10, 10))
-
-  const rootCa = await createRootCA(new Time({ type: 0, value: notBeforeDate }), new Time({ type: 0, value: notAfterDate }))
 
   const node = new NodeType(
     undefined,
@@ -145,17 +140,21 @@ const runTest = async () => {
   const maxReplicationTimePerNode = Number(argv.timeThreshold)
   const nodes: NodeKeyValue = {}
 
+  const notBeforeDate = new Date(Date.UTC(2010, 11, 28, 10, 10, 10))
+  const notAfterDate = new Date(Date.UTC(2030, 11, 28, 10, 10, 10))
+  const rootCa = await createRootCA(new Time({ type: 0, value: notBeforeDate }), new Time({ type: 0, value: notAfterDate }))
+
   const initNode = async (noNumber: number) => {
     const nodeData = new NodeData()
     nodeData.checked = false
     nodeData.testPassed = false
-    nodeData.node = await launchNode(noNumber)
+    nodeData.node = await launchNode(noNumber, rootCa)
     nodeData.timeLaunched = new Date()
     nodes[noNumber] = nodeData
   }
 
   // Launch entry node
-  bootstrapNode = await launchNode(0, '/mockBootstrapMultiaddress', true, false)
+  bootstrapNode = await launchNode(0, rootCa, '/mockBootstrapMultiaddress', true, false)
 
   // Launch other nodes
   const numbers = [...Array(nodesCount + 1).keys()].splice(1)

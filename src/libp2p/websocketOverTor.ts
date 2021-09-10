@@ -82,8 +82,6 @@ class WebsocketsOverTor extends WebSockets {
     log('dialing %s:%s', cOpts.host, cOpts.port)
     const myUri = `${toUri(ma) as string}/?remoteAddress=${encodeURIComponent(this.localAddress)}`
 
-    console.log('ŁĄCZY SIĘ NA ', myUri)
-
     const rawSocket = connect(myUri, Object.assign({ binary: true }, options))
     if (!options.signal) {
       await rawSocket.connected()
@@ -122,10 +120,22 @@ class WebsocketsOverTor extends WebSockets {
       server.__connections.push(maConn)
     }
 
+    let caArray
+
+    if (Array.isArray(this._websocketOpts.ca)) {
+      if (this._websocketOpts.ca[0]) {
+        caArray = this._websocketOpts.ca[0]
+      } else {
+        caArray = null
+      }
+    } else {
+      caArray = null
+    }
+
     const serverHttps = https.createServer({
       cert: this._websocketOpts.cert,
       key: this._websocketOpts.key,
-      ca: [this._websocketOpts.ca[0]],
+      ca: [caArray],
       requestCert: true,
       enableTrace: true
     })
@@ -145,7 +155,6 @@ class WebsocketsOverTor extends WebSockets {
       log('query', query.remoteAddress)
       try {
         maConn = toConnection(stream, { remoteAddr: multiaddr(query.remoteAddress.toString()) })
-        console.log('maCon \n', maConn)
         const peer = {
           id: PeerId.createFromB58String(query.remoteAddress.toString().split('/p2p/')[1]),
           multiaddrs: [maConn.remoteAddr]

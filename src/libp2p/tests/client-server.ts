@@ -7,9 +7,14 @@ import WebSocketServer from 'it-ws/server'
 import fs from 'fs'
 import { Crypto } from '@peculiar/webcrypto'
 
-import { createUserCert, createUserCsr, createRootCA, configCrypto } from '@zbayapp/identity'
+import { createUserCert, createUserCsr, createRootCA, configCrypto, verifyUserCert } from '@zbayapp/identity'
+import { RootCA } from '@zbayapp/identity/lib/generateRootCA'
 
 // ---------------------------- section with creating pems
+
+const verify = async (rootString, userString) => {
+  return await verifyUserCert(rootString, userString)
+}
 
 export function dumpPEM(tag: string, body, path: string) {
   const result = (
@@ -18,6 +23,7 @@ export function dumpPEM(tag: string, body, path: string) {
     `-----END ${tag}-----\n`
   )
   fs.writeFileSync(`testingFixtures/certificates/files2/${path}`, result)
+
   return Buffer.from(result)
 }
 
@@ -34,7 +40,7 @@ function formatPEM(pemString: string) {
   return resultString
 }
 
-export const createUsersCerts = async (onion, rootCert) => {
+export const createUsersCerts = async (onion: string, rootCert: RootCA): Promise<{ userCert: Buffer, userKey: Buffer }> => {
   const userData = {
     zbayNickname: 'dev99damian1',
     commonName: onion,
@@ -50,9 +56,15 @@ export const createUsersCerts = async (onion, rootCert) => {
   const user = await createUserCsr(userData)
   const userCert = await createUserCert(rootCert.rootCertString, rootCert.rootKeyString, user.userCsr, notBeforeDate, notAfterDate)
 
+  const certVerificationResult = await verify(rootCert.rootCertString, userCert.userCertString)
+
+  console.log(certVerificationResult)
+
+  const onionFirsts = onion.substring(0, 3)
+
   return {
-    userCert: dumpPEM('CERTIFICATE', userCert.userCertObject.certificate.toSchema(true).toBER(false), 'servCert.pem'),
-    userKey: dumpPEM('PRIVATE KEY', await getCrypto().exportKey('pkcs8', user.pkcs10.privateKey), 'servKey.pem')
+    userCert: dumpPEM('CERTIFICATE', userCert.userCertObject.certificate.toSchema(true).toBER(false), `servCert${onionFirsts}.pem`),
+    userKey: dumpPEM('PRIVATE KEY', await getCrypto().exportKey('pkcs8', user.pkcs10.privateKey), `servKey${onionFirsts}.pem`)
   }
 }
 
