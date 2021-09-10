@@ -7,6 +7,7 @@ import { DataServer } from '../socket/DataServer'
 import { ConnectionsManager } from '../libp2p/connectionsManager'
 import CommunitiesManager from '../communities/manager'
 import { createUsersCerts, dumpPEM } from '../libp2p/tests/client-server'
+import { CertsData } from '../common/types'
 
 /**
  * More customizable version of Node (entry node), mainly for testing purposes
@@ -78,15 +79,9 @@ export class NodeWithoutTor extends LocalNode {
     const communities = new CommunitiesManager(connectonsManager)
     const peerId = await this.getPeer()
 
-    const userCert = await createUsersCerts('0.0.0.0', this.rootCa)
-
     const bootstrapAddressArrayWs = this.bootstrapMultiaddrs.map((address) => address.replace('wss', 'ws'))
-
-    const certs = {
-      cert: userCert.userCert,
-      key: userCert.userKey,
-      ca: [dumpPEM('CERTIFICATE', this.rootCa.rootObject.certificate.toSchema(true).toBER(false), 'ca2.pem')]
-    }
+    // eslint-disable-next-line
+    const certs = {} as CertsData
 
     this.localAddress = await communities.initStorage(
       peerId,
@@ -132,7 +127,7 @@ export class NodeWithTor extends LocalNode {
     const certs = {
       cert: userCert.userCert,
       key: userCert.userKey,
-      ca: [dumpPEM('CERTIFICATE', this.rootCa.rootObject.certificate.toSchema(true).toBER(false), 'ca2.pem')]
+      ca: [dumpPEM('CERTIFICATE', this.rootCa.rootObject.certificate.toSchema(true).toBER(false))]
     }
 
     const communities = new CommunitiesManager(connectonsManager)

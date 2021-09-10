@@ -4,25 +4,20 @@ import { Time, getCrypto, CryptoEngine, setEngine } from 'pkijs'
 import WebSocket from 'it-ws'
 import WebSocketServer from 'it-ws/server'
 
-import fs from 'fs'
 import { Crypto } from '@peculiar/webcrypto'
 
-import { createUserCert, createUserCsr, createRootCA, configCrypto, verifyUserCert } from '@zbayapp/identity'
+import { createUserCert, createUserCsr, createRootCA, configCrypto } from '@zbayapp/identity'
 import { RootCA } from '@zbayapp/identity/lib/generateRootCA'
 
 // ---------------------------- section with creating pems
 
-const verify = async (rootString, userString) => {
-  return await verifyUserCert(rootString, userString)
-}
-
-export function dumpPEM(tag: string, body, path: string) {
+export function dumpPEM(tag: string, body) {
   const result = (
     `-----BEGIN ${tag}-----\n` +
     `${formatPEM(Buffer.from(body).toString('base64'))}\n` +
     `-----END ${tag}-----\n`
   )
-  fs.writeFileSync(`testingFixtures/certificates/files2/${path}`, result)
+  // fs.writeFileSync(`testingFixtures/certificates/files2/${path}`, result)
 
   return Buffer.from(result)
 }
@@ -56,15 +51,9 @@ export const createUsersCerts = async (onion: string, rootCert: RootCA): Promise
   const user = await createUserCsr(userData)
   const userCert = await createUserCert(rootCert.rootCertString, rootCert.rootKeyString, user.userCsr, notBeforeDate, notAfterDate)
 
-  const certVerificationResult = await verify(rootCert.rootCertString, userCert.userCertString)
-
-  console.log(certVerificationResult)
-
-  const onionFirsts = onion.substring(0, 3)
-
   return {
-    userCert: dumpPEM('CERTIFICATE', userCert.userCertObject.certificate.toSchema(true).toBER(false), `servCert${onionFirsts}.pem`),
-    userKey: dumpPEM('PRIVATE KEY', await getCrypto().exportKey('pkcs8', user.pkcs10.privateKey), `servKey${onionFirsts}.pem`)
+    userCert: dumpPEM('CERTIFICATE', userCert.userCertObject.certificate.toSchema(true).toBER(false)),
+    userKey: dumpPEM('PRIVATE KEY', await getCrypto().exportKey('pkcs8', user.pkcs10.privateKey))
   }
 }
 
@@ -77,8 +66,8 @@ export const createCertificatesTestHelper = async (onion1, onion2) => {
   const userData2 = await createUsersCerts(onion2, rootCert)
 
   const pems = {
-    ca: dumpPEM('CERTIFICATE', rootCert.rootObject.certificate.toSchema(true).toBER(false), 'ca.pem'),
-    ca_key: dumpPEM('PRIVATE KEY', await getCrypto().exportKey('pkcs8', rootCert.rootObject.privateKey), 'ca_key.pem'),
+    ca: dumpPEM('CERTIFICATE', rootCert.rootObject.certificate.toSchema(true).toBER(false)),
+    ca_key: dumpPEM('PRIVATE KEY', await getCrypto().exportKey('pkcs8', rootCert.rootObject.privateKey)),
 
     servCert: userData1.userCert,
     servKey: userData1.userKey,
