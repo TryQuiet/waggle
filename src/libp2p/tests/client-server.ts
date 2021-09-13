@@ -1,10 +1,4 @@
-import pipe from 'it-pipe'
-import https from 'https'
-import { Time, getCrypto, CryptoEngine, setEngine } from 'pkijs'
-import WebSocket from 'it-ws'
-import WebSocketServer from 'it-ws/server'
-
-import { Crypto } from '@peculiar/webcrypto'
+import { Time, getCrypto } from 'pkijs'
 
 import { createUserCert, createUserCsr, createRootCA, configCrypto } from '@zbayapp/identity'
 import { RootCA } from '@zbayapp/identity/lib/generateRootCA'
@@ -77,57 +71,4 @@ export const createCertificatesTestHelper = async (onion1, onion2) => {
   }
 
   return pems
-}
-
-// --------------------------------- section with client-server connection
-
-const server = async (pems) => {
-  const server = https.createServer({
-    cert: pems.servCert,
-    key: pems.servKey,
-    ca: [pems.ca],
-    requestCert: true
-
-  })
-  const wss = WebSocketServer({
-    server: server,
-    // eslint-disable-next-line
-    verifyClient: function (info, done) {
-      done(true)
-    }
-  })
-  await wss.listen(8081)
-  wss.on('connection', function connection() {
-    console.log('client connected')
-  })
-}
-
-const client = async (pems) => {
-  const stream = WebSocket.connect('wss://localhost:8081', {
-    websocket: {
-      cert: pems.userCert,
-      key: pems.userKey,
-      ca: [pems.ca],
-      rejectUnauthorized: false
-    }
-  })
-  await stream.connected()
-    .catch((err) => {
-      if (err) return console.log(err)
-    })
-  pipe(stream, stream, stream)
-}
-
-// eslint-disable-next-line
-const start = async () => {
-  const webcrypto = new Crypto()
-  setEngine('newEngine', webcrypto, new CryptoEngine({
-    name: '',
-    crypto: webcrypto,
-    subtle: webcrypto.subtle
-  }))
-
-  const pems = await createCertificatesTestHelper('onion1.onion', 'onion2.onion')
-  await server(pems)
-  await client(pems)
 }

@@ -121,7 +121,6 @@ export class NodeWithTor extends LocalNode {
         libp2pTransportClass: WebsocketsOverTor
       }
     )
-    // eslint-disable-next-line
     const userCert = await createUsersCerts(onionAddress, this.rootCa)
 
     const certs = {

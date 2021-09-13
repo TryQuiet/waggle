@@ -4,7 +4,6 @@ import { Tor } from '../torManager/index'
 import os from 'os'
 import fp from 'find-free-port'
 import * as utils from '../utils'
-// import SocksProxyAgent from './socksProxyAgent'
 import HttpsProxyAgent from 'https-proxy-agent'
 import { createTmpDir, TmpDir, tmpZbayDirPath } from '../testUtils'
 import { createCertificatesTestHelper } from './tests/client-server'
@@ -31,7 +30,7 @@ describe('websocketOverTor connection test', () => {
   let httpTunnelPort: number
   let port1: number
   let port2: number
-  let listen
+  let listener
 
   beforeAll(async () => {
     jest.clearAllMocks()
@@ -72,8 +71,8 @@ describe('websocketOverTor connection test', () => {
   })
 
   afterEach(async () => {
-    if (listen) {
-      await listen.close()
+    if (listener) {
+      await listener.close()
     }
   })
 
@@ -133,12 +132,12 @@ describe('websocketOverTor connection test', () => {
     const ws1 = new WebsocketsOverTor(websocketsOverTorData1)
     const ws2 = new WebsocketsOverTor(websocketsOverTorData2)
 
-    listen = await ws1.prepareListener(prepareListenerArg)
+    listener = await ws1.prepareListener(prepareListenerArg)
 
-    await listen.listen(multiAddress)
+    await listener.listen(multiAddress)
 
     const onConnection = jest.fn()
-    listen.on('connection', onConnection)
+    listener.on('connection', onConnection)
 
     await ws2.dial(multiAddress, {
       signal: singal
@@ -203,12 +202,12 @@ describe('websocketOverTor connection test', () => {
     const ws1 = new WebsocketsOverTor(websocketsOverTorData1)
     const ws2 = new WebsocketsOverTor(websocketsOverTorData2)
 
-    listen = await ws1.prepareListener(prepareListenerArg)
+    listener = await ws1.prepareListener(prepareListenerArg)
 
-    await listen.listen(multiAddress)
+    await listener.listen(multiAddress)
 
     const onConnection = jest.fn()
-    listen.on('connection', onConnection)
+    listener.on('connection', onConnection)
 
     await expect(ws2.dial(multiAddress, {
       signal: singal
@@ -270,12 +269,12 @@ describe('websocketOverTor connection test', () => {
     const ws1 = new WebsocketsOverTor(websocketsOverTorData1)
     const ws2 = new WebsocketsOverTor(websocketsOverTorData2)
 
-    listen = await ws1.prepareListener(prepareListenerArg)
+    listener = await ws1.prepareListener(prepareListenerArg)
 
-    await listen.listen(multiAddress)
+    await listener.listen(multiAddress)
 
     const onConnection = jest.fn()
-    listen.on('connection', onConnection)
+    listener.on('connection', onConnection)
 
     await expect(ws2.dial(multiAddress, {
       signal: singal

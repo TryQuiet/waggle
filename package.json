@@ -1,6 +1,6 @@
 {
   "name": "waggle",
-  "version": "3.1.0",
+  "version": "4.0.0",
   "author": "jk",
   "description": "tlg-manager",
   "types": "lib/index.d.ts",
@@ -102,7 +102,6 @@
     "prettier-config-standard": "^1.0.1",
     "protons": "^2.0.0",
     "random-timestamps": "^1.0.1",
-    "simple-git": "^2.24.0",
     "socket.io": "3.0.5",
     "socks-proxy-agent": "^5.0.0",
     "streaming-iterables": "^5.0.2",
