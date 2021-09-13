@@ -1,5 +1,5 @@
 import { loadCSR } from '@zbayapp/identity'
-import { CertFieldsTypes, getCertFieldValue, getReqFieldValue } from '@zbayapp/identity/lib/common'
+import { CertFieldsTypes, getReqFieldValue } from '@zbayapp/identity/lib/common'
 import { registerDecorator, ValidationOptions, ValidationArguments } from 'class-validator'
 
 import debug from 'debug'
