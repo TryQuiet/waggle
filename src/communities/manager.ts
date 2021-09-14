@@ -53,7 +53,7 @@ export default class CommunitiesManager {
     }
   }
 
-  public launch = async (peerId: JSONPeerId, hiddenServiceKey: string, bootstrapMultiaddrs: string[], certs): Promise<string> => {
+  public launch = async (peerId: JSONPeerId, hiddenServiceKey: string, bootstrapMultiaddrs: string[], certs: CertsData): Promise<string> => {
     // Start existing community (community that user is already a part of)
     const ports = await getPorts()
     const onionAddress = await this.connectionsManager.tor.spawnHiddenService({

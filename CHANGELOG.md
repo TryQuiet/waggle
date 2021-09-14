@@ -10,6 +10,12 @@
 
 * Creating community event's payload must contain certificates
 * Peer network connection is via https
+* LaunchComunity API
+* Register user certificate API
+
+### Fixed
+
+* CSRContainsField validator
 
 ## [3.1.0]
 
