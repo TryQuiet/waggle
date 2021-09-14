@@ -140,7 +140,6 @@ export default class IOProxy {
     this.io.emit(EventTypesResponse.NEW_COMMUNITY, { id: communityId, payload: communityData })
   }
 
-
   public async launchCommunity(communityId: string, peerId: PeerId.JSONPeerId, hiddenService: {address: string, privateKey: string}, bootstrapMultiaddress: string[], certs: CertsData) {
     await this.communities.launch(peerId, hiddenService.privateKey, bootstrapMultiaddress, certs)
     this.io.emit(EventTypesResponse.COMMUNITY, { id: communityId })
