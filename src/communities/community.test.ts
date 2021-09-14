@@ -4,6 +4,7 @@ import { createMinConnectionManager, createTmpDir, tmpZbayDirPath } from '../tes
 import PeerId from 'peer-id'
 import { getPorts } from '../utils'
 import { createCertificatesTestHelper } from '../libp2p/tests/client-server'
+jest.setTimeout(100_000)
 
 describe('Community manager', () => {
   let connectionsManager: ConnectionsManager
