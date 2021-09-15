@@ -137,7 +137,7 @@ class WebsocketsOverTor extends WebSockets {
       key: this._websocketOpts.key,
       ca: [caArray],
       requestCert: true,
-      enableTrace: true
+      enableTrace: false
     })
 
     const optionsServ = {

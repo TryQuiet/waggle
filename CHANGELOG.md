@@ -1,5 +1,11 @@
 # Changelog
 
+## [4.0.1]
+
+### Fixed
+
+* Snapshot-replication tests
+
 ## [4.0.0]
 
 ### Added
@@ -10,6 +16,12 @@
 
 * Creating community event's payload must contain certificates
 * Peer network connection is via https
+* LaunchComunity API
+* Register user certificate API
+
+### Fixed
+
+* CSRContainsField validator
 
 ## [3.1.0]
 
