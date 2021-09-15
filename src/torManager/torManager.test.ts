@@ -98,4 +98,31 @@ describe('Tor manager', () => {
     expect(tor.torHashedPassword).toHaveLength(61)
     expect(tor.torPassword).toHaveLength(32)
   })
+
+  it('stop tor initializing after 3 fails', async () => {
+    const torPath = torBinForPlatform()
+    const [controlPort] = await fp(9051)
+    const httpTunnelPort = (await fp(controlPort as number + 1)).shift()
+    const socksPort = (await fp(httpTunnelPort as number + 1)).shift()
+    const libPath = torDirForPlatform()
+    const tor = new Tor({
+      appDataPath: tmpAppDataPath,
+      socksPort,
+      torPath: torPath,
+      controlPort,
+      httpTunnelPort,
+      options: {
+        env: {
+          LD_LIBRARY_PATH: libPath,
+          HOME: tmpAppDataPath
+        },
+        detached: true
+      }
+    })
+    try {
+      await tor.init(3, 1000)
+    } catch (err) {
+      console.log(err)
+    }
+  })
 })

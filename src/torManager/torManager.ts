@@ -5,6 +5,7 @@ import { TorControl } from './TorControl'
 import { ZBAY_DIR_PATH } from '../constants'
 import debug from 'debug'
 import crypto from 'crypto'
+import { romveFilesFromDir } from '../utils'
 const log = Object.assign(debug('waggle:tor'), {
   error: debug('waggle:tor:err')
 })
@@ -50,8 +51,8 @@ export class Tor {
     this.httpTunnelPort = httpTunnelPort ? httpTunnelPort.toString() : null
   }
 
-  public init = async (): Promise<void> => {
-    return await new Promise((resolve): void => {
+  public init = async (repeat = 3, timeout = 40000): Promise<void> => {
+    return await new Promise((resolve, reject): void => {
       if (this.process) {
         throw new Error('Tor already initialized')
       }
@@ -71,22 +72,45 @@ export class Tor {
         const file = fs.readFileSync(this.torPidPath)
         oldTorPid = Number(file.toString())
       }
+      let counter = 0
 
-      if (oldTorPid && process.platform !== 'win32') {
-        child_process.exec(this.torProcessNameCommand(oldTorPid.toString()), (err, stdout, _stderr) => {
-          if (err) {
-            log.error(err)
-          }
-          if (stdout.trim() === 'tor') {
-            process.kill(oldTorPid, 'SIGTERM')
-          } else {
-            fs.unlinkSync(this.torPidPath)
-          }
-          this.spawnTor(resolve)
-        })
-      } else {
-        this.spawnTor(resolve)
+      const foo = async () => {
+        if (counter > repeat) {
+          // eslint-disable-next-line
+          reject()
+          return
+        }
+        if (oldTorPid && process.platform !== 'win32') {
+          child_process.exec(
+            this.torProcessNameCommand(oldTorPid.toString()),
+            // eslint-disable-next-line
+            async (err, stdout, _stderr) => {
+              if (err) {
+                log.error(err)
+              }
+              if (stdout.trim() === 'tor') {
+                process.kill(oldTorPid, 'SIGTERM')
+              } else {
+                fs.unlinkSync(this.torPidPath)
+              }
+              oldTorPid = null
+            }
+          )
+        }
+        try {
+          await this.spawnTor(timeout)
+          resolve()
+        } catch {
+          await this.process.kill()
+          await romveFilesFromDir(this.torDataDirectory)
+          counter++
+
+          // eslint-disable-next-line
+          foo()
+        }
       }
+      // eslint-disable-next-line
+      void foo()
     })
   }
 
@@ -107,28 +131,39 @@ export class Tor {
     return byPlatform[process.platform]
   }
 
-  protected readonly spawnTor = resolve => {
-    this.process = child_process.spawn(
-      this.torPath,
-      [
-        '--SocksPort',
-        this.socksPort,
-        ...(this.httpTunnelPort ? ['--HTTPTunnelPort', this.httpTunnelPort] : []),
-        '--ControlPort',
-        this.controlPort.toString(),
-        '--PidFile',
-        this.torPidPath,
-        '--DataDirectory',
-        this.torDataDirectory,
-        '--HashedControlPassword',
-        this.torHashedPassword
-      ],
-      this.options
-    )
-    this.process.stdout.on('data', data => {
-      log(data.toString())
-      const regexp = /Bootstrapped 100%/
-      if (regexp.test(data.toString())) resolve()
+  protected readonly spawnTor = async (timeoutMs): Promise<void> => {
+    return await new Promise((resolve, reject) => {
+      this.process = child_process.spawn(
+        this.torPath,
+        [
+          '--SocksPort',
+          this.socksPort,
+          ...(this.httpTunnelPort ? ['--HTTPTunnelPort', this.httpTunnelPort] : []),
+          '--ControlPort',
+          this.controlPort.toString(),
+          '--PidFile',
+          this.torPidPath,
+          '--DataDirectory',
+          this.torDataDirectory,
+          '--HashedControlPassword',
+          this.torHashedPassword
+        ],
+        this.options
+      )
+
+      const timeout = setTimeout(() => {
+        // eslint-disable-next-line
+        reject()
+      }, timeoutMs)
+
+      this.process.stdout.on('data', data => {
+        log(data.toString())
+        const regexp = /Bootstrapped 100%/
+        if (regexp.test(data.toString())) {
+          clearTimeout(timeout)
+          resolve()
+        }
+      })
     })
   }
 
