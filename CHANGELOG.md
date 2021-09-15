@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Fix
+
+* ConnectionsManager option - allow using tor files (binaries and libs) from waggle
+
 ## [4.0.1]
 
 ### Fixed

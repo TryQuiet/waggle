@@ -19,6 +19,7 @@ import initListeners from '../socket/listeners'
 import IOProxy from '../socket/IOProxy'
 import { Connection } from 'libp2p-gossipsub/src/interfaces'
 import { HttpsProxyAgent } from 'https-proxy-agent'
+import path from 'path'
 
 const log = Object.assign(debug('waggle:conn'), {
   error: debug('waggle:conn:err')
@@ -85,8 +86,13 @@ export class ConnectionsManager {
   public init = async () => {
     this.initListeners()
 
+    let basePath = ''
+    if (this.options.useLocalTorFiles) {
+      basePath = path.join(__dirname, '../..')
+    }
+
     this.tor = new Tor({
-      torPath: torBinForPlatform(),
+      torPath: torBinForPlatform(basePath),
       appDataPath: this.zbayDir,
       controlPort: this.options.torControlPort,
       socksPort: this.agentPort,
@@ -95,7 +101,7 @@ export class ConnectionsManager {
 
       options: {
         env: {
-          LD_LIBRARY_PATH: torDirForPlatform(),
+          LD_LIBRARY_PATH: torDirForPlatform(basePath),
           HOME: os.homedir()
         },
         detached: true
