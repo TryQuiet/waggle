@@ -76,7 +76,7 @@ describe('Tor manager', () => {
     expect(hiddenService.onionAddress).toHaveLength(56)
     await tor.kill()
   })
-
+  
   it('spawns hidden service using private key', async () => {
     const tor = await spawnTorProcess(tmpAppDataPath)
     await tor.init()
@@ -84,12 +84,12 @@ describe('Tor manager', () => {
       virtPort: 4343,
       targetPort: 4343,
       privKey:
-        'ED25519-V3:uCr5t3EcOCwig4cu7pWY6996whV+evrRlI0iIIsjV3uCz4rx46sB3CPq8lXEWhjGl2jlyreomORirKcz9mmcdQ=='
+      'ED25519-V3:uCr5t3EcOCwig4cu7pWY6996whV+evrRlI0iIIsjV3uCz4rx46sB3CPq8lXEWhjGl2jlyreomORirKcz9mmcdQ=='
     })
     expect(hiddenServiceOnionAddress).toBe('u2rg2direy34dj77375h2fbhsc2tvxj752h4tlso64mjnlevcv54oaad')
     await tor.kill()
   })
-
+  
   it('generates hashed password', async () => {
     const tor = await spawnTorProcess(tmpAppDataPath)
     tor.generateHashedPassword()
@@ -97,5 +97,12 @@ describe('Tor manager', () => {
     console.log(tor.torPassword)
     expect(tor.torHashedPassword).toHaveLength(61)
     expect(tor.torPassword).toHaveLength(32)
+  })
+  it('creates and destroys hidden service', async () => {
+    const tor = await spawnTorProcess(tmpAppDataPath)
+    await tor.init()
+    const hiddenService = await tor.createNewHiddenService(4343, 4343)
+    await tor.destroyHiddenService(hiddenService.onionAddress)
+    await tor.kill()
   })
 })

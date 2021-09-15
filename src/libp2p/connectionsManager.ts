@@ -19,6 +19,8 @@ import initListeners from '../socket/listeners'
 import IOProxy from '../socket/IOProxy'
 import { Connection } from 'libp2p-gossipsub/src/interfaces'
 import { HttpsProxyAgent } from 'https-proxy-agent'
+import { getPorts } from '../utils'
+
 
 const log = Object.assign(debug('waggle:conn'), {
   error: debug('waggle:conn:err')
@@ -80,6 +82,17 @@ export class ConnectionsManager {
 
   public initListeners = () => {
     initListeners(this.io, new IOProxy(this))
+  }
+
+  public createNetwork = async () => {
+    const ports = await getPorts()
+    const hiddenService = await this.tor.createNewHiddenService(ports.libp2pHiddenService, ports.libp2pHiddenService)
+    await this.tor.destroyHiddenService(hiddenService.onionAddress)
+    const peerId = await PeerId.create()
+    return {
+      hiddenService,
+      peerId: peerId.toJSON()
+    }
   }
 
   public init = async () => {

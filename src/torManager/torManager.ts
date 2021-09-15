@@ -165,7 +165,11 @@ export class Tor {
   }
 
   public async destroyHiddenService(serviceId: string): Promise<void> {
-    await this.torControl.sendCommand(`DEL_ONION ${serviceId}`)
+    try {
+      await this.torControl.sendCommand(`DEL_ONION ${serviceId}`)
+    } catch (err) {
+      console.log(err)
+    }
   }
 
   public async createNewHiddenService(

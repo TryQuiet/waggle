@@ -133,7 +133,7 @@ export default class IOProxy {
   }
 
   public async createNetwork(communityId: string) {
-    const network = await this.communities.createNetwork()
+    const network = await this.connectionsManager.createNetwork()
     this.io.emit(EventTypesResponse.NETWORK, { id: communityId, payload: network })
   }
 
