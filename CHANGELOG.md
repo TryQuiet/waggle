@@ -1,5 +1,13 @@
 # Changelog
 
+## [4.1.0]
+
+### Added
+
+* DestroyHiddenService method in torManager
+* CreateNetwork in communitiesManager
+* CreateNetwork api in IOPRoxy
+
 ## [4.0.1]
 
 ### Fixed
