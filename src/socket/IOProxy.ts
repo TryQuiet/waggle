@@ -132,9 +132,9 @@ export default class IOProxy {
     this.io.emit(EventTypesResponse.CERTIFICATE_REGISTRATION_ERROR, { payload: message })
   }
 
-  public async createNetwork(communityId:string) {
+  public async createNetwork(communityId: string) {
     const network = await this.communities.createNetwork()
-    this.io.emit(EventTypesResponse.NETWORK, {id: communityId, payload: network})
+    this.io.emit(EventTypesResponse.NETWORK, { id: communityId, payload: network })
   }
 
   public async createCommunity(communityId: string, certs: CertsData, rootCert?: string, rootKey?: string) {

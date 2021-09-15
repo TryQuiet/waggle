@@ -47,11 +47,11 @@ export default class CommunitiesManager {
     const peerId = await PeerId.create()
     return {
       hiddenService,
-      peerId: peerId.toJSON(),
+      peerId: peerId.toJSON()
     }
   }
 
-  public create = async (certs: CertsData,): Promise<CommunityData> => {
+  public create = async (certs: CertsData): Promise<CommunityData> => {
     const ports = await getPorts()
     const hiddenService = await this.connectionsManager.tor.createNewHiddenService(ports.libp2pHiddenService, ports.libp2pHiddenService)
     const peerId = await PeerId.create()
