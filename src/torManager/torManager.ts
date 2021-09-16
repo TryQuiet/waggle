@@ -164,11 +164,13 @@ export class Tor {
     return onionAddress
   }
 
-  public async destroyHiddenService(serviceId: string): Promise<void> {
+  public async destroyHiddenService(serviceId: string): Promise<boolean> {
     try {
       await this.torControl.sendCommand(`DEL_ONION ${serviceId}`)
+      return true
     } catch (err) {
-      console.log(err)
+      log.error(err)
+      return false
     }
   }
 

@@ -8,7 +8,7 @@ import PeerId from 'peer-id'
 import WebsocketsOverTor from './websocketOverTor'
 import Bootstrap from 'libp2p-bootstrap'
 import { Storage } from '../storage'
-import { torBinForPlatform, torDirForPlatform } from '../utils'
+import { torBinForPlatform, torDirForPlatform, getPorts } from '../utils'
 import { ZBAY_DIR_PATH } from '../constants'
 import { CertsData, ConnectionsManagerOptions } from '../common/types'
 import fetch, { Response } from 'node-fetch'
@@ -19,8 +19,6 @@ import initListeners from '../socket/listeners'
 import IOProxy from '../socket/IOProxy'
 import { Connection } from 'libp2p-gossipsub/src/interfaces'
 import { HttpsProxyAgent } from 'https-proxy-agent'
-import { getPorts } from '../utils'
-
 
 const log = Object.assign(debug('waggle:conn'), {
   error: debug('waggle:conn:err')

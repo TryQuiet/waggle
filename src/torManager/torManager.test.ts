@@ -76,7 +76,7 @@ describe('Tor manager', () => {
     expect(hiddenService.onionAddress).toHaveLength(56)
     await tor.kill()
   })
-  
+
   it('spawns hidden service using private key', async () => {
     const tor = await spawnTorProcess(tmpAppDataPath)
     await tor.init()
@@ -89,7 +89,7 @@ describe('Tor manager', () => {
     expect(hiddenServiceOnionAddress).toBe('u2rg2direy34dj77375h2fbhsc2tvxj752h4tlso64mjnlevcv54oaad')
     await tor.kill()
   })
-  
+
   it('generates hashed password', async () => {
     const tor = await spawnTorProcess(tmpAppDataPath)
     tor.generateHashedPassword()
@@ -102,7 +102,15 @@ describe('Tor manager', () => {
     const tor = await spawnTorProcess(tmpAppDataPath)
     await tor.init()
     const hiddenService = await tor.createNewHiddenService(4343, 4343)
-    await tor.destroyHiddenService(hiddenService.onionAddress)
+    const status = await tor.destroyHiddenService(hiddenService.onionAddress)
+    expect(status).toBe(true)
+    await tor.kill()
+  })
+  it('attempt destroy nonexistent hidden service', async () => {
+    const tor = await spawnTorProcess(tmpAppDataPath)
+    await tor.init()
+    const status = await tor.destroyHiddenService('u2rg2direy34dj77375h2fbhsc2tvxj752h4tlso64mjnlevcv54oaad')
+    expect(status).toBe(false)
     await tor.kill()
   })
 })
