@@ -30,7 +30,7 @@ export interface IConstructor {
   agentPort?: number
   agentHost?: string
   options?: Partial<ConnectionsManagerOptions>
-  io: any
+  io: SocketIO.Server
   storageClass?: any // TODO: what type?
   httpTunnelPort?: number
 }
