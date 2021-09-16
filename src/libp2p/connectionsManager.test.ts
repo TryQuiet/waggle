@@ -1,7 +1,6 @@
 import { ConnectionsManager } from './connectionsManager'
 import { DummyIOServer, getPorts } from '../utils'
 import { createTmpDir, TmpDir, tmpZbayDirPath } from '../testUtils'
-import { hexStringToArrayBuffer } from '@zbayapp/identity/lib'
 import PeerId from 'peer-id'
 
 let tmpDir: TmpDir
