@@ -156,7 +156,7 @@ export class ConnectionsManager {
     try {
       return await fetch(serviceAddress + '/register', options)
     } catch (e) {
-      console.error(e)
+      log.error(e)
       throw e
     }
   }

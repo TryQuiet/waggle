@@ -118,7 +118,7 @@ export default class IOProxy {
     try {
       response = await this.connectionsManager.sendCertificateRegistrationRequest(serviceAddress, userCsr)
     } catch (e) {
-      emitServerError(this.io, {type: errorTypes.REGISTRAR, message: 'Connecting to registrar failed', communityId})
+      emitServerError(this.io, {type:  errorTypes.REGISTRAR, message: 'Connecting to registrar failed', communityId})
       return
     }
     
@@ -128,6 +128,9 @@ export default class IOProxy {
       case 403:
         emitValidationError(this.io, {type: errorTypes.REGISTRAR, message: 'Username already taken.', communityId})
         return
+      case 400:
+        emitValidationError(this.io, {type: errorTypes.REGISTRAR, message: 'Username is not valid', communityId})
+        return  // TODO: add test
       default:
         emitServerError(this.io, {type: errorTypes.REGISTRAR, message: 'Registering username failed.', communityId})
         return

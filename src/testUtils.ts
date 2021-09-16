@@ -11,6 +11,7 @@ import { Libp2pType } from './libp2p/customLibp2p'
 import WebsocketsOverTor from './libp2p/websocketOverTor'
 import { ConnectionsManagerOptions } from './common/types'
 import { createCertificatesTestHelper } from './libp2p/tests/client-server'
+import { Response } from 'node-fetch'
 tmp.setGracefulCleanup()
 
 export interface TmpDir {
@@ -45,6 +46,7 @@ export const createMinConnectionManager = (options: ConnectionsManagerOptions): 
   return new ConnectionsManager({
     agentHost: 'localhost',
     agentPort: 2222,
+    // @ts-expect-error
     io: new DummyIOServer(),
     options: {
       bootstrapMultiaddrs: testBootstrapMultiaddrs,
@@ -107,5 +109,29 @@ export class TorMock { // TODO: extend Tor to be sure that mocked api is correct
   protected readonly spawnTor = resolve => {
     console.log('TorMock.spawnTor')
     resolve()
+  }
+
+  public kill = async (): Promise<void> => {
+    console.log('TorMock.kill')
+  }
+}
+
+export class ResponseMock extends Response {
+  _json: {}
+  _status: number
+
+  public init(respStatus: number, respJson?: {}) {
+    this._json = respJson
+    this._status = respStatus
+    return this
+  }
+
+  // @ts-expect-error
+  get status() {
+    return this._status
+  }
+
+  public async json() {
+    return this._json
   }
 }
