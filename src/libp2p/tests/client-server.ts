@@ -8,7 +8,7 @@ import { RootCA } from '@zbayapp/identity/lib/generateRootCA'
 export function dumpPEM(tag: string, body) {
   const result = (
     `-----BEGIN ${tag}-----\n` +
-    `${formatPEM(Buffer.from(body).toString('base64'))}\n` +
+    `${formatPEM(body)}\n` +
     `-----END ${tag}-----\n`
   )
   // fs.writeFileSync(`testingFixtures/certificates/files2/${path}`, result)

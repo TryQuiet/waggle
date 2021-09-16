@@ -6,6 +6,8 @@ import { Storage } from '../storage'
 import debug from 'debug'
 import PeerId from 'peer-id'
 import { loadAllMessages } from './events/messages'
+import {registerOwnerCertificate} from '../registration'
+import { dataFromRootPems } from '../constants'
 
 const log = Object.assign(debug('waggle:io'), {
   error: debug('waggle:io:err')
@@ -111,7 +113,14 @@ export default class IOProxy {
     await this.getStorage(peerId).subscribeForAllConversations(conversations)
   }
 
+  public registerOwnerCertificate = async (communityId: string, userCsr, dataFromPerms) => {
+    console.log('registerOwnCertificate')
+    const cert = await registerOwnerCertificate(userCsr, dataFromPerms)
+    this.io.emit(EventTypesResponse.SEND_USER_CERTIFICATE, {id: communityId, payload: {certificate: cert, peers: [], rootCa: dataFromRootPems.certificate}})
+  }
+
   public registerUserCertificate = async (serviceAddress: string, userCsr: string, communityId: string) => {
+    console.log('registerUserCertificate')
     const response = await this.connectionsManager.sendCertificateRegistrationRequest(serviceAddress, userCsr)
     switch (response.status) {
       case 200:
@@ -123,7 +132,7 @@ export default class IOProxy {
         this.emitCertificateRegistrationError('Registering username failed.')
         return
     }
-    const registrarResponse: { certificate: string, peers: string[] } = await response.json()
+    const registrarResponse: { certificate: string, peers: string[], rootCa: string } = await response.json()
     log(`Sending certificate with ${registrarResponse.peers.length} peers`)
     this.io.emit(EventTypesResponse.SEND_USER_CERTIFICATE, { id: communityId, payload: registrarResponse })
   }
@@ -146,6 +155,7 @@ export default class IOProxy {
   }
 
   public async launchCommunity(communityId: string, peerId: PeerId.JSONPeerId, hiddenService: {address: string, privateKey: string}, bootstrapMultiaddress: string[], certs: CertsData) {
+    console.log('launchCommunity', {...certs})
     await this.communities.launch(peerId, hiddenService.privateKey, bootstrapMultiaddress, certs)
     this.io.emit(EventTypesResponse.COMMUNITY, { id: communityId })
   }

@@ -146,6 +146,7 @@ describe('Registration service', () => {
     const isProperUserCert = await verifyUserCert(certRoot.rootCertString, responseData.certificate)
     expect(isProperUserCert.result).toBe(true)
     expect(responseData.peers.length).toBe(1)
+    expect(responseData.rootCa).toBeTruthy()
   })
 
   it('returns 403 if username already exists', async () => {

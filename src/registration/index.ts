@@ -10,6 +10,8 @@ import { DataFromPems } from '../common/types'
 import { CsrContainsFields, IsCsr } from './validators'
 import fp from 'find-free-port'
 import { Storage } from '../storage'
+import { UserCert } from '@zbayapp/identity/lib/generateUserCertificate'
+import { dataFromRootPems } from '../constants'
 
 const log = Object.assign(debug('waggle:registration'), {
   error: debug('waggle:registration:err')
@@ -21,6 +23,19 @@ class UserCsrData {
   @IsCsr()
   @CsrContainsFields()
   csr: string
+}
+
+export const registerOwnerCertificate = async (userCsr, dataFromPems): Promise<any> => {
+  console.log(userCsr, 'userCsr'),
+  console.log({...dataFromPems}, dataFromPems)
+  console.log('REGISTER OWNER CERTIFICATE')
+  const userData = new UserCsrData()
+  userData.csr = userCsr
+  const validationErrors = await validate(userData)
+  console.log(validationErrors, 'validationErrors')
+  // if (validationErrors.length > 0) return
+  const userCert = await createUserCert(dataFromPems.certificate, dataFromPems.privKey, userCsr, new Date(), new Date(2030, 1, 1))
+  return userCert.userCertString
 }
 
 export class CertificateRegistration {
@@ -97,7 +112,8 @@ export class CertificateRegistration {
     }
     res.send({
       certificate: cert.userCertString,
-      peers: await this.getPeers()
+      peers: await this.getPeers(),
+      rootCa: dataFromRootPems.certificate
     })
   }
 
