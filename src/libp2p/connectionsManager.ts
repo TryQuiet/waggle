@@ -20,8 +20,6 @@ import IOProxy from '../socket/IOProxy'
 import { Connection } from 'libp2p-gossipsub/src/interfaces'
 import { HttpsProxyAgent } from 'https-proxy-agent'
 
-import {dumpPEM} from './tests/client-server'
-
 const log = Object.assign(debug('waggle:conn'), {
   error: debug('waggle:conn:err')
 })
@@ -124,7 +122,7 @@ export class ConnectionsManager {
 
   public initLibp2p = async (peerId: PeerId, listenAddrs: string, bootstrapMultiaddrs: string[], certs: CertsData): Promise<{ libp2p: Libp2pType, localAddress: string }> => {
     const localAddress = `${listenAddrs}/p2p/${peerId.toB58String()}`
-    console.log('initLibp2p', {...certs})
+    console.log('initLibp2p', { ...certs })
     const libp2p = ConnectionsManager.createBootstrapNode({
       peerId: peerId,
       listenAddrs: [listenAddrs],
@@ -175,9 +173,6 @@ export class ConnectionsManager {
     bootstrapMultiaddrsList,
     transportClass
   }): Libp2pType => {
-    cert = dumpPEM('CERTIFICATE',cert)
-    ca = [dumpPEM('CERTIFICATE',ca)]
-    key = dumpPEM('PRIVATE KEY',key)
     return ConnectionsManager.defaultLibp2pNode({
       peerId,
       listenAddrs,

@@ -6,7 +6,7 @@ import { Storage } from '../storage'
 import debug from 'debug'
 import PeerId from 'peer-id'
 import { loadAllMessages } from './events/messages'
-import {registerOwnerCertificate} from '../registration'
+import { registerOwnerCertificate } from '../registration'
 import { dataFromRootPems } from '../constants'
 
 const log = Object.assign(debug('waggle:io'), {
@@ -116,7 +116,7 @@ export default class IOProxy {
   public registerOwnerCertificate = async (communityId: string, userCsr, dataFromPerms) => {
     console.log('registerOwnCertificate')
     const cert = await registerOwnerCertificate(userCsr, dataFromPerms)
-    this.io.emit(EventTypesResponse.SEND_USER_CERTIFICATE, {id: communityId, payload: {certificate: cert, peers: [], rootCa: dataFromRootPems.certificate}})
+    this.io.emit(EventTypesResponse.SEND_USER_CERTIFICATE, { id: communityId, payload: { certificate: cert, peers: [], rootCa: dataFromRootPems.certificate } })
   }
 
   public registerUserCertificate = async (serviceAddress: string, userCsr: string, communityId: string) => {
@@ -155,7 +155,7 @@ export default class IOProxy {
   }
 
   public async launchCommunity(communityId: string, peerId: PeerId.JSONPeerId, hiddenService: {address: string, privateKey: string}, bootstrapMultiaddress: string[], certs: CertsData) {
-    console.log('launchCommunity', {...certs})
+    console.log('launchCommunity', { ...certs })
     await this.communities.launch(peerId, hiddenService.privateKey, bootstrapMultiaddress, certs)
     this.io.emit(EventTypesResponse.COMMUNITY, { id: communityId })
   }

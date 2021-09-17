@@ -27,7 +27,7 @@ class UserCsrData {
 
 export const registerOwnerCertificate = async (userCsr, dataFromPems): Promise<any> => {
   console.log(userCsr, 'userCsr'),
-  console.log({...dataFromPems}, dataFromPems)
+  console.log({ ...dataFromPems }, dataFromPems)
   console.log('REGISTER OWNER CERTIFICATE')
   const userData = new UserCsrData()
   userData.csr = userCsr

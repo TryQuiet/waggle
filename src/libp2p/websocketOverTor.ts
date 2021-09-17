@@ -12,6 +12,7 @@ import multiaddr from 'multiaddr'
 import debug from 'debug'
 import PeerId from 'peer-id'
 import https from 'https'
+import { dumpPEM } from './tests/client-server'
 
 const log: any = debug('libp2p:websockets:listener:waggle')
 log.error = debug('libp2p:websockets:listener:waggle:error')
@@ -46,9 +47,26 @@ class WebsocketsOverTor extends WebSockets {
     let conn
     let socket
     let maConn
+    let caArray
+
+    if (Array.isArray(this._websocketOpts.ca)) {
+      if (this._websocketOpts.ca[0]) {
+        caArray = this._websocketOpts.ca[0]
+      } else {
+        caArray = null
+      }
+    } else {
+      caArray = null
+    }
+
     try {
       socket = await this._connect(ma, {
-        websocket: this._websocketOpts,
+        websocket: {
+          ...this._websocketOpts,
+          cert: dumpPEM('CERTIFICATE', this._websocketOpts.cert),
+          key: dumpPEM('PRIVATE KEY', this._websocketOpts.key),
+          ca: [dumpPEM('CERTIFICATE', caArray)]
+        },
         ...options,
         localAddr: this.localAddress
       })
@@ -132,12 +150,16 @@ class WebsocketsOverTor extends WebSockets {
       caArray = null
     }
 
+    const certData = {
+      cert: dumpPEM('CERTIFICATE', this._websocketOpts.cert),
+      key: dumpPEM('PRIVATE KEY', this._websocketOpts.key),
+      ca: [dumpPEM('CERTIFICATE', caArray)]
+    }
+
     const serverHttps = https.createServer({
-      cert: this._websocketOpts.cert,
-      key: this._websocketOpts.key,
-      ca: [caArray],
+      ...certData,
       requestCert: true,
-      enableTrace: false
+      enableTrace: true
     })
 
     const optionsServ = {

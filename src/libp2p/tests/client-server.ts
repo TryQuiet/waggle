@@ -6,11 +6,21 @@ import { RootCA } from '@zbayapp/identity/lib/generateRootCA'
 // ---------------------------- section with creating pems
 
 export function dumpPEM(tag: string, body) {
-  const result = (
-    `-----BEGIN ${tag}-----\n` +
-    `${formatPEM(body)}\n` +
-    `-----END ${tag}-----\n`
-  )
+  let result
+  console.log(body)
+  if (typeof body === 'string') {
+    result = (
+      `-----BEGIN ${tag}-----\n` +
+      `${formatPEM(body)}\n` +
+      `-----END ${tag}-----\n`
+    )
+  } else {
+    result = (
+      `-----BEGIN ${tag}-----\n` +
+      `${formatPEM(Buffer.from(body).toString('base64'))}\n` +
+      `-----END ${tag}-----\n`
+    )
+  }
   // fs.writeFileSync(`testingFixtures/certificates/files2/${path}`, result)
 
   return Buffer.from(result)
@@ -29,7 +39,7 @@ function formatPEM(pemString: string) {
   return resultString
 }
 
-export const createUsersCerts = async (onion: string, rootCert: RootCA): Promise<{ userCert: Buffer, userKey: Buffer }> => {
+export const createUsersCerts = async (onion: string, rootCert: RootCA) => {
   const userData = {
     zbayNickname: 'dev99damian1',
     commonName: onion,
@@ -46,8 +56,8 @@ export const createUsersCerts = async (onion: string, rootCert: RootCA): Promise
   const userCert = await createUserCert(rootCert.rootCertString, rootCert.rootKeyString, user.userCsr, notBeforeDate, notAfterDate)
 
   return {
-    userCert: dumpPEM('CERTIFICATE', userCert.userCertObject.certificate.toSchema(true).toBER(false)),
-    userKey: dumpPEM('PRIVATE KEY', await getCrypto().exportKey('pkcs8', user.pkcs10.privateKey))
+    userCert: userCert.userCertString,
+    userKey: user.userKey
   }
 }
 
@@ -60,8 +70,8 @@ export const createCertificatesTestHelper = async (onion1, onion2) => {
   const userData2 = await createUsersCerts(onion2, rootCert)
 
   const pems = {
-    ca: dumpPEM('CERTIFICATE', rootCert.rootObject.certificate.toSchema(true).toBER(false)),
-    ca_key: dumpPEM('PRIVATE KEY', await getCrypto().exportKey('pkcs8', rootCert.rootObject.privateKey)),
+    ca: rootCert.rootCertString,
+    ca_key: rootCert.rootKeyString,
 
     servCert: userData1.userCert,
     servKey: userData1.userKey,
@@ -69,6 +79,5 @@ export const createCertificatesTestHelper = async (onion1, onion2) => {
     userCert: userData2.userCert,
     userKey: userData2.userKey
   }
-
   return pems
 }
