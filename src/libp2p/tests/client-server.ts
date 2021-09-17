@@ -2,7 +2,7 @@ import { Time, getCrypto } from 'pkijs'
 
 import { createUserCert, createUserCsr, createRootCA, configCrypto } from '@zbayapp/identity'
 import { RootCA } from '@zbayapp/identity/lib/generateRootCA'
-import { Certificate } from 'crypto'
+import { Certificate } from 'pkijs'
 
 // ---------------------------- section with creating pems
 
