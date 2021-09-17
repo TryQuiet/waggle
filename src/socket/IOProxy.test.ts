@@ -51,17 +51,21 @@ describe('IO proxy', () => {
     const observedIO = jest.spyOn(ioProxy.io, 'emit')
     await ioProxy.registerUserCertificate('improperServiceAddress.onion', 'userCsr', 'someCommunityId')
     expect(observedIO).toBeCalledTimes(1)
-    expect(observedIO).toBeCalledWith(EventTypesResponse.ERROR, {type: EventTypesResponse.REGISTRAR, message: 'Connecting to registrar failed', communityId: 'someCommunityId', code: 500})
+    expect(observedIO).toBeCalledWith(EventTypesResponse.ERROR, { type: EventTypesResponse.REGISTRAR, message: 'Connecting to registrar failed', communityId: 'someCommunityId', code: 500 })
   })
 
-  it('emits validation error if registrar returns validation error', async () => {
+  it.each([
+    ['Username already taken.', 403, 403],
+    ['Username is not valid', 403, 400],
+    ['Registering username failed.', 500, 500]
+  ])('emits error "%s" with code %s if registrar returns %s', async (socketMessage: string, socketStatusCode: number, registrarStatusCode: number) => {
     const observedIO = jest.spyOn(ioProxy.io, 'emit')
     const mockRegisterCertificate = jest.fn()
     ioProxy.connectionsManager.sendCertificateRegistrationRequest = mockRegisterCertificate
-    mockRegisterCertificate.mockReturnValue(Promise.resolve(new ResponseMock().init(403)))
+    mockRegisterCertificate.mockReturnValue(Promise.resolve(new ResponseMock().init(registrarStatusCode)))
     await ioProxy.registerUserCertificate('http://properAddress.onion', 'userCsr', 'someCommunityId')
     expect(observedIO).toBeCalledTimes(1)
-    expect(observedIO).toBeCalledWith(EventTypesResponse.ERROR, {type: EventTypesResponse.REGISTRAR, message: 'Username already taken.', communityId: 'someCommunityId', code: 403})
+    expect(observedIO).toBeCalledWith(EventTypesResponse.ERROR, { type: EventTypesResponse.REGISTRAR, message: socketMessage, communityId: 'someCommunityId', code: socketStatusCode })
   })
 
   it('sends user certificate after successful registration', async () => {

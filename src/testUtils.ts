@@ -12,6 +12,10 @@ import WebsocketsOverTor from './libp2p/websocketOverTor'
 import { ConnectionsManagerOptions } from './common/types'
 import { createCertificatesTestHelper } from './libp2p/tests/client-server'
 import { Response } from 'node-fetch'
+import debug from 'debug'
+const log = Object.assign(debug('waggle:test'), {
+  error: debug('waggle:test:err')
+})
 tmp.setGracefulCleanup()
 
 export interface TmpDir {
@@ -91,7 +95,7 @@ export class TorMock { // TODO: extend Tor to be sure that mocked api is correct
     targetPort: number
     privKey: string
   }): Promise<any> {
-    console.log('TorMock.spawnHiddenService', virtPort, targetPort, privKey)
+    log('TorMock.spawnHiddenService', virtPort, targetPort, privKey)
     return 'mockedOnionAddress.onion'
   }
 
@@ -99,7 +103,7 @@ export class TorMock { // TODO: extend Tor to be sure that mocked api is correct
     virtPort: number,
     targetPort: number
   ): Promise<{ onionAddress: string, privateKey: string }> {
-    console.log('TorMock.createNewHiddenService', virtPort, targetPort)
+    log('TorMock.createNewHiddenService', virtPort, targetPort)
     return {
       onionAddress: 'mockedOnionAddress',
       privateKey: 'mockedPrivateKey'
@@ -107,12 +111,12 @@ export class TorMock { // TODO: extend Tor to be sure that mocked api is correct
   }
 
   protected readonly spawnTor = resolve => {
-    console.log('TorMock.spawnTor')
+    log('TorMock.spawnTor')
     resolve()
   }
 
   public kill = async (): Promise<void> => {
-    console.log('TorMock.kill')
+    log('TorMock.kill')
   }
 }
 

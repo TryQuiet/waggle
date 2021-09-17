@@ -114,25 +114,25 @@ export default class IOProxy {
   }
 
   public registerUserCertificate = async (serviceAddress: string, userCsr: string, communityId: string) => {
-    let response: Response;
+    let response: Response
     try {
       response = await this.connectionsManager.sendCertificateRegistrationRequest(serviceAddress, userCsr)
     } catch (e) {
-      emitServerError(this.io, {type:  errorTypes.REGISTRAR, message: 'Connecting to registrar failed', communityId})
+      emitServerError(this.io, { type: errorTypes.REGISTRAR, message: 'Connecting to registrar failed', communityId })
       return
     }
-    
+
     switch (response.status) {
       case 200:
         break
       case 403:
-        emitValidationError(this.io, {type: errorTypes.REGISTRAR, message: 'Username already taken.', communityId})
+        emitValidationError(this.io, { type: errorTypes.REGISTRAR, message: 'Username already taken.', communityId })
         return
       case 400:
-        emitValidationError(this.io, {type: errorTypes.REGISTRAR, message: 'Username is not valid', communityId})
-        return  // TODO: add test
+        emitValidationError(this.io, { type: errorTypes.REGISTRAR, message: 'Username is not valid', communityId })
+        return // TODO: add test
       default:
-        emitServerError(this.io, {type: errorTypes.REGISTRAR, message: 'Registering username failed.', communityId})
+        emitServerError(this.io, { type: errorTypes.REGISTRAR, message: 'Registering username failed.', communityId })
         return
     }
     const registrarResponse: { certificate: string, peers: string[] } = await response.json()
@@ -145,7 +145,7 @@ export default class IOProxy {
     try {
       network = await this.connectionsManager.createNetwork()
     } catch (e) {
-      emitServerError(this.io, {type: EventTypesResponse.NETWORK, message: 'Creating network failed', communityId})
+      emitServerError(this.io, { type: EventTypesResponse.NETWORK, message: 'Creating network failed', communityId })
       return
     }
     this.io.emit(EventTypesResponse.NETWORK, { id: communityId, payload: network })
@@ -175,7 +175,7 @@ export default class IOProxy {
       port
     )
     if (!registrar) {
-      emitServerError(this.io, {type: 'registrar', message: 'Could not launch registrar', communityId})
+      emitServerError(this.io, { type: 'registrar', message: 'Could not launch registrar', communityId })
     } else {
       this.io.emit(EventTypesResponse.REGISTRAR, { id: communityId, peerId, payload: registrar.getHiddenServiceData() })
     }

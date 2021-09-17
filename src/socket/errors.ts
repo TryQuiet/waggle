@@ -1,4 +1,4 @@
-import { EventTypesResponse } from "./constantsReponse"
+import { EventTypesResponse } from './constantsReponse'
 
 export enum errorTypes {
   REGISTRAR = 'registrar'
@@ -19,9 +19,9 @@ export const emitError = (io: SocketIO.Server, payload: Error) => {
 }
 
 export const emitValidationError = (io: SocketIO.Server, payload: ErrorPayload) => {
-  emitError(io, {...payload, code: 403})
+  emitError(io, { ...payload, code: 403 })
 }
 
 export const emitServerError = (io: SocketIO.Server, payload: ErrorPayload) => {
-  emitError(io, {...payload, code: 500})
+  emitError(io, { ...payload, code: 500 })
 }
