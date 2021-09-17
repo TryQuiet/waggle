@@ -53,7 +53,7 @@ export class Tracker {
       }
     })
 
-    await tor.init({})
+    await tor.init()
     return await tor.spawnHiddenService({
       virtPort: this._port,
       targetPort: this._port,

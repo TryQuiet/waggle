@@ -96,7 +96,7 @@ export default class Node {
         detached: true
       }
     })
-    await tor.init({})
+    await tor.init()
     return tor
   }
 

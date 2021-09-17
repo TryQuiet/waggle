@@ -39,7 +39,16 @@ export class Tor {
   torPassword: string
   torHashedPassword: string
   torAuthCookie: string
-  constructor({ torPath, options, appDataPath, controlPort, socksPort, httpTunnelPort, torPassword, torAuthCookie }: IConstructor) {
+  constructor({
+    torPath,
+    options,
+    appDataPath,
+    controlPort,
+    socksPort,
+    httpTunnelPort,
+    torPassword,
+    torAuthCookie
+  }: IConstructor) {
     this.torPath = path.normalize(torPath)
     this.options = options
     this.services = new Map()
@@ -51,7 +60,7 @@ export class Tor {
     this.httpTunnelPort = httpTunnelPort ? httpTunnelPort.toString() : null
   }
 
-  public init = async ({ repeat = 3, timeout = 40000 }): Promise<void> => {
+  public init = async ({ repeat = 3, timeout = 40000 } = {}): Promise<void> => {
     return await new Promise((resolve, reject) => {
       if (this.process) {
         throw new Error('Tor already initialized')
@@ -75,9 +84,7 @@ export class Tor {
       let counter = 0
 
       const spawnTorInsure = async () => {
-        console.log(counter)
         if (counter > repeat) {
-          console.log('hejoooo')
           reject(new Error(`Failed to spawn tor ${counter} times`))
           return
         }
@@ -187,6 +194,16 @@ export class Tor {
     return onionAddress
   }
 
+  public async destroyHiddenService(serviceId: string): Promise<boolean> {
+    try {
+      await this.torControl.sendCommand(`DEL_ONION ${serviceId}`)
+      return true
+    } catch (err) {
+      log.error(err)
+      return false
+    }
+  }
+
   public async createNewHiddenService(
     virtPort: number,
     targetPort: number
@@ -209,7 +226,10 @@ export class Tor {
 
   public generateHashedPassword = () => {
     const password = crypto.randomBytes(16).toString('hex')
-    const hashedPassword = child_process.execSync(`${this.torPath} --quiet --hash-password ${password}`, { env: this.options.env })
+    const hashedPassword = child_process.execSync(
+      `${this.torPath} --quiet --hash-password ${password}`,
+      { env: this.options.env }
+    )
     this.torPassword = password
     this.torHashedPassword = hashedPassword.toString().trim()
   }

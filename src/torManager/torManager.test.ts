@@ -22,7 +22,7 @@ afterEach(async () => {
 describe('Tor manager', () => {
   it('starts and closes tor', async () => {
     const tor = await spawnTorProcess(tmpAppDataPath)
-    await tor.init({})
+    await tor.init()
     await tor.kill()
   })
 
@@ -49,7 +49,7 @@ describe('Tor manager', () => {
       }
     })
 
-    await tor.init({})
+    await tor.init()
 
     const torSecondInstance = new Tor({
       appDataPath: tmpAppDataPath,
@@ -71,7 +71,7 @@ describe('Tor manager', () => {
 
   it('spawns new hidden service', async () => {
     const tor = await spawnTorProcess(tmpAppDataPath)
-    await tor.init({})
+    await tor.init()
     const hiddenService = await tor.createNewHiddenService(4343, 4343)
     expect(hiddenService.onionAddress).toHaveLength(56)
     await tor.kill()
@@ -79,7 +79,7 @@ describe('Tor manager', () => {
 
   it('spawns hidden service using private key', async () => {
     const tor = await spawnTorProcess(tmpAppDataPath)
-    await tor.init({})
+    await tor.init()
     const hiddenServiceOnionAddress = await tor.spawnHiddenService({
       virtPort: 4343,
       targetPort: 4343,
@@ -149,6 +149,23 @@ describe('Tor manager', () => {
     })
 
     await tor.init({ repeat: 3, timeout: 40000 })
+    await tor.kill()
+  })
+
+  it('creates and destroys hidden service', async () => {
+    const tor = await spawnTorProcess(tmpAppDataPath)
+    await tor.init()
+    const hiddenService = await tor.createNewHiddenService(4343, 4343)
+    const status = await tor.destroyHiddenService(hiddenService.onionAddress)
+    expect(status).toBe(true)
+    await tor.kill()
+  })
+
+  it('attempt destroy nonexistent hidden service', async () => {
+    const tor = await spawnTorProcess(tmpAppDataPath)
+    await tor.init()
+    const status = await tor.destroyHiddenService('u2rg2direy34dj77375h2fbhsc2tvxj752h4tlso64mjnlevcv54oaad')
+    expect(status).toBe(false)
     await tor.kill()
   })
 })
