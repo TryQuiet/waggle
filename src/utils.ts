@@ -23,7 +23,7 @@ export function createPaths(paths: string[]) {
   }
 }
 
-export async function removeFilesFromDir(dirPath: string) {
+export function removeFilesFromDir(dirPath: string) {
   if (fs.existsSync(dirPath)) {
     fs.rmdirSync(dirPath, { recursive: true })
   }

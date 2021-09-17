@@ -83,7 +83,7 @@ export class Tor {
       }
       let counter = 0
 
-      const spawnTorInsure = async () => {
+      const tryToSpawnTor = async () => {
         if (counter > repeat) {
           reject(new Error(`Failed to spawn tor ${counter} times`))
           return
@@ -113,11 +113,11 @@ export class Tor {
           counter++
 
           // eslint-disable-next-line
-          process.nextTick(spawnTorInsure)
+          process.nextTick(tryToSpawnTor)
         }
       }
       // eslint-disable-next-line
-      spawnTorInsure()
+      tryToSpawnTor()
 
     })
   }
