@@ -2,10 +2,11 @@ import { Time, getCrypto } from 'pkijs'
 
 import { createUserCert, createUserCsr, createRootCA, configCrypto } from '@zbayapp/identity'
 import { RootCA } from '@zbayapp/identity/lib/generateRootCA'
+import { Certificate } from 'crypto'
 
 // ---------------------------- section with creating pems
 
-export function dumpPEM(tag: string, body) {
+export function dumpPEM(tag: string, body: string | Certificate | CryptoKey) {
   let result
   if (typeof body === 'string') {
     result = (
