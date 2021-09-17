@@ -22,7 +22,7 @@ afterEach(async () => {
 describe('Tor manager', () => {
   it('starts and closes tor', async () => {
     const tor = await spawnTorProcess(tmpAppDataPath)
-    await tor.init()
+    await tor.init({})
     await tor.kill()
   })
 
@@ -49,7 +49,7 @@ describe('Tor manager', () => {
       }
     })
 
-    await tor.init()
+    await tor.init({})
 
     const torSecondInstance = new Tor({
       appDataPath: tmpAppDataPath,
@@ -65,13 +65,13 @@ describe('Tor manager', () => {
         detached: true
       }
     })
-    await torSecondInstance.init()
+    await torSecondInstance.init({})
     await torSecondInstance.kill()
   })
 
   it('spawns new hidden service', async () => {
     const tor = await spawnTorProcess(tmpAppDataPath)
-    await tor.init()
+    await tor.init({})
     const hiddenService = await tor.createNewHiddenService(4343, 4343)
     expect(hiddenService.onionAddress).toHaveLength(56)
     await tor.kill()
@@ -79,7 +79,7 @@ describe('Tor manager', () => {
 
   it('spawns hidden service using private key', async () => {
     const tor = await spawnTorProcess(tmpAppDataPath)
-    await tor.init()
+    await tor.init({})
     const hiddenServiceOnionAddress = await tor.spawnHiddenService({
       virtPort: 4343,
       targetPort: 4343,
@@ -120,10 +120,11 @@ describe('Tor manager', () => {
       }
     })
 
-    try {
-      await tor.init(3, 1000)
-      await tor.kill()
-    } catch { console.log('to many try of tor spawn') }
+    await expect(tor.init({ repeat: 3, timeout: 1000 }))
+      .rejects
+      .toThrow('Failed to spawn tor 4 times')
+
+    await tor.kill()
   })
 
   it('tor is initializing correctly with 40 seconds timeout', async () => {
@@ -146,7 +147,8 @@ describe('Tor manager', () => {
         detached: true
       }
     })
-    await tor.init(3, 40000)
+
+    await tor.init({ repeat: 3, timeout: 40000 })
     await tor.kill()
   })
 })

@@ -108,7 +108,7 @@ describe('Registration service', () => {
     storage = await getStorage(tmpAppDataPath)
     const saveCertificate = jest.spyOn(storage, 'saveCertificate')
     tor = await spawnTorProcess(tmpAppDataPath, ports)
-    await tor.init()
+    await tor.init({})
     registrationService = await setupRegistrar(
       tor,
       storage,

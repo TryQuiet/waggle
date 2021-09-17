@@ -59,7 +59,7 @@ describe('websocketOverTor connection test', () => {
         detached: true
       }
     })
-    await tor.init()
+    await tor.init({})
 
     service1 = await tor.createNewHiddenService(port1, port1)
     service2 = await tor.createNewHiddenService(port2, port2)

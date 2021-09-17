@@ -5,7 +5,7 @@ import { TorControl } from './TorControl'
 import { ZBAY_DIR_PATH } from '../constants'
 import debug from 'debug'
 import crypto from 'crypto'
-import { romveFilesFromDir } from '../utils'
+import { removeFilesFromDir } from '../utils'
 const log = Object.assign(debug('waggle:tor'), {
   error: debug('waggle:tor:err')
 })
@@ -51,8 +51,8 @@ export class Tor {
     this.httpTunnelPort = httpTunnelPort ? httpTunnelPort.toString() : null
   }
 
-  public init = async (repeat = 3, timeout = 40000): Promise<void> => {
-    return await new Promise((resolve, reject): void => {
+  public init = async ({ repeat = 3, timeout = 40000 }): Promise<void> => {
+    return await new Promise((resolve, reject) => {
       if (this.process) {
         throw new Error('Tor already initialized')
       }
@@ -74,17 +74,17 @@ export class Tor {
       }
       let counter = 0
 
-      const foo = async () => {
+      const spawnTorInsure = async () => {
+        console.log(counter)
         if (counter > repeat) {
-          // eslint-disable-next-line
-          reject()
+          console.log('hejoooo')
+          reject(new Error(`Failed to spawn tor ${counter} times`))
           return
         }
         if (oldTorPid && process.platform !== 'win32') {
           child_process.exec(
             this.torProcessNameCommand(oldTorPid.toString()),
-            // eslint-disable-next-line
-            async (err, stdout, _stderr) => {
+            (err: child_process.ExecException, stdout: string, _stderr: string) => {
               if (err) {
                 log.error(err)
               }
@@ -102,15 +102,16 @@ export class Tor {
           resolve()
         } catch {
           await this.process.kill()
-          await romveFilesFromDir(this.torDataDirectory)
+          await removeFilesFromDir(this.torDataDirectory)
           counter++
 
           // eslint-disable-next-line
-          foo()
+          process.nextTick(spawnTorInsure)
         }
       }
       // eslint-disable-next-line
-      void foo()
+      spawnTorInsure()
+
     })
   }
 
@@ -152,8 +153,7 @@ export class Tor {
       )
 
       const timeout = setTimeout(() => {
-        // eslint-disable-next-line
-        reject()
+        reject(new Error(`Timeout of ${timeoutMs / 1000} while waiting for tor to bootstrap`))
       }, timeoutMs)
 
       this.process.stdout.on('data', data => {

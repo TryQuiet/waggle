@@ -103,7 +103,7 @@ export class ConnectionsManager {
     })
 
     if (this.options.spawnTor) {
-      await this.tor.init()
+      await this.tor.init({})
     } else {
       this.tor.initTorControl()
     }
