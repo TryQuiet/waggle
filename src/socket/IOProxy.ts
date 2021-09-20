@@ -6,7 +6,7 @@ import { Storage } from '../storage'
 import debug from 'debug'
 import PeerId from 'peer-id'
 import { loadAllMessages } from './events/messages'
-import { errorTypes, emitServerError, emitValidationError } from './errors'
+import { emitServerError, emitValidationError } from './errors'
 import { Response } from 'node-fetch'
 
 const log = Object.assign(debug('waggle:io'), {
@@ -118,7 +118,7 @@ export default class IOProxy {
     try {
       response = await this.connectionsManager.sendCertificateRegistrationRequest(serviceAddress, userCsr)
     } catch (e) {
-      emitServerError(this.io, { type: errorTypes.REGISTRAR, message: 'Connecting to registrar failed', communityId })
+      emitServerError(this.io, { type: EventTypesResponse.REGISTRAR, message: 'Connecting to registrar failed', communityId })
       return
     }
 
@@ -126,13 +126,13 @@ export default class IOProxy {
       case 200:
         break
       case 403:
-        emitValidationError(this.io, { type: errorTypes.REGISTRAR, message: 'Username already taken.', communityId })
+        emitValidationError(this.io, { type: EventTypesResponse.REGISTRAR, message: 'Username already taken.', communityId })
         return
       case 400:
-        emitValidationError(this.io, { type: errorTypes.REGISTRAR, message: 'Username is not valid', communityId })
-        return // TODO: add test
+        emitValidationError(this.io, { type: EventTypesResponse.REGISTRAR, message: 'Username is not valid', communityId })
+        return
       default:
-        emitServerError(this.io, { type: errorTypes.REGISTRAR, message: 'Registering username failed.', communityId })
+        emitServerError(this.io, { type: EventTypesResponse.REGISTRAR, message: 'Registering username failed.', communityId })
         return
     }
     const registrarResponse: { certificate: string, peers: string[] } = await response.json()
@@ -166,6 +166,7 @@ export default class IOProxy {
 
   public async launchRegistrar(communityId: string, peerId: string, rootCertString: string, rootKeyString: string, hiddenServicePrivKey?: string, port?: number) {
     const registrar = await this.communities.setupRegistrationService(
+      peerId,
       this.getStorage(peerId),
       {
         certificate: rootCertString,

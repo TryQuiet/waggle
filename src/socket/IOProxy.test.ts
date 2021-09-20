@@ -28,6 +28,7 @@ describe('IO proxy', () => {
 
   afterEach(async () => {
     await ioProxy.communities.closeStorages()
+    await ioProxy.communities.stopRegistrars()
     await manager.tor.kill()
   })
 
@@ -45,6 +46,23 @@ describe('IO proxy', () => {
     expect(observedLaunchRegistrar).not.toBeCalled()
     const communityData = await observedCommunityCreate.mock.results[0].value
     expect(observedIO).lastCalledWith(EventTypesResponse.NEW_COMMUNITY, { id: 'MyCommunity', payload: communityData })
+  })
+
+  it('creates community and starts registrar if user is the owner', async () => {
+    const communityId = 'MyCommunity'
+    const observedLaunchRegistrar = jest.spyOn(ioProxy, 'launchRegistrar')
+    const observedIO = jest.spyOn(ioProxy.io, 'emit')
+    const observedCommunityCreate = jest.spyOn(ioProxy.communities, 'create')
+    const pems = await createCertificatesTestHelper('adres1.onion', 'adres2.onion')
+    const certs = {
+      cert: pems.userCert,
+      key: pems.userKey,
+      ca: [pems.ca]
+    }
+    await ioProxy.createCommunity(communityId, certs, 'ownerRootCert', 'ownerRootKey')
+    expect(observedLaunchRegistrar).toBeCalled()
+    const communityData = await observedCommunityCreate.mock.results[0].value
+    expect(observedIO).lastCalledWith(EventTypesResponse.NEW_COMMUNITY, { id: communityId, payload: communityData })
   })
 
   it('emits error if connecting to registrar fails', async () => {

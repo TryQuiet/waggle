@@ -1,9 +1,5 @@
 import { EventTypesResponse } from './constantsReponse'
 
-export enum errorTypes {
-  REGISTRAR = 'registrar'
-}
-
 class ErrorPayload {
   type: string
   message: string
