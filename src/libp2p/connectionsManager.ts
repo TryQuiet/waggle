@@ -81,6 +81,7 @@ export class ConnectionsManager {
 
   public initListeners = () => {
     initListeners(this.io, new IOProxy(this))
+    log('Initialized socket listeners')
   }
 
   public createNetwork = async () => {
@@ -96,7 +97,10 @@ export class ConnectionsManager {
 
   public init = async () => {
     this.initListeners()
+    await this.spawnTor()
+  }
 
+  public spawnTor = async () => {
     let basePath = ''
     if (this.options.useLocalTorFiles) {
       basePath = path.join(__dirname, '../..')
@@ -121,8 +125,10 @@ export class ConnectionsManager {
 
     if (this.options.spawnTor) {
       await this.tor.init()
+      log('Spawned Tor')
     } else {
       this.tor.initTorControl()
+      log('Initialized tor control')
     }
   }
 
