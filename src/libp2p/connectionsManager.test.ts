@@ -15,7 +15,7 @@ beforeEach(() => {
 })
 
 describe('Connections manager', () => {
-  it('runs tor by default', async () => {
+  it.skip('runs tor by default', async () => {
     const ports = await getPorts()
     connectionsManager = new ConnectionsManager({
       agentHost: 'localhost',
@@ -33,7 +33,7 @@ describe('Connections manager', () => {
     await connectionsManager.tor.kill()
   })
 
-  it('inits only tor control if spawnTor is set to false', async () => {
+  it.skip('inits only tor control if spawnTor is set to false', async () => {
     const torPassword = 'testTorPassword'
     const ports = await getPorts()
     connectionsManager = new ConnectionsManager({
@@ -56,7 +56,7 @@ describe('Connections manager', () => {
     expect(torControl.params.port).toEqual(ports.controlPort)
   })
 
-  it('create network', async() => {
+  it.skip('create network', async() => {
     const ports = await getPorts()
     connectionsManager = new ConnectionsManager({
       agentHost: 'localhost',
@@ -76,6 +76,37 @@ describe('Connections manager', () => {
     const peerId = await PeerId.createFromJSON(network.peerId)
     console.log(peerId, 'NETWOK')
     expect(PeerId.isPeerId(peerId)).toBeTruthy()
+    await connectionsManager.tor.kill()
+  })
+  it('launch network with certs', async () => {
+    const ports = await getPorts()
+    connectionsManager = new ConnectionsManager({
+      agentHost: 'localhost',
+      agentPort: ports.socksPort,
+      io: new DummyIOServer(),
+      options: {
+        env: {
+          appDataPath: tmpAppDataPath
+        },
+        torControlPort: ports.controlPort
+      }
+    })
+
+
+
+    await connectionsManager.init()
+
+
+    const peerId = await PeerId.create()
+    const listenAddress = 'ads'
+    const bootstrapMultiaddress = ['asdf']
+    const certs = {
+cert: 'asdf',
+key: 'sdf',
+ca: ['sdfg']
+    }
+
+    await connectionsManager.initLibp2p(peerId, listenAddress, bootstrapMultiaddress, certs)
     await connectionsManager.tor.kill()
   })
 })

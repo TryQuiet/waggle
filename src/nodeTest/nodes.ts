@@ -126,7 +126,7 @@ export class NodeWithTor extends LocalNode {
     const certs = {
       cert: userCert.userCert,
       key: userCert.userKey,
-      ca: [dumpPEM('CERTIFICATE', this.rootCa.rootObject.certificate.toSchema(true).toBER(false))]
+      ca: [this.rootCa.rootCertString]
     }
 
     const communities = new CommunitiesManager(connectonsManager)

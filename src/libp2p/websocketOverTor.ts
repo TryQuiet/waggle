@@ -36,11 +36,16 @@ class WebsocketsOverTor extends WebSockets {
   discovery: Discovery
   constructor({ upgrader, websocket, localAddr }) {
     super({ upgrader })
+    console.log({upgrader}, 'UPGRADER-------------------------------------------------------------------------------')
     this._websocketOpts = websocket
+    console.log(this._websocketOpts, 'WEBSOCKETOOPTS')
+    console.log(websocket, 'WEBSOCKETOOPTS')
+    console.log(localAddr)
     this.localAddress = localAddr
     this._upgrader = upgrader
     this.discovery = new Discovery()
   }
+
 
   async dial(ma, options: any = {}) {
     log('dialing %s', ma)
@@ -137,31 +142,34 @@ class WebsocketsOverTor extends WebSockets {
     const trackConn = (server, maConn) => {
       server.__connections.push(maConn)
     }
+console.log(1)
+let caArray
 
-    let caArray
-
-    if (Array.isArray(this._websocketOpts.ca)) {
-      if (this._websocketOpts.ca[0]) {
-        caArray = this._websocketOpts.ca[0]
-      } else {
-        caArray = null
+if (Array.isArray(this._websocketOpts.ca)) {
+  if (this._websocketOpts.ca[0]) {
+    caArray = this._websocketOpts.ca[0]
+  } else {
+    caArray = null
       }
     } else {
       caArray = null
     }
 
+    console.log(2)
     const certData = {
       cert: dumpPEM('CERTIFICATE', this._websocketOpts.cert),
       key: dumpPEM('PRIVATE KEY', this._websocketOpts.key),
       ca: [dumpPEM('CERTIFICATE', caArray)]
     }
-
+    
+    console.log(3, certData)
     const serverHttps = https.createServer({
       ...certData,
       requestCert: true,
       enableTrace: true
     })
-
+    console.log(4)
+    
     const optionsServ = {
       server: serverHttps,
       // eslint-disable-next-line
@@ -169,7 +177,8 @@ class WebsocketsOverTor extends WebSockets {
         done(true)
       }
     }
-
+    console.log(5)
+    
     const server = createServer(optionsServ, async (stream, request) => {
       let maConn, conn
       // eslint-disable-next-line
@@ -188,44 +197,52 @@ class WebsocketsOverTor extends WebSockets {
         log.error('inbound connection failed to upgrade', err)
         return maConn?.close()
       }
-
+      
       log('inbound connection %s upgraded', maConn.remoteAddr)
-
+      
       trackConn(server, maConn)
 
       if (handler) handler(conn)
       listener.emit('connection', conn)
     })
-
+    
+    console.log(6)
     server
-      .on('listening', () => listener.emit('listening'))
-      .on('error', err => listener.emit('error', err))
-      .on('close', () => listener.emit('close'))
-
+    .on('listening', () => listener.emit('listening'))
+    .on('error', err => listener.emit('error', err))
+    .on('close', () => listener.emit('close'))
+    
+    console.log(7)
     // Keep track of open connections to destroy in case of timeout
     server.__connections = []
-
+    
+    console.log(8)
     let listeningMultiaddr
-
+    
+    console.log(9)
     listener.close = () => {
       server.__connections.forEach(maConn => maConn.close())
       return server.close()
     }
-
+    
+    console.log(10)
     listener.listen = (ma: multiaddr) => {
       listeningMultiaddr = ma
       return server.listen(ma.toOptions())
     }
-
+    
+    console.log(11)
     listener.getAddrs = () => {
       const multiaddrs = []
       const address = server.address()
       if (!address) {
         throw new Error('Listener is not ready yet')
       }
-
+      console.log(12)
+      
       const ipfsId: string = listeningMultiaddr.getPeerId()
-
+      
+      console.log(13)
       // Because TCP will only return the IPv6 version
       // we need to capture from the passed multiaddr
       if (listeningMultiaddr.toString().indexOf('ip4') !== -1) {
