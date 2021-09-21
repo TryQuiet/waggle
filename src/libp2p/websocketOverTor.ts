@@ -1,3 +1,4 @@
+
 import withIs from 'class-is'
 import WebSockets from 'libp2p-websockets'
 import { AbortError } from 'abortable-iterator'
@@ -12,7 +13,6 @@ import multiaddr from 'multiaddr'
 import debug from 'debug'
 import PeerId from 'peer-id'
 import https from 'https'
-import { dumpPEM } from './tests/client-server'
 
 const log: any = debug('libp2p:websockets:listener:waggle')
 log.error = debug('libp2p:websockets:listener:waggle:error')
@@ -47,26 +47,9 @@ class WebsocketsOverTor extends WebSockets {
     let conn
     let socket
     let maConn
-    let caArray
-
-    if (Array.isArray(this._websocketOpts.ca)) {
-      if (this._websocketOpts.ca[0]) {
-        caArray = this._websocketOpts.ca[0]
-      } else {
-        caArray = null
-      }
-    } else {
-      caArray = null
-    }
-
     try {
       socket = await this._connect(ma, {
-        websocket: {
-          ...this._websocketOpts,
-          cert: dumpPEM('CERTIFICATE', this._websocketOpts.cert),
-          key: dumpPEM('PRIVATE KEY', this._websocketOpts.key),
-          ca: [dumpPEM('CERTIFICATE', caArray)]
-        },
+        websocket: this._websocketOpts,
         ...options,
         localAddr: this.localAddress
       })
@@ -99,6 +82,11 @@ class WebsocketsOverTor extends WebSockets {
     const cOpts = ma.toOptions()
     log('dialing %s:%s', cOpts.host, cOpts.port)
     const myUri = `${toUri(ma) as string}/?remoteAddress=${encodeURIComponent(this.localAddress)}`
+
+    // certificates are temporarily disable
+    delete options.websocket.cert
+    delete options.websocket.key
+    delete options.websocket.ca
 
     const rawSocket = connect(myUri, Object.assign({ binary: true }, options))
     if (!options.signal) {
@@ -150,20 +138,18 @@ class WebsocketsOverTor extends WebSockets {
       caArray = null
     }
 
-    const certData = {
-      cert: dumpPEM('CERTIFICATE', this._websocketOpts.cert),
-      key: dumpPEM('PRIVATE KEY', this._websocketOpts.key),
-      ca: [dumpPEM('CERTIFICATE', caArray)]
-    }
-
-    const serverHttps = https.createServer({
-      ...certData,
-      requestCert: true,
-      enableTrace: true
-    })
+    // certificates are temporarily disable
+    // eslint-disable-next-line
+    // const serverHttps = https.createServer({
+    //   cert: this._websocketOpts.cert,
+    //   key: this._websocketOpts.key,
+    //   ca: [caArray],
+    //   requestCert: true,
+    //   enableTrace: false
+    // })
 
     const optionsServ = {
-      server: serverHttps,
+      // server: serverHttps,
       // eslint-disable-next-line
       verifyClient: function (info, done) {
         done(true)
