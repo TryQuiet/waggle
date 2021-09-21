@@ -7,6 +7,15 @@
 * DestroyHiddenService method in torManager
 * CreateNetwork in communitiesManager
 * CreateNetwork api in IOPRoxy
+* Emit general ERROR socket event
+
+### Changed
+
+* Community manager - keep reference not only to storage but also to registrar
+
+### Removed
+
+* REGISTRAR_ERROR and CERTIFICATE_REGISTRATION socket events
 
 ## [4.0.1]
 
