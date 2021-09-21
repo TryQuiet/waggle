@@ -12,7 +12,7 @@ import multiaddr from 'multiaddr'
 import debug from 'debug'
 import PeerId from 'peer-id'
 import https from 'https'
-import { dumpPEM } from './tests/client-server'
+import { formatPEM } from './certificateHelpers'
 
 const log: any = debug('libp2p:websockets:listener:waggle')
 log.error = debug('libp2p:websockets:listener:waggle:error')
@@ -36,7 +36,10 @@ class WebsocketsOverTor extends WebSockets {
   discovery: Discovery
   constructor({ upgrader, websocket, localAddr }) {
     super({ upgrader })
-    console.log({upgrader}, 'UPGRADER-------------------------------------------------------------------------------')
+    console.log(
+      { upgrader },
+      'UPGRADER-------------------------------------------------------------------------------'
+    )
     this._websocketOpts = websocket
     console.log(this._websocketOpts, 'WEBSOCKETOOPTS')
     console.log(websocket, 'WEBSOCKETOOPTS')
@@ -45,7 +48,6 @@ class WebsocketsOverTor extends WebSockets {
     this._upgrader = upgrader
     this.discovery = new Discovery()
   }
-
 
   async dial(ma, options: any = {}) {
     log('dialing %s', ma)
@@ -68,9 +70,9 @@ class WebsocketsOverTor extends WebSockets {
       socket = await this._connect(ma, {
         websocket: {
           ...this._websocketOpts,
-          cert: dumpPEM('CERTIFICATE', this._websocketOpts.cert),
-          key: dumpPEM('PRIVATE KEY', this._websocketOpts.key),
-          ca: [dumpPEM('CERTIFICATE', caArray)]
+          cert: formatPEM('CERTIFICATE', this._websocketOpts.cert),
+          key: formatPEM('PRIVATE KEY', this._websocketOpts.key),
+          ca: [formatPEM('CERTIFICATE', caArray)]
         },
         ...options,
         localAddr: this.localAddress
@@ -142,14 +144,14 @@ class WebsocketsOverTor extends WebSockets {
     const trackConn = (server, maConn) => {
       server.__connections.push(maConn)
     }
-console.log(1)
-let caArray
+    console.log(1)
+    let caArray
 
-if (Array.isArray(this._websocketOpts.ca)) {
-  if (this._websocketOpts.ca[0]) {
-    caArray = this._websocketOpts.ca[0]
-  } else {
-    caArray = null
+    if (Array.isArray(this._websocketOpts.ca)) {
+      if (this._websocketOpts.ca[0]) {
+        caArray = this._websocketOpts.ca[0]
+      } else {
+        caArray = null
       }
     } else {
       caArray = null
@@ -161,7 +163,7 @@ if (Array.isArray(this._websocketOpts.ca)) {
       key: dumpPEM('PRIVATE KEY', this._websocketOpts.key),
       ca: [dumpPEM('CERTIFICATE', caArray)]
     }
-    
+
     console.log(3, certData)
     const serverHttps = https.createServer({
       ...certData,
@@ -169,16 +171,16 @@ if (Array.isArray(this._websocketOpts.ca)) {
       enableTrace: true
     })
     console.log(4)
-    
+
     const optionsServ = {
       server: serverHttps,
       // eslint-disable-next-line
-      verifyClient: function (info, done) {
+      verifyClient: function(info, done) {
         done(true)
       }
     }
     console.log(5)
-    
+
     const server = createServer(optionsServ, async (stream, request) => {
       let maConn, conn
       // eslint-disable-next-line
@@ -197,40 +199,40 @@ if (Array.isArray(this._websocketOpts.ca)) {
         log.error('inbound connection failed to upgrade', err)
         return maConn?.close()
       }
-      
+
       log('inbound connection %s upgraded', maConn.remoteAddr)
-      
+
       trackConn(server, maConn)
 
       if (handler) handler(conn)
       listener.emit('connection', conn)
     })
-    
+
     console.log(6)
     server
-    .on('listening', () => listener.emit('listening'))
-    .on('error', err => listener.emit('error', err))
-    .on('close', () => listener.emit('close'))
-    
+      .on('listening', () => listener.emit('listening'))
+      .on('error', err => listener.emit('error', err))
+      .on('close', () => listener.emit('close'))
+
     console.log(7)
     // Keep track of open connections to destroy in case of timeout
     server.__connections = []
-    
+
     console.log(8)
     let listeningMultiaddr
-    
+
     console.log(9)
     listener.close = () => {
       server.__connections.forEach(maConn => maConn.close())
       return server.close()
     }
-    
+
     console.log(10)
     listener.listen = (ma: multiaddr) => {
       listeningMultiaddr = ma
       return server.listen(ma.toOptions())
     }
-    
+
     console.log(11)
     listener.getAddrs = () => {
       const multiaddrs = []
@@ -239,9 +241,9 @@ if (Array.isArray(this._websocketOpts.ca)) {
         throw new Error('Listener is not ready yet')
       }
       console.log(12)
-      
+
       const ipfsId: string = listeningMultiaddr.getPeerId()
-      
+
       console.log(13)
       // Because TCP will only return the IPv6 version
       // we need to capture from the passed multiaddr
