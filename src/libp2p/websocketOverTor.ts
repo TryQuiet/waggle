@@ -82,6 +82,7 @@ class WebsocketsOverTor extends WebSockets {
     log('dialing %s:%s', cOpts.host, cOpts.port)
     const myUri = `${toUri(ma) as string}/?remoteAddress=${encodeURIComponent(this.localAddress)}`
 
+    // certificates are temporarily disable
     delete options.websocket.cert
     delete options.websocket.key
     delete options.websocket.ca
@@ -136,6 +137,7 @@ class WebsocketsOverTor extends WebSockets {
       caArray = null
     }
 
+    // certificates are temporarily disable
     // eslint-disable-next-line
     const serverHttps = https.createServer({
       cert: this._websocketOpts.cert,

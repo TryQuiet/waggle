@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+# Removed
+
+* Certificates validation in websocket over tor is temporarly removed - doesn't work with electron
+
 ### Added
 
 * DestroyHiddenService method in torManager
