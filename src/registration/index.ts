@@ -25,17 +25,17 @@ class UserCsrData {
   csr: string
 }
 
-export const registerOwnerCertificate = async (userCsr, dataFromPems): Promise<any> => {
-  console.log(userCsr, 'userCsr'),
-  console.log({ ...dataFromPems }, dataFromPems)
-  console.log('REGISTER OWNER CERTIFICATE')
+export const registerOwnerCertificate = async (userCsr, dataFromPems): Promise<Certificate> => {
   const userData = new UserCsrData()
   userData.csr = userCsr
   const validationErrors = await validate(userData)
-  console.log(validationErrors, 'validationErrors')
-  // if (validationErrors.length > 0) return
+  if (validationErrors.length > 0) return
   const userCert = await createUserCert(dataFromPems.certificate, dataFromPems.privKey, userCsr, new Date(), new Date(2030, 1, 1))
   return userCert.userCertString
+}
+
+export const saveOwnerCertToDb = async () => {
+  
 }
 
 export class CertificateRegistration {

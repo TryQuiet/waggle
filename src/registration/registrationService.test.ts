@@ -10,6 +10,8 @@ import { RootCA } from '@zbayapp/identity/lib/generateRootCA'
 import { Storage } from '../storage'
 import PeerId from 'peer-id'
 import { DataFromPems } from '../common/types'
+import {registerOwnerCertificate} from './index'
+import { dataFromRootPems } from '../constants'
 jest.setTimeout(50_000)
 
 async function registerUserTest(csr: string, socksPort: number, localhost: boolean = true): Promise<Response> {
@@ -209,5 +211,18 @@ describe('Registration service', () => {
     const csr = 'MIIBFTCBvAIBADAqMSgwFgYKKwYBBAGDjBsCARMIdGVzdE5hbWUwDgYDVQQDEwdaYmF5IENBMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEGPGHpJzE/CvL7l/OmTSfYQrhhnWQrYw3GgWB1raCTSeFI/MDVztkBOlxwdUWSm10+1OtKVUWeMKaMtyIYFcPPqAwMC4GCSqGSIb3DQEJDjEhMB8wHQYDVR0OBBYEFLjaEh+cnNhsi5qDsiMB/ZTzZFfqMAoGCCqGSM49BAMCA0gAMEUCIFwlob/Igab05EozU0e/lsG7c9BxEy4M4c4Jzru2vasGAiEAqFTQuQr/mVqTHO5vybWm/iNDk8vh88K6aBCCGYqIfdw='
     const response = await registerUserTest(csr, ports.socksPort)
     expect(response.status).toEqual(400)
+  })
+  it('registers owner certificate', async () => {
+    const csr = await createUserCsr({
+      zbayNickname: 'userName',
+      commonName: 'nqnw4kc4c77fb47lk52m5l57h4tcxceo7ymxekfn7yh5m66t4jv2olad.onion',
+      peerId: 'Qmf3ySkYqLET9xtAtDzvAr5Pp3egK1H3C5iJAZm1SpLEp6',
+      dmPublicKey: 'testdmPublicKey',
+      signAlg: configCrypto.signAlg,
+      hashAlg: configCrypto.hashAlg
+    })
+    const certificate = await registerOwnerCertificate(csr.userCsr, dataFromRootPems)
+    const isProperUserCert = await verifyUserCert(dataFromRootPems.certificate, certificate)
+    expect(isProperUserCert.result).toBe(true)
   })
 })
