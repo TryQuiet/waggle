@@ -184,12 +184,6 @@ export class ConnectionsManager {
     bootstrapMultiaddrsList,
     transportClass
   }): Libp2pType => {
-    // cert = dumpPEM('CERTIFICATE',cert)
-    // ca = [dumpPEM('CERTIFICATE',ca)]
-    // key = dumpPEM('PRIVATE KEY',key)
-    // console.log(cert)
-    // console.log(ca)
-    // console.log(key)
     return ConnectionsManager.defaultLibp2pNode({
       peerId,
       listenAddrs,

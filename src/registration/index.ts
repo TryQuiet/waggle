@@ -23,19 +23,6 @@ class UserCsrData {
   csr: string
 }
 
-export const registerOwnerCertificate = async (userCsr, dataFromPems): Promise<Certificate> => {
-  const userData = new UserCsrData()
-  userData.csr = userCsr
-  const validationErrors = await validate(userData)
-  if (validationErrors.length > 0) return
-  const userCert = await createUserCert(dataFromPems.certificate, dataFromPems.privKey, userCsr, new Date(), new Date(2030, 1, 1))
-  return userCert.userCertString
-}
-
-// export const saveOwnerCertToDb = async () => {
-
-// }
-
 export class CertificateRegistration {
   private readonly _app: express.Application
   private _server: Server
