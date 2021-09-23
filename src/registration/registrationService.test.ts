@@ -211,7 +211,7 @@ describe('Registration service', () => {
     const response = await registerUserTest(csr, ports.socksPort)
     expect(response.status).toEqual(400)
   })
-  it.only('registers owner certificate', async () => {
+  it('registers owner certificate', async () => {
     const csr = await createUserCsr({
       zbayNickname: 'userName',
       commonName: 'nqnw4kc4c77fb47lk52m5l57h4tcxceo7ymxekfn7yh5m66t4jv2olad.onion',
