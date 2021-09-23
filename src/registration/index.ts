@@ -151,7 +151,7 @@ export class CertificateRegistration {
   public async listen(): Promise<void> {
     return await new Promise(resolve => {
       this._server = this._app.listen(this._port, () => {
-        log(`Certificate registration service listening on ${this._onionAddress}.onion:${this._port}`)
+        log(`Certificate registration service listening on ${this._onionAddress}:${this._port}`)
         resolve()
       })
     })

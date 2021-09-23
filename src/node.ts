@@ -117,7 +117,7 @@ export default class Node {
         service = (await this.tor.createNewHiddenService(this.hiddenServicePort, this.hiddenServicePort)).onionAddress
       }
     }
-    return `${service as string}.onion`
+    return `${service as string}`
   }
 
   async initDataServer(): Promise<DataServer> {

@@ -5,12 +5,17 @@
 ### Fixed
 
 * Stucking Tor - kill and relaunch the Tor after given timeout
+
 ### Added
 
 * DestroyHiddenService method in torManager
 * CreateNetwork in communitiesManager
 * CreateNetwork api in IOPRoxy
 * ConnectionsManager option - allow using tor files (binaries and libs) from waggle
+
+### Changed
+
+* spawnHiddenService and createNewHiddenService now return onion address with '.onion'
 
 ## [4.0.1]
 
