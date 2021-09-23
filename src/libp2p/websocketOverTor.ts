@@ -49,13 +49,15 @@ class WebsocketsOverTor extends WebSockets {
     let socket
     let maConn
 
+    const ca = this._websocketOpts.ca[0]
+
     try {
       socket = await this._connect(ma, {
         websocket: {
           ...this._websocketOpts,
           cert: dumpPEM('CERTIFICATE', this._websocketOpts.cert),
           key: dumpPEM('PRIVATE KEY', this._websocketOpts.key),
-          ca: [dumpPEM('CERTIFICATE', this._websocketOpts.ca[0])]
+          ca: [dumpPEM('CERTIFICATE', ca)]
         }
       })
     } catch (e) {
