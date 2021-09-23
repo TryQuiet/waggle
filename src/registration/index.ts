@@ -10,7 +10,6 @@ import { DataFromPems } from '../common/types'
 import { CsrContainsFields, IsCsr } from './validators'
 import fp from 'find-free-port'
 import { Storage } from '../storage'
-import { UserCert } from '@zbayapp/identity/lib/generateUserCertificate'
 
 const log = Object.assign(debug('waggle:registration'), {
   error: debug('waggle:registration:err')
@@ -34,7 +33,7 @@ export const registerOwnerCertificate = async (userCsr, dataFromPems): Promise<C
 }
 
 // export const saveOwnerCertToDb = async () => {
-  
+
 // }
 
 export class CertificateRegistration {

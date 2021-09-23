@@ -1,4 +1,4 @@
-import { Time, getCrypto, Certificate } from 'pkijs'
+import { Time, Certificate } from 'pkijs'
 
 import { createUserCert, createUserCsr, createRootCA, configCrypto } from '@zbayapp/identity'
 import { RootCA } from '@zbayapp/identity/lib/generateRootCA'

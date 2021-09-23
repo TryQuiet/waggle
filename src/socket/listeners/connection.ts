@@ -2,7 +2,6 @@ import { EventTypesServer } from '../constants'
 import { CertsData, IChannelInfo, IMessage } from '../../common/types'
 import IOProxy from '../IOProxy'
 import PeerId from 'peer-id'
-import { dataFromRootPems } from '../../testUtils'
 
 export const connections = (io, ioProxy: IOProxy) => {
   io.on(EventTypesServer.CONNECTION, socket => {

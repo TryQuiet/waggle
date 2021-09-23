@@ -1,6 +1,5 @@
 import path from 'path'
 import os from 'os'
-import { DataFromPems } from './common/types'
 
 export enum Config {
   ZBAY_DIR = '.zbay',

@@ -20,7 +20,6 @@ import IOProxy from '../socket/IOProxy'
 import { Connection } from 'libp2p-gossipsub/src/interfaces'
 import { HttpsProxyAgent } from 'https-proxy-agent'
 import path from 'path'
-import {dumpPEM} from './tests/client-server'
 
 const log = Object.assign(debug('waggle:conn'), {
   error: debug('waggle:conn:err')

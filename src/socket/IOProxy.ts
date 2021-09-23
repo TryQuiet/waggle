@@ -6,7 +6,7 @@ import { Storage } from '../storage'
 import debug from 'debug'
 import PeerId from 'peer-id'
 import { loadAllMessages } from './events/messages'
-import {CertificateRegistration} from '../registration'
+import { CertificateRegistration } from '../registration'
 
 const log = Object.assign(debug('waggle:io'), {
   error: debug('waggle:io:err')
@@ -117,8 +117,9 @@ export default class IOProxy {
     console.log(dataFromPerms.certificate)
     this.io.emit(EventTypesResponse.SEND_USER_CERTIFICATE, { id: communityId, payload: { certificate: cert, peers: [], rootCa: dataFromPerms.certificate } })
   }
+
   public saveOwnerCertificate = async (communityId: string, peerId: string, certificate: string, dataFromPerms) => {
-    const cert = await this.getStorage(peerId).saveCertificate(certificate, dataFromPerms)
+    await this.getStorage(peerId).saveCertificate(certificate, dataFromPerms)
     console.log('savedOwnerCertificate')
     this.io.emit(EventTypesResponse.SAVED_OWNER_CERTIFICATE, { id: communityId })
   }

@@ -13,7 +13,7 @@ import multiaddr from 'multiaddr'
 import debug from 'debug'
 import PeerId from 'peer-id'
 import https from 'https'
-import {dumpPEM} from './tests/client-server'
+import { dumpPEM } from './tests/client-server'
 
 const log: any = debug('libp2p:websockets:listener:waggle')
 log.error = debug('libp2p:websockets:listener:waggle:error')
@@ -43,8 +43,6 @@ class WebsocketsOverTor extends WebSockets {
     this.discovery = new Discovery()
   }
 
-  
-
   async dial(ma, options: any = {}) {
     log('dialing %s', ma)
     let conn
@@ -68,7 +66,7 @@ class WebsocketsOverTor extends WebSockets {
           cert: dumpPEM('CERTIFICATE', this._websocketOpts.cert),
           key: dumpPEM('PRIVATE KEY', this._websocketOpts.key),
           ca: [dumpPEM('CERTIFICATE', caArray)]
-        },
+        }
       })
     } catch (e) {
       log.error('error connecting to %s. Details: %s', ma, e.message)
@@ -157,7 +155,7 @@ class WebsocketsOverTor extends WebSockets {
     }
 
     const serverHttps = https.createServer({
-    ...certData,
+      ...certData,
       requestCert: true,
       enableTrace: false
     })

@@ -6,7 +6,7 @@ import Websockets from 'libp2p-websockets'
 import { DataServer } from '../socket/DataServer'
 import { ConnectionsManager } from '../libp2p/connectionsManager'
 import CommunitiesManager from '../communities/manager'
-import { createUsersCerts, dumpPEM } from '../libp2p/tests/client-server'
+import { createUsersCerts } from '../libp2p/tests/client-server'
 import { CertsData } from '../common/types'
 
 /**

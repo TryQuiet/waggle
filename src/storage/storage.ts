@@ -16,7 +16,7 @@ import { EventTypesResponse } from '../socket/constantsReponse'
 import { loadAllPublicChannels } from '../socket/events/channels'
 import { Libp2p } from 'libp2p-gossipsub/src/interfaces'
 import { Config } from '../constants'
-import {dataFromRootPems} from '../testUtils'
+import { dataFromRootPems } from '../testUtils'
 import { loadCertificates } from '../socket/events/certificates'
 import {
   IRepo,
@@ -112,7 +112,7 @@ export class Storage {
       try {
         await this.ipfs.stop()
       } catch (err) {
-        log.error(`Following error occured during closing ipfs database: ${err}`)
+        log.error(`Following error occured during closing ipfs database: ${err as string}`)
       }
     }
   }
@@ -364,7 +364,7 @@ export class Storage {
   public async askForMessages(
     channelAddress: string,
     ids: string[]
-  ): Promise<{ filteredMessages: IMessage[]; channelAddress: string }> {
+  ): Promise<{ filteredMessages: IMessage[], channelAddress: string }> {
     const repo = this.publicChannelsRepos.get(channelAddress)
     if (!repo) return
     const messages = this.getAllEventLogEntries(repo.db)
