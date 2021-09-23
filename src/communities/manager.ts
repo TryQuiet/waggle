@@ -67,7 +67,7 @@ export default class CommunitiesManager {
   }
 
   public initStorage = async (peerId: PeerId, onionAddress: string, port: number, bootstrapMultiaddrs: string[], certs: CertsData): Promise<string> => {
-    const listenAddrs = `/dns4/${onionAddress}/tcp/${port}/wss`
+    const listenAddrs = `/dns4/${onionAddress}.onion/tcp/${port}/wss`
     const peerIdB58string = peerId.toB58String()
     if (bootstrapMultiaddrs.length === 0) {
       bootstrapMultiaddrs = [listenAddrs]
