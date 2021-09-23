@@ -6,7 +6,7 @@ import { Storage } from '../storage'
 import debug from 'debug'
 import PeerId from 'peer-id'
 import { loadAllMessages } from './events/messages'
-import { registerOwnerCertificate } from '../registration'
+import {CertificateRegistration} from '../registration'
 import { dataFromRootPems } from '../constants'
 
 const log = Object.assign(debug('waggle:io'), {
@@ -114,8 +114,14 @@ export default class IOProxy {
   }
 
   public registerOwnerCertificate = async (communityId: string, userCsr: string, dataFromPerms) => {
-    const cert = await registerOwnerCertificate(userCsr, dataFromPerms)
-    this.io.emit(EventTypesResponse.SEND_USER_CERTIFICATE, { id: communityId, payload: { certificate: cert, peers: [], rootCa: dataFromRootPems.certificate } })
+    const cert = await CertificateRegistration.registerOwnerCertificate(userCsr, dataFromPerms)
+    console.log(dataFromPerms.certificate)
+    this.io.emit(EventTypesResponse.SEND_USER_CERTIFICATE, { id: communityId, payload: { certificate: cert, peers: [], rootCa: dataFromPerms.certificate } })
+  }
+  public saveOwnerCertificate = async (communityId: string, peerId: string, certificate: string, dataFromPerms) => {
+    const cert = await this.getStorage(peerId).saveCertificate(certificate, dataFromPerms)
+    console.log('savedOwnerCertificate')
+    this.io.emit(EventTypesResponse.SAVED_OWNER_CERTIFICATE, { id: communityId })
   }
 
   public registerUserCertificate = async (serviceAddress: string, userCsr: string, communityId: string) => {

@@ -13,6 +13,7 @@ import multiaddr from 'multiaddr'
 import debug from 'debug'
 import PeerId from 'peer-id'
 import https from 'https'
+import {dumpPEM} from './tests/client-server'
 
 const log: any = debug('libp2p:websockets:listener:waggle')
 log.error = debug('libp2p:websockets:listener:waggle:error')
@@ -42,16 +43,32 @@ class WebsocketsOverTor extends WebSockets {
     this.discovery = new Discovery()
   }
 
+  
+
   async dial(ma, options: any = {}) {
     log('dialing %s', ma)
     let conn
     let socket
     let maConn
+    let caArray
+
+    if (Array.isArray(this._websocketOpts.ca)) {
+      if (this._websocketOpts.ca[0]) {
+        caArray = this._websocketOpts.ca[0]
+      } else {
+        caArray = null
+      }
+    } else {
+      caArray = null
+    }
     try {
       socket = await this._connect(ma, {
-        websocket: this._websocketOpts,
-        ...options,
-        localAddr: this.localAddress
+        websocket: {
+          ...this._websocketOpts,
+          cert: dumpPEM('CERTIFICATE', this._websocketOpts.cert),
+          key: dumpPEM('PRIVATE KEY', this._websocketOpts.key),
+          ca: [dumpPEM('CERTIFICATE', caArray)]
+        },
       })
     } catch (e) {
       log.error('error connecting to %s. Details: %s', ma, e.message)
@@ -82,11 +99,6 @@ class WebsocketsOverTor extends WebSockets {
     const cOpts = ma.toOptions()
     log('dialing %s:%s', cOpts.host, cOpts.port)
     const myUri = `${toUri(ma) as string}/?remoteAddress=${encodeURIComponent(this.localAddress)}`
-
-    // certificates are temporarily disable
-    delete options.websocket.cert
-    delete options.websocket.key
-    delete options.websocket.ca
 
     const rawSocket = connect(myUri, Object.assign({ binary: true }, options))
     if (!options.signal) {
@@ -138,18 +150,20 @@ class WebsocketsOverTor extends WebSockets {
       caArray = null
     }
 
-    // certificates are temporarily disable
-    // eslint-disable-next-line
-    // const serverHttps = https.createServer({
-    //   cert: this._websocketOpts.cert,
-    //   key: this._websocketOpts.key,
-    //   ca: [caArray],
-    //   requestCert: true,
-    //   enableTrace: false
-    // })
+    const certData = {
+      cert: dumpPEM('CERTIFICATE', this._websocketOpts.cert),
+      key: dumpPEM('PRIVATE KEY', this._websocketOpts.key),
+      ca: [dumpPEM('CERTIFICATE', caArray)]
+    }
+
+    const serverHttps = https.createServer({
+    ...certData,
+      requestCert: true,
+      enableTrace: false
+    })
 
     const optionsServ = {
-      // server: serverHttps,
+      server: serverHttps,
       // eslint-disable-next-line
       verifyClient: function (info, done) {
         done(true)
@@ -217,7 +231,7 @@ class WebsocketsOverTor extends WebSockets {
       if (listeningMultiaddr.toString().indexOf('ip4') !== -1) {
         let m = listeningMultiaddr.decapsulate('tcp')
         // eslint-disable-next-line
-        m = m.encapsulate('/tcp/' + address.port + '/ws')
+        m = m.encapsulate('/tcp/' + address.port + '/wss')
         if (listeningMultiaddr.getPeerId()) {
           m = m.encapsulate('/p2p/' + ipfsId)
         }

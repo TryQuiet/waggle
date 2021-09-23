@@ -34,9 +34,9 @@ export const registerOwnerCertificate = async (userCsr, dataFromPems): Promise<C
   return userCert.userCertString
 }
 
-export const saveOwnerCertToDb = async () => {
+// export const saveOwnerCertToDb = async () => {
   
-}
+// }
 
 export class CertificateRegistration {
   private readonly _app: express.Application
@@ -73,11 +73,29 @@ export class CertificateRegistration {
     }
   }
 
+  public async saveOwnerCertToDb(userCert: string) {
+    const certSaved = await this._storage.saveCertificate(userCert, this._dataFromPems)
+    if (!certSaved) {
+      throw new Error('Could not save certificate')
+    }
+    log('Saved certificate')
+    return userCert
+  }
+
+  static async registerOwnerCertificate(userCsr: string, dataFromPems: DataFromPems) {
+    const userData = new UserCsrData()
+    userData.csr = userCsr
+    const validationErrors = await validate(userData)
+    if (validationErrors.length > 0) return
+    const userCert = await createUserCert(dataFromPems.certificate, dataFromPems.privKey, userCsr, new Date(), new Date(2030, 1, 1))
+    return userCert.userCertString
+  }
+
   public async getPeers(): Promise<string[]> {
     const users = this._storage.getAllUsers()
     const peers = users.map(async (userData: { onionAddress: string, peerId: string }) => {
       const [port] = await fp(1234) // port probably does not matter - to be checked
-      return `/dns4/${userData.onionAddress}/tcp/${port as string}/ws/p2p/${userData.peerId}`
+      return `/dns4/${userData.onionAddress}/tcp/${port as string}/wss/p2p/${userData.peerId}`
     })
 
     return await Promise.all(peers)

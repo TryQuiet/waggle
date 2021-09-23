@@ -10,7 +10,7 @@ import { RootCA } from '@zbayapp/identity/lib/generateRootCA'
 import { Storage } from '../storage'
 import PeerId from 'peer-id'
 import { DataFromPems } from '../common/types'
-import {registerOwnerCertificate} from './index'
+// import {registerOwnerCertificate} from './index'
 import { dataFromRootPems } from '../constants'
 jest.setTimeout(50_000)
 
@@ -212,7 +212,7 @@ describe('Registration service', () => {
     const response = await registerUserTest(csr, ports.socksPort)
     expect(response.status).toEqual(400)
   })
-  it('registers owner certificate', async () => {
+  it.only('registers owner certificate', async () => {
     const csr = await createUserCsr({
       zbayNickname: 'userName',
       commonName: 'nqnw4kc4c77fb47lk52m5l57h4tcxceo7ymxekfn7yh5m66t4jv2olad.onion',
@@ -221,7 +221,7 @@ describe('Registration service', () => {
       signAlg: configCrypto.signAlg,
       hashAlg: configCrypto.hashAlg
     })
-    const certificate = await registerOwnerCertificate(csr.userCsr, dataFromRootPems)
+    const certificate = await CertificateRegistration.registerOwnerCertificate(csr.userCsr, dataFromRootPems)
     const isProperUserCert = await verifyUserCert(dataFromRootPems.certificate, certificate)
     expect(isProperUserCert.result).toBe(true)
   })
