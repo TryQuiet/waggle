@@ -11,7 +11,6 @@ import { CsrContainsFields, IsCsr } from './validators'
 import fp from 'find-free-port'
 import { Storage } from '../storage'
 import { UserCert } from '@zbayapp/identity/lib/generateUserCertificate'
-import { dataFromRootPems } from '../constants'
 
 const log = Object.assign(debug('waggle:registration'), {
   error: debug('waggle:registration:err')
@@ -131,7 +130,7 @@ export class CertificateRegistration {
     res.send({
       certificate: cert.userCertString,
       peers: await this.getPeers(),
-      rootCa: dataFromRootPems.certificate
+      rootCa: this._dataFromPems.certificate
     })
   }
 

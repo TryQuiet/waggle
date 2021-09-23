@@ -15,7 +15,8 @@ import {
 import { EventTypesResponse } from '../socket/constantsReponse'
 import { loadAllPublicChannels } from '../socket/events/channels'
 import { Libp2p } from 'libp2p-gossipsub/src/interfaces'
-import { Config, dataFromRootPems } from '../constants'
+import { Config } from '../constants'
+import {dataFromRootPems} from '../testUtils'
 import { loadCertificates } from '../socket/events/certificates'
 import {
   IRepo,

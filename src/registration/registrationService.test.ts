@@ -2,7 +2,7 @@ import { createRootCA, createUserCert, createUserCsr, verifyUserCert, configCryp
 import { SocksProxyAgent } from 'socks-proxy-agent'
 import { CertificateRegistration } from '.'
 import { Time } from 'pkijs'
-import { createLibp2p, createTmpDir, spawnTorProcess, TmpDir, tmpZbayDirPath, TorMock } from '../testUtils'
+import { createLibp2p, createTmpDir, spawnTorProcess, TmpDir, tmpZbayDirPath, TorMock, dataFromRootPems } from '../testUtils'
 import { DummyIOServer, getPorts, Ports } from '../utils'
 import fetch, { Response } from 'node-fetch'
 import { Tor } from '../torManager'
@@ -11,7 +11,6 @@ import { Storage } from '../storage'
 import PeerId from 'peer-id'
 import { DataFromPems } from '../common/types'
 // import {registerOwnerCertificate} from './index'
-import { dataFromRootPems } from '../constants'
 jest.setTimeout(50_000)
 
 async function registerUserTest(csr: string, socksPort: number, localhost: boolean = true): Promise<Response> {
@@ -148,7 +147,7 @@ describe('Registration service', () => {
     const isProperUserCert = await verifyUserCert(certRoot.rootCertString, responseData.certificate)
     expect(isProperUserCert.result).toBe(true)
     expect(responseData.peers.length).toBe(1)
-    expect(responseData.rootCa).toBeTruthy()
+    expect(responseData.rootCa).toBe(certRoot.rootCertString)
   })
 
   it('returns 403 if username already exists', async () => {

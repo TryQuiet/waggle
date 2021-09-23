@@ -7,7 +7,6 @@ import debug from 'debug'
 import PeerId from 'peer-id'
 import { loadAllMessages } from './events/messages'
 import {CertificateRegistration} from '../registration'
-import { dataFromRootPems } from '../constants'
 
 const log = Object.assign(debug('waggle:io'), {
   error: debug('waggle:io:err')
