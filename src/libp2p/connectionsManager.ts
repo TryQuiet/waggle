@@ -248,7 +248,7 @@ export class ConnectionsManager {
               agent,
               cert,
               key,
-              ca: [ca]
+              ca
             },
             localAddr
           }
