@@ -1,21 +1,27 @@
-import tmp from 'tmp'
+import debug from 'debug'
 import fp from 'find-free-port'
-import { SocksProxyAgent } from 'socks-proxy-agent'
-import { Config } from './constants'
-import { DummyIOServer, getPorts, Ports, torBinForPlatform, torDirForPlatform } from './utils'
-import { Tor } from './torManager'
-import { ConnectionsManager } from './libp2p/connectionsManager'
+import { Response } from 'node-fetch'
 import path from 'path'
 import PeerId from 'peer-id'
+import { SocksProxyAgent } from 'socks-proxy-agent'
+import tmp from 'tmp'
+import { ConnectionsManagerOptions, DataFromPems } from './common/types'
+import { Config } from './constants'
+import { ConnectionsManager } from './libp2p/connectionsManager'
 import { Libp2pType } from './libp2p/customLibp2p'
-import WebsocketsOverTor from './libp2p/websocketOverTor'
-import { ConnectionsManagerOptions } from './common/types'
 import { createCertificatesTestHelper } from './libp2p/tests/client-server'
-import { Response } from 'node-fetch'
-import debug from 'debug'
+import WebsocketsOverTor from './libp2p/websocketOverTor'
+import { Tor } from './torManager'
+import { DummyIOServer, getPorts, Ports, torBinForPlatform, torDirForPlatform } from './utils'
 const log = Object.assign(debug('waggle:test'), {
   error: debug('waggle:test:err')
 })
+
+export const dataFromRootPems: DataFromPems = { // Tmp cert
+  certificate: 'MIIBNjCB3AIBATAKBggqhkjOPQQDAjASMRAwDgYDVQQDEwdaYmF5IENBMCYYEzIwMjEwNjIyMDkzMDEwLjAyNVoYDzIwMzAwMTMxMjMwMDAwWjASMRAwDgYDVQQDEwdaYmF5IENBMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEV5a3Czy+L7IfVX0FpJtSF5mi0GWGrtPqv5+CFSDPrHXijsxWdPTobR1wk8uCLP4sAgUbs/bIleCxQy41kSSyOaMgMB4wDwYDVR0TBAgwBgEB/wIBAzALBgNVHQ8EBAMCAAYwCgYIKoZIzj0EAwIDSQAwRgIhAPOzksuipKyBALt/o8O/XwsrVSzfSHXdAR4dOWThQ1lbAiEAmKqjhsmf50kxWX0ekhbAeCTjcRApXhjnslmJkIFGF2o=+lmBImw3BMNjA0FTlK5iRmVC+w/T6M04Es+yiYL608vOhx2slnoyAwHjAPBgNVHRMECDAGAQH/AgEDMAsGA1UdDwQEAwIABjAKBggqhkjOPQQDAgNIADBFAiEA+0kIz0ny/PLVERTcL0+KCpsztyA6Zuwzj05VW5NMdx0CICgdzf0lg0/2Ksl1AjSPYsy2w+Hn09PGlBnD7TiExBpx',
+  privKey: 'MIGTAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBHkwdwIBAQQgTvNuJL0blaYq6zmFS53WmmOfHshlqn+8wNHDzo4df5WgCgYIKoZIzj0DAQehRANCAARXlrcLPL4vsh9VfQWkm1IXmaLQZYau0+q/n4IVIM+sdeKOzFZ09OhtHXCTy4Is/iwCBRuz9siV4LFDLjWRJLI5+lmBImw3BMNjA0FTlK5iRmVC+w/T6M04Es+yiYL608vOhx2sln'
+}
+
 tmp.setGracefulCleanup()
 
 export interface TmpDir {
@@ -66,7 +72,7 @@ export const createLibp2p = async (peerId: PeerId): Promise<Libp2pType> => {
 
   return ConnectionsManager.createBootstrapNode({
     peerId,
-    listenAddrs: [`/dns4/localhost/tcp/${port as string}/ws`],
+    listenAddrs: [`/dns4/localhost/tcp/${port as string}/wss`],
     bootstrapMultiaddrsList: testBootstrapMultiaddrs,
     agent: new SocksProxyAgent({ port: 1234, host: 'localhost' }),
     localAddr: `/dns4/localhost/tcp/${port as string}/wss/p2p/${peerId.toB58String()}`,

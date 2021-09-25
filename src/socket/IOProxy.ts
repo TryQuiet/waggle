@@ -1,13 +1,14 @@
+import debug from 'debug'
+import { Response } from 'node-fetch'
+import PeerId from 'peer-id'
 import { CertsData, IChannelInfo, IMessage } from '../common/types'
 import CommunitiesManager from '../communities/manager'
 import { ConnectionsManager } from '../libp2p/connectionsManager'
-import { EventTypesResponse } from './constantsReponse'
+import { CertificateRegistration } from '../registration'
 import { Storage } from '../storage'
-import debug from 'debug'
-import PeerId from 'peer-id'
-import { loadAllMessages } from './events/messages'
+import { EventTypesResponse } from './constantsReponse'
 import { emitServerError, emitValidationError } from './errors'
-import { Response } from 'node-fetch'
+import { loadAllMessages } from './events/messages'
 
 const log = Object.assign(debug('waggle:io'), {
   error: debug('waggle:io:err')
@@ -113,6 +114,18 @@ export default class IOProxy {
     await this.getStorage(peerId).subscribeForAllConversations(conversations)
   }
 
+  public registerOwnerCertificate = async (communityId: string, userCsr: string, dataFromPerms) => {
+    const cert = await CertificateRegistration.registerOwnerCertificate(userCsr, dataFromPerms)
+    console.log(dataFromPerms.certificate)
+    this.io.emit(EventTypesResponse.SEND_USER_CERTIFICATE, { id: communityId, payload: { certificate: cert, peers: [], rootCa: dataFromPerms.certificate } })
+  }
+
+  public saveOwnerCertificate = async (communityId: string, peerId: string, certificate: string, dataFromPerms) => {
+    await this.getStorage(peerId).saveCertificate(certificate, dataFromPerms)
+    console.log('savedOwnerCertificate')
+    this.io.emit(EventTypesResponse.SAVED_OWNER_CERTIFICATE, { id: communityId })
+  }
+
   public registerUserCertificate = async (serviceAddress: string, userCsr: string, communityId: string) => {
     let response: Response
     try {
@@ -135,8 +148,7 @@ export default class IOProxy {
         emitServerError(this.io, { type: EventTypesResponse.REGISTRAR, message: 'Registering username failed.', communityId })
         return
     }
-    const registrarResponse: { certificate: string, peers: string[] } = await response.json()
-    log(`Sending certificate with ${registrarResponse.peers.length} peers`)
+    const registrarResponse: { certificate: string, peers: string[], rootCa: string } = await response.json()
     this.io.emit(EventTypesResponse.SEND_USER_CERTIFICATE, { id: communityId, payload: registrarResponse })
   }
 

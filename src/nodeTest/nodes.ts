@@ -6,7 +6,7 @@ import Websockets from 'libp2p-websockets'
 import { DataServer } from '../socket/DataServer'
 import { ConnectionsManager } from '../libp2p/connectionsManager'
 import CommunitiesManager from '../communities/manager'
-import { createUsersCerts, dumpPEM } from '../libp2p/tests/client-server'
+import { createUsersCerts } from '../libp2p/tests/client-server'
 import { CertsData } from '../common/types'
 
 /**
@@ -78,7 +78,6 @@ export class NodeWithoutTor extends LocalNode {
     )
     const communities = new CommunitiesManager(connectonsManager)
     const peerId = await this.getPeer()
-
     const bootstrapAddressArrayWs = this.bootstrapMultiaddrs.map((address) => address.replace('wss', 'ws'))
     // eslint-disable-next-line
     const certs = {} as CertsData
@@ -126,7 +125,7 @@ export class NodeWithTor extends LocalNode {
     const certs = {
       cert: userCert.userCert,
       key: userCert.userKey,
-      ca: [dumpPEM('CERTIFICATE', this.rootCa.rootObject.certificate.toSchema(true).toBER(false))]
+      ca: [this.rootCa.rootCertString]
     }
 
     const communities = new CommunitiesManager(connectonsManager)
