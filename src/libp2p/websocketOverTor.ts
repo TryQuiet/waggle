@@ -79,10 +79,16 @@ class WebsocketsOverTor extends WebSockets {
   }
 
   get certData() {
+    let ca: string
+    if (Array.isArray(this._websocketOpts.ca)) {
+      ca = this._websocketOpts.ca[0]
+    } else {
+      ca = this._websocketOpts.ca
+    }
     return {
       cert: dumpPEM('CERTIFICATE', this._websocketOpts.cert),
       key: dumpPEM('PRIVATE KEY', this._websocketOpts.key),
-      ca: [dumpPEM('CERTIFICATE', this._websocketOpts.ca[0])]
+      ca: [dumpPEM('CERTIFICATE', ca)]
     }
   }
 
