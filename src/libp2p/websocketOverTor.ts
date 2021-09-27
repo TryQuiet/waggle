@@ -49,15 +49,11 @@ class WebsocketsOverTor extends WebSockets {
     let socket
     let maConn
 
-    const ca = this._websocketOpts.ca[0]
-
     try {
       socket = await this._connect(ma, {
         websocket: {
           ...this._websocketOpts,
-          cert: dumpPEM('CERTIFICATE', this._websocketOpts.cert),
-          key: dumpPEM('PRIVATE KEY', this._websocketOpts.key),
-          ca: [dumpPEM('CERTIFICATE', ca)]
+          ...this.certData
         }
       })
     } catch (e) {
@@ -79,6 +75,14 @@ class WebsocketsOverTor extends WebSockets {
     } catch (e) {
       log.error('error upgrading outbound connection %s. Details: %s', maConn.remoteAddr, e.message)
       throw e
+    }
+  }
+
+  get certData() {
+    return {
+      cert: dumpPEM('CERTIFICATE', this._websocketOpts.cert),
+      key: dumpPEM('PRIVATE KEY', this._websocketOpts.key),
+      ca: [dumpPEM('CERTIFICATE', this._websocketOpts.ca[0])]
     }
   }
 
@@ -128,26 +132,8 @@ class WebsocketsOverTor extends WebSockets {
       server.__connections.push(maConn)
     }
 
-    let caArray
-
-    if (Array.isArray(this._websocketOpts.ca)) {
-      if (this._websocketOpts.ca[0]) {
-        caArray = this._websocketOpts.ca[0]
-      } else {
-        caArray = null
-      }
-    } else {
-      caArray = null
-    }
-
-    const certData = {
-      cert: dumpPEM('CERTIFICATE', this._websocketOpts.cert),
-      key: dumpPEM('PRIVATE KEY', this._websocketOpts.key),
-      ca: [dumpPEM('CERTIFICATE', caArray)]
-    }
-
     const serverHttps = https.createServer({
-      ...certData,
+      ...this.certData,
       requestCert: true,
       enableTrace: false
     })

@@ -5,6 +5,7 @@
 ### Fixed
 
 * ConnectionsManager.createNetwork - pass service id without '.onion' to destroyHiddenService
+* WebsocketOverTor - unify generating cert data
 
 ## [4.1.0]
 
