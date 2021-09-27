@@ -22,9 +22,14 @@ interface CommunityData {
   localAddress: string
 }
 
+interface Community {
+  storage: Storage
+  registrar?: CertificateRegistration
+}
+
 export default class CommunitiesManager {
   connectionsManager: ConnectionsManager
-  communities: Map<string, { storage: Storage, registrar?: CertificateRegistration }>
+  communities: Map<string, Community>
 
   constructor(connectionsManager: ConnectionsManager) {
     this.connectionsManager = connectionsManager
@@ -33,11 +38,15 @@ export default class CommunitiesManager {
 
   public getStorage(peerId: string): Storage {
     try {
-      return this.communities.get(peerId).storage
+      return this.getCommunity(peerId).storage
     } catch (e) {
       log.error(`No available Storage for peer ${peerId}`)
       throw e
     }
+  }
+
+  public getCommunity(peerId: string): Community {
+    return this.communities.get(peerId)
   }
 
   public create = async (certs: CertsData): Promise<CommunityData> => {
@@ -73,15 +82,7 @@ export default class CommunitiesManager {
       bootstrapMultiaddrs = [listenAddrs]
     }
     const libp2pObj = await this.connectionsManager.initLibp2p(peerId, listenAddrs, bootstrapMultiaddrs, certs)
-    const storage = new this.connectionsManager.StorageCls(
-      this.connectionsManager.zbayDir,
-      this.connectionsManager.io,
-      {
-        ...this.connectionsManager.options,
-        orbitDbDir: `OrbitDB${peerIdB58string}`,
-        ipfsDir: `Ipfs${peerIdB58string}`
-      }
-    )
+    const storage = this.connectionsManager.createStorage(peerIdB58string)
     await storage.init(libp2pObj.libp2p, peerId)
     this.communities.set(peerIdB58string, { storage })
     log(`Initialized storage for peer ${peerIdB58string}`)
@@ -89,13 +90,16 @@ export default class CommunitiesManager {
   }
 
   public closeStorages = async () => {
-    for (const storage of Array.from(this.communities.values()).map(community => community.storage)) {
+    const storages = Array.from(this.communities.values()).map(community => community.storage)
+    log(`Closing ${storages.length} storages`)
+    for (const storage of storages) {
       await storage.stopOrbitDb()
     }
   }
 
   public stopRegistrars = async () => {
     const registrars = Array.from(this.communities.values()).map(community => community.registrar).filter((r) => r !== null && r !== undefined)
+    log(`Stopping ${registrars.length} registrars`)
     for (const registrar of registrars) {
       await registrar.stop()
     }

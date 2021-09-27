@@ -29,6 +29,12 @@ export default class IOProxy {
     return this.communities.getStorage(peerId)
   }
 
+  public async closeAll(): Promise<void> {
+    await this.communities.stopRegistrars()
+    await this.communities.closeStorages()
+    await this.connectionsManager.tor.kill()
+  }
+
   public subscribeForTopic = async (peerId: string, channelData: IChannelInfo) => {
     log(`${peerId} is subscribing for channel ${channelData.address}`)
     await this.getStorage(peerId).subscribeForChannel(channelData.address, channelData)

@@ -158,6 +158,18 @@ export class ConnectionsManager {
     }
   }
 
+  public createStorage = (peerId: string) => {
+    return new this.StorageCls(
+      this.zbayDir,
+      this.io,
+      {
+        ...this.options,
+        orbitDbDir: `OrbitDB${peerId}`,
+        ipfsDir: `Ipfs${peerId}`
+      }
+    )
+  }
+
   public sendCertificateRegistrationRequest = async (serviceAddress: string, userCsr: string): Promise<Response> => {
     const options = {
       method: 'POST',
