@@ -1,5 +1,11 @@
 # Changelog
 
+## [4.1.1]
+
+### Fixed
+
+* ConnectionsManager.createNetwork - pass service id without '.onion' to destroyHiddenService
+
 ## [4.1.0]
 
 ### Fixed
