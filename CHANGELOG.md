@@ -12,7 +12,7 @@
 
 ### Removed
 
-* REGISTRAR_ERROR and CERTIFICATE_REGISTRATION socket events
+* REGISTRAR_ERROR and CERTIFICATE_REGISTRATION_ERROR socket events
 
 ## [4.1.1]
 
