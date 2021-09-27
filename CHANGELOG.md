@@ -1,5 +1,19 @@
 # Changelog
 
+## [4.2.0]
+
+### Added
+
+* Emit general ERROR socket event
+
+### Changed
+
+* Community manager - keep reference not only to storage but also to registrar
+
+### Removed
+
+* REGISTRAR_ERROR and CERTIFICATE_REGISTRATION socket events
+
 ## [4.1.0]
 
 ### Fixed
@@ -12,7 +26,6 @@
 * DestroyHiddenService method in torManager
 * CreateNetwork in communitiesManager
 * CreateNetwork api in IOPRoxy
-* Emit general ERROR socket event
 * ConnectionsManager option - allow using tor files (binaries and libs) from waggle
 * Register owner certificate
 
@@ -20,14 +33,6 @@
 
 * spawnHiddenService and createNewHiddenService now return onion address with '.onion'
 * Registrar returns also rootCA
-
-### Changed
-
-* Community manager - keep reference not only to storage but also to registrar
-
-### Removed
-
-* REGISTRAR_ERROR and CERTIFICATE_REGISTRATION socket events
 
 ## [4.0.1]
 
