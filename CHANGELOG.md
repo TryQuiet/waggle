@@ -14,6 +14,13 @@
 
 * REGISTRAR_ERROR and CERTIFICATE_REGISTRATION socket events
 
+## [4.1.1]
+
+### Fixed
+
+* ConnectionsManager.createNetwork - pass service id without '.onion' to destroyHiddenService
+* WebsocketOverTor - unify generating cert data
+
 ## [4.1.0]
 
 ### Fixed
