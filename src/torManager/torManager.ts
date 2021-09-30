@@ -146,7 +146,7 @@ export class Tor {
         [
           '--SocksPort',
           this.socksPort,
-          '--HTTPTunnelPort', 
+          '--HTTPTunnelPort',
           this.httpTunnelPort.toString(),
           '--ControlPort',
           this.controlPort.toString(),

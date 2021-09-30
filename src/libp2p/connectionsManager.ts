@@ -76,7 +76,7 @@ export class ConnectionsManager {
     if (this.socksProxyAgent || !this.agentPort || !this.agentHost) return
 
     log(`Creating socks proxy agent, ${this.httpTunnelPort}`)
-    
+
     return new HttpsProxyAgent({ port: this.httpTunnelPort, host: this.agentHost })
   }
 
