@@ -6,7 +6,7 @@ import path from 'path'
 import { CryptoEngine, setEngine, Time } from 'pkijs'
 import yargs, { Argv } from 'yargs'
 import logger from '../logger'
-import { createTmpDir } from '../testUtils'
+import { createTmpDir } from '../common/testUtils'
 import { LocalNode, NodeWithoutTor, NodeWithTor } from './nodes'
 const log = logger('testReplicate')
 

@@ -21,8 +21,8 @@ import { loadAllPublicChannels } from '../socket/events/channels'
 import {
   loadAllDirectMessages, loadAllMessages, message as socketMessage, sendIdsToZbay
 } from '../socket/events/messages'
-import { dataFromRootPems } from '../testUtils'
-import { createPaths } from '../utils'
+import { dataFromRootPems } from '../common/testUtils'
+import { createPaths } from '../common/utils'
 import validate from '../validation/validators'
 const log = logger('db')
 

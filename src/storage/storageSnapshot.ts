@@ -7,7 +7,7 @@ import PeerId from 'peer-id'
 import { StorageOptions } from '../common/types'
 import logger from '../logger'
 import { Storage } from '../storage'
-import { createPaths } from '../utils'
+import { createPaths } from '../common/utils'
 
 const log = logger('dbSnap')
 

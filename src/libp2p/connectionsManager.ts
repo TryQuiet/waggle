@@ -7,7 +7,7 @@ import Mplex from 'libp2p-mplex'
 import { NOISE } from 'libp2p-noise'
 import fetch, { Response } from 'node-fetch'
 import * as os from 'os'
-import path from 'path'
+import path, { resolve } from 'path'
 import PeerId from 'peer-id'
 import { SocksProxyAgent } from 'socks-proxy-agent'
 import { CertsData, ConnectionsManagerOptions } from '../common/types'
@@ -17,7 +17,7 @@ import IOProxy from '../socket/IOProxy'
 import initListeners from '../socket/listeners'
 import { Storage } from '../storage'
 import { Tor } from '../torManager'
-import { getPorts, torBinForPlatform, torDirForPlatform } from '../utils'
+import { fetchRetry, getPorts, torBinForPlatform, torDirForPlatform } from '../common/utils'
 import CustomLibp2p, { Libp2pType } from './customLibp2p'
 import WebsocketsOverTor from './websocketOverTor'
 const log = logger('conn')
@@ -72,7 +72,7 @@ export class ConnectionsManager {
   public readonly createAgent = () => {
     if (this.socksProxyAgent || !this.agentPort || !this.agentHost) return
 
-    log(`Creating socks proxy agent, ${this.httpTunnelPort}`)
+    log(`Creating https proxy agent: ${this.httpTunnelPort}`)
 
     return new HttpsProxyAgent({ port: this.httpTunnelPort, host: this.agentHost })
   }
@@ -169,7 +169,7 @@ export class ConnectionsManager {
     )
   }
 
-  public sendCertificateRegistrationRequest = async (serviceAddress: string, userCsr: string): Promise<Response> => {
+  public sendCertificateRegistrationRequest = async (serviceAddress: string, userCsr: string, retryCount: number = 3): Promise<Response> => {
     const options = {
       method: 'POST',
       body: JSON.stringify({ data: userCsr }),
@@ -177,7 +177,7 @@ export class ConnectionsManager {
       agent: new SocksProxyAgent({ port: this.agentPort, host: this.agentHost })
     }
     try {
-      return await fetch(serviceAddress + '/register', options)
+      return await fetchRetry(serviceAddress + '/register', options, retryCount)
     } catch (e) {
       log.error(e)
       throw e

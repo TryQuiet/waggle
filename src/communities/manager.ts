@@ -1,7 +1,7 @@
 import PeerId, { JSONPeerId } from 'peer-id'
 import { ConnectionsManager } from '../libp2p/connectionsManager'
 import { Storage } from '../storage'
-import { getPorts } from '../utils'
+import { getPorts } from '../common/utils'
 import { CertsData, DataFromPems } from '../common/types'
 import { CertificateRegistration } from '../registration'
 import logger from '../logger'

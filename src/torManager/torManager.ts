@@ -4,7 +4,7 @@ import * as fs from 'fs'
 import path from 'path'
 import { ZBAY_DIR_PATH } from '../constants'
 import logger from '../logger'
-import { removeFilesFromDir } from '../utils'
+import { removeFilesFromDir } from '../common/utils'
 import { TorControl } from './TorControl'
 const log = logger('tor')
 
