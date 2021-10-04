@@ -2,11 +2,8 @@ import fs from 'fs'
 import fp from 'find-free-port'
 import path from 'path'
 import SocketIO from 'socket.io'
-import debug from 'debug'
-
-const log = Object.assign(debug('waggle:test'), {
-  error: debug('waggle:test:err')
-})
+import logger from './logger'
+const log = logger('test')
 
 export interface Ports {
   socksPort: number

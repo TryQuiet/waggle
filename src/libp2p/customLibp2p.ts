@@ -1,10 +1,7 @@
 import Libp2p from 'libp2p'
 import PeerId from 'peer-id'
-import debug from 'debug'
-
-const log = Object.assign(debug('waggle:libp2p'), {
-  error: debug('waggle:libp2p:err')
-})
+import logger from '../logger'
+const log = logger('libp2p')
 
 export interface Libp2pType extends CustomLibp2p, Libp2p {}
 

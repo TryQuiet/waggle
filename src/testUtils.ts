@@ -1,4 +1,3 @@
-import debug from 'debug'
 import fp from 'find-free-port'
 import { Response } from 'node-fetch'
 import path from 'path'
@@ -11,11 +10,10 @@ import { ConnectionsManager } from './libp2p/connectionsManager'
 import { Libp2pType } from './libp2p/customLibp2p'
 import { createCertificatesTestHelper } from './libp2p/tests/client-server'
 import WebsocketsOverTor from './libp2p/websocketOverTor'
+import logger from './logger'
 import { Tor } from './torManager'
 import { DummyIOServer, getPorts, Ports, torBinForPlatform, torDirForPlatform } from './utils'
-const log = Object.assign(debug('waggle:test'), {
-  error: debug('waggle:test:err')
-})
+const log = logger('test')
 
 export const dataFromRootPems: DataFromPems = { // Tmp cert
   certificate: 'MIIBNjCB3AIBATAKBggqhkjOPQQDAjASMRAwDgYDVQQDEwdaYmF5IENBMCYYEzIwMjEwNjIyMDkzMDEwLjAyNVoYDzIwMzAwMTMxMjMwMDAwWjASMRAwDgYDVQQDEwdaYmF5IENBMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEV5a3Czy+L7IfVX0FpJtSF5mi0GWGrtPqv5+CFSDPrHXijsxWdPTobR1wk8uCLP4sAgUbs/bIleCxQy41kSSyOaMgMB4wDwYDVR0TBAgwBgEB/wIBAzALBgNVHQ8EBAMCAAYwCgYIKoZIzj0EAwIDSQAwRgIhAPOzksuipKyBALt/o8O/XwsrVSzfSHXdAR4dOWThQ1lbAiEAmKqjhsmf50kxWX0ekhbAeCTjcRApXhjnslmJkIFGF2o=+lmBImw3BMNjA0FTlK5iRmVC+w/T6M04Es+yiYL608vOhx2slnoyAwHjAPBgNVHRMECDAGAQH/AgEDMAsGA1UdDwQEAwIABjAKBggqhkjOPQQDAgNIADBFAiEA+0kIz0ny/PLVERTcL0+KCpsztyA6Zuwzj05VW5NMdx0CICgdzf0lg0/2Ksl1AjSPYsy2w+Hn09PGlBnD7TiExBpx',
