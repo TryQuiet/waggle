@@ -26,7 +26,7 @@ export default class CustomLibp2p extends Libp2p {
  */
   async _maybeConnect (peerId: PeerId) {
     // If auto dialing is on and we have no connection to the peer, check if we should dial
-    if (this._config.peerDiscovery.autoDial === true && !this.connectionManager.get(peerId)) {
+    if (this._config.peerDiscovery.autoDial && !this.connectionManager.get(peerId)) {
       const minConnections = this._options.connectionManager.minConnections || 0
       if (minConnections > this.connectionManager.size) {
         log('connecting to discovered peer %s', peerId.toB58String())
