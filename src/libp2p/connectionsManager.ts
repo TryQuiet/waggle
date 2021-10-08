@@ -134,8 +134,8 @@ export class ConnectionsManager {
     peerId: PeerId,
     listenAddrs: string,
     bootstrapMultiaddrs: string[],
-    certs: CertsData,
-  ): Promise<{ libp2p: Libp2pType; localAddress: string }> => {
+    certs: CertsData
+  ): Promise<{ libp2p: Libp2pType, localAddress: string }> => {
     const localAddress = `${listenAddrs}/p2p/${peerId.toB58String()}`
     const libp2p = ConnectionsManager.createBootstrapNode({
       peerId: peerId,
