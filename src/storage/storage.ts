@@ -1,8 +1,9 @@
 import { Crypto } from '@peculiar/webcrypto'
 import { getCertFieldValue, parseCertificate, verifyUserCert } from '@zbayapp/identity'
 import { CertFieldsTypes } from '@zbayapp/identity/lib/common'
-import IPFS from 'ipfs'
-import { Libp2p } from 'libp2p-gossipsub/src/interfaces'
+// import IPFS from 'ipfs'-
+import * as IPFS from 'ipfs-core'
+// import { Libp2p } from 'libp2p-gossipsub/src/interfaces'
 import OrbitDB from 'orbit-db'
 import EventStore from 'orbit-db-eventstore'
 import KeyValueStore from 'orbit-db-kvstore'
@@ -24,6 +25,8 @@ import {
 import { dataFromRootPems } from '../common/testUtils'
 import { createPaths } from '../common/utils'
 import validate from '../validation/validators'
+// import { Libp2pType } from '../libp2p/customLibp2p'
+
 const log = logger('db')
 
 const webcrypto = new Crypto()
@@ -110,9 +113,11 @@ export class Storage {
     await this.__stopIPFS()
   }
 
-  protected async initIPFS(libp2p: Libp2p, peerID: PeerId): Promise<IPFS.IPFS> {
-    return await IPFS.create({
-      libp2p: () => libp2p,
+  protected async initIPFS(libp2p: any, peerID: PeerId): Promise<IPFS.IPFS> {
+    const libp2pBundle = async (opts) => libp2p
+    console.log('AAAA')
+    const a = await IPFS.create({
+      libp2p: libp2pBundle,
       preload: { enabled: false },
       repo: this.ipfsRepoPath,
       EXPERIMENTAL: {
@@ -121,6 +126,8 @@ export class Storage {
       // @ts-expect-error - IPFS does not have privateKey in its Options type
       privateKey: peerID.toJSON().privKey
     })
+    console.log('BBB')
+    return a
   }
 
   public async createDbForCertificates() {

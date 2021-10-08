@@ -1,10 +1,10 @@
 import { HttpsProxyAgent } from 'https-proxy-agent'
 import Bootstrap from 'libp2p-bootstrap'
 import Gossipsub from 'libp2p-gossipsub'
-import { Connection } from 'libp2p-gossipsub/src/interfaces'
+// import { Connection } from 'libp2p-gossipsub/src/interfaces'
 import KademliaDHT from 'libp2p-kad-dht'
 import Mplex from 'libp2p-mplex'
-import { NOISE } from 'libp2p-noise'
+import { NOISE } from '@chainsafe/libp2p-noise'
 import fetch, { Response } from 'node-fetch'
 import * as os from 'os'
 import path, { resolve } from 'path'
@@ -18,9 +18,11 @@ import initListeners from '../socket/listeners'
 import { Storage } from '../storage'
 import { Tor } from '../torManager'
 import { fetchRetry, getPorts, torBinForPlatform, torDirForPlatform } from '../common/utils'
-import CustomLibp2p, { Libp2pType } from './customLibp2p'
+// import CustomLibp2p, { Libp2pType } from './customLibp2p'
 import WebsocketsOverTor from './websocketOverTor'
+import Connection from 'libp2p-interfaces/src/connection/connection'
 const log = logger('conn')
+import Libp2p from 'libp2p'
 
 export interface IConstructor {
   host?: string
@@ -131,7 +133,7 @@ export class ConnectionsManager {
     }
   }
 
-  public initLibp2p = async (peerId: PeerId, listenAddrs: string, bootstrapMultiaddrs: string[], certs: CertsData): Promise<{ libp2p: Libp2pType, localAddress: string }> => {
+  public initLibp2p = async (peerId: PeerId, listenAddrs: string, bootstrapMultiaddrs: string[], certs: CertsData): Promise<{ libp2p: Libp2p, localAddress: string }> => {
     const localAddress = `${listenAddrs}/p2p/${peerId.toB58String()}`
     const libp2p = ConnectionsManager.createBootstrapNode({
       peerId: peerId,
@@ -194,7 +196,7 @@ export class ConnectionsManager {
     localAddr,
     bootstrapMultiaddrsList,
     transportClass
-  }): Libp2pType => {
+  }): Libp2p => {
     return ConnectionsManager.defaultLibp2pNode({
       peerId,
       listenAddrs,
@@ -218,8 +220,8 @@ export class ConnectionsManager {
     localAddr,
     bootstrapMultiaddrsList,
     transportClass
-  }): Libp2pType => {
-    return new CustomLibp2p({
+  }): Libp2p => {
+    return new Libp2p({
       peerId,
       addresses: {
         listen: listenAddrs

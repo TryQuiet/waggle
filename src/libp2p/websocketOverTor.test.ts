@@ -1,5 +1,5 @@
 import WebsocketsOverTor from './websocketOverTor'
-import Multiaddr from 'multiaddr'
+import { Multiaddr } from 'multiaddr'
 import { Tor } from '../torManager/index'
 import os from 'os'
 import fp from 'find-free-port'

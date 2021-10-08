@@ -3,8 +3,10 @@ import PeerId from 'peer-id'
 import logger from '../logger'
 const log = logger('libp2p')
 
+// @ts-expect-error
 export interface Libp2pType extends CustomLibp2p, Libp2p {}
 
+// @ts-expect-error
 export default class CustomLibp2p extends Libp2p {
   [x: string]: any
   constructor (_options) {
@@ -24,7 +26,7 @@ export default class CustomLibp2p extends Libp2p {
  * @private
  * @param {PeerId} peerId
  */
-  async _maybeConnect (peerId: PeerId) {
+  private async _maybeConnect (peerId) {
     // If auto dialing is on and we have no connection to the peer, check if we should dial
     if (this._config.peerDiscovery.autoDial === true && !this.connectionManager.get(peerId)) {
       const minConnections = this._options.connectionManager.minConnections || 0

@@ -9,7 +9,7 @@ import createServer from 'it-ws/server'
 import toConnection from 'libp2p-websockets/src/socket-to-conn'
 import url from 'url'
 import os from 'os'
-import multiaddr from 'multiaddr'
+import { Multiaddr } from 'multiaddr'
 import debug from 'debug'
 import PeerId from 'peer-id'
 import https from 'https'
@@ -92,7 +92,7 @@ class WebsocketsOverTor extends WebSockets {
     }
   }
 
-  async _connect(ma: multiaddr, options: any = {}) {
+  async _connect(ma: Multiaddr, options: any = {}) {
     if (options.signal?.aborted) {
       throw new AbortError()
     }
@@ -158,7 +158,7 @@ class WebsocketsOverTor extends WebSockets {
       const query = url.parse(request.url, true).query
       log('query', query.remoteAddress)
       try {
-        maConn = toConnection(stream, { remoteAddr: multiaddr(query.remoteAddress.toString()) })
+        maConn = toConnection(stream, { remoteAddr: new Multiaddr(query.remoteAddress.toString()) })
         const peer = {
           id: PeerId.createFromB58String(query.remoteAddress.toString().split('/p2p/')[1]),
           multiaddrs: [maConn.remoteAddr]
@@ -194,7 +194,7 @@ class WebsocketsOverTor extends WebSockets {
       return server.close()
     }
 
-    listener.listen = (ma: multiaddr) => {
+    listener.listen = (ma: Multiaddr) => {
       listeningMultiaddr = ma
       return server.listen(ma.toOptions())
     }
@@ -223,7 +223,7 @@ class WebsocketsOverTor extends WebSockets {
           Object.keys(netInterfaces).forEach(niKey => {
             netInterfaces[niKey].forEach(ni => {
               if (ni.family === 'IPv4') {
-                multiaddrs.push(multiaddr(m.toString().replace('0.0.0.0', ni.address)))
+                multiaddrs.push(new Multiaddr(m.toString().replace('0.0.0.0', ni.address)))
               }
             })
           })

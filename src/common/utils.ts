@@ -33,10 +33,17 @@ export function fetchAbsolute(fetch: Function): Function {
     url.startsWith('/') ? fetch(baseUrl + url, ...otherParams) : fetch(url, ...otherParams)
 }
 
+function getRandomInt(min=null, max=null) {
+  const ports = [1000, 65536]
+  min = Math.ceil(ports[0]);
+  max = Math.floor(ports[1]);
+  return Math.floor(Math.random() * (max - min)) + min;
+}
+
 export const getPorts = async (): Promise<Ports> => {
   const [controlPort] = await fp(9151)
   const [socksPort] = await fp(9052)
-  const [libp2pHiddenService] = await fp(7788)
+  const [libp2pHiddenService] = await fp(getRandomInt())
   const [dataServer] = await fp(4677)
   const [httpTunnelPort] = await fp(9000)
   return {
