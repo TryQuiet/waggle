@@ -1,8 +1,8 @@
 import express from 'express'
 import { createServer, Server } from 'http'
+import logger from '../logger'
 // eslint-disable-next-line
 const socketio = require('socket.io')
-import logger from '../logger'
 const log = logger('socket')
 
 export class DataServer {

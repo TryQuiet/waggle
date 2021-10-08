@@ -5,9 +5,9 @@ import Gossipsub from 'libp2p-gossipsub'
 import KademliaDHT from 'libp2p-kad-dht'
 import Mplex from 'libp2p-mplex'
 import { NOISE } from '@chainsafe/libp2p-noise'
-import fetch, { Response } from 'node-fetch'
+import { Response } from 'node-fetch'
 import * as os from 'os'
-import path, { resolve } from 'path'
+import path from 'path'
 import PeerId from 'peer-id'
 import { SocksProxyAgent } from 'socks-proxy-agent'
 import { CertsData, ConnectionsManagerOptions } from '../common/types'
@@ -144,7 +144,7 @@ export class ConnectionsManager {
       bootstrapMultiaddrsList: bootstrapMultiaddrs,
       transportClass: this.libp2pTransportClass
     })
-    libp2p.connectionManager.on('peer:connect', async (connection: Connection) => {
+    libp2p.connectionManager.on('peer:connect', (connection: Connection) => {
       log(`${peerId.toB58String()} connected to ${connection.remotePeer.toB58String()}`)
     })
     libp2p.on('peer:discovery', (peer: PeerId) => {

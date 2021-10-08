@@ -68,7 +68,6 @@ export const connections = (io, ioProxy: IOProxy) => {
     socket.on(EventTypesServer.REGISTER_USER_CERTIFICATE, async (serviceAddress: string, userCsr: string, id: string) => {
       log(`Registering user certificate (${id})`)
       await ioProxy.registerUserCertificate(serviceAddress, userCsr, id)
-      
     })
     socket.on(EventTypesServer.REGISTER_OWNER_CERTIFICATE, async (communityId: string, userCsr: string, dataFromPerms: {
       certificate: string
