@@ -1,5 +1,4 @@
 import * as os from 'os'
-import { SocksProxyAgent } from 'socks-proxy-agent'
 import Mplex from 'libp2p-mplex'
 import { NOISE } from 'libp2p-noise'
 import KademliaDHT from 'libp2p-kad-dht'
