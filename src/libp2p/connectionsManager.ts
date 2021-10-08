@@ -21,8 +21,8 @@ import { fetchRetry, getPorts, torBinForPlatform, torDirForPlatform } from '../c
 // import CustomLibp2p, { Libp2pType } from './customLibp2p'
 import WebsocketsOverTor from './websocketOverTor'
 import Connection from 'libp2p-interfaces/src/connection/connection'
-const log = logger('conn')
 import Libp2p from 'libp2p'
+const log = logger('conn')
 
 export interface IConstructor {
   host?: string

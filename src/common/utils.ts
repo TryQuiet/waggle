@@ -33,11 +33,11 @@ export function fetchAbsolute(fetch: Function): Function {
     url.startsWith('/') ? fetch(baseUrl + url, ...otherParams) : fetch(url, ...otherParams)
 }
 
-function getRandomInt(min=null, max=null) {
+function getRandomInt(min: number = null, max: number = null) {
   const ports = [1000, 65536]
-  min = Math.ceil(ports[0]);
-  max = Math.floor(ports[1]);
-  return Math.floor(Math.random() * (max - min)) + min;
+  min = Math.ceil(min | ports[0])
+  max = Math.floor(max | ports[1])
+  return Math.floor(Math.random() * (max - min)) + min
 }
 
 export const getPorts = async (): Promise<Ports> => {

@@ -114,10 +114,8 @@ export class Storage {
   }
 
   protected async initIPFS(libp2p: any, peerID: PeerId): Promise<IPFS.IPFS> {
-    const libp2pBundle = async (opts) => libp2p
-    console.log('AAAA')
-    const a = await IPFS.create({
-      libp2p: libp2pBundle,
+    return await IPFS.create({
+      libp2p: async (_opts) => libp2p,
       preload: { enabled: false },
       repo: this.ipfsRepoPath,
       EXPERIMENTAL: {
@@ -126,8 +124,6 @@ export class Storage {
       // @ts-expect-error - IPFS does not have privateKey in its Options type
       privateKey: peerID.toJSON().privKey
     })
-    console.log('BBB')
-    return a
   }
 
   public async createDbForCertificates() {
