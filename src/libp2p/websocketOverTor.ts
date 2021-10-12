@@ -35,16 +35,21 @@ class WebsocketsOverTor extends WebSockets {
   _upgrader: any
   localAddress: string
   discovery: Discovery
+  peerId: string
   constructor({ upgrader, websocket, localAddr }) {
     super({ upgrader })
     this._websocketOpts = websocket
     this.localAddress = localAddr
+    this.peerId = localAddr.split('/').pop()
     this._upgrader = upgrader
     this.discovery = new Discovery()
   }
 
   async dial(ma, options: any = {}) {
-    log('dialing %s', ma)
+    if (ma.toString().split('/')[4] !== '443') {
+      return
+    }
+
     let conn
     let socket
     let maConn
@@ -97,14 +102,14 @@ class WebsocketsOverTor extends WebSockets {
       throw new AbortError()
     }
     const cOpts = ma.toOptions()
-    log('dialing %s:%s', cOpts.host, 443)
+    log('connect %s:%s', cOpts.host, cOpts.port)
     const myUri = `${toUri(ma) as string}/?remoteAddress=${encodeURIComponent(this.localAddress)}`
 
     const rawSocket = connect(myUri, Object.assign({ binary: true }, options))
     if (!options.signal) {
       await rawSocket.connected()
 
-      log('connected %s', ma)
+      log(`${this.localAddress} connected %s`, ma)
       return rawSocket
     }
 
@@ -133,6 +138,7 @@ class WebsocketsOverTor extends WebSockets {
   }
 
   prepareListener = ({ handler, upgrader }) => {
+    console.log('prepateListener', )
     const listener: any = new EventEmitter()
     const trackConn = (server, maConn) => {
       server.__connections.push(maConn)
@@ -156,7 +162,7 @@ class WebsocketsOverTor extends WebSockets {
       let maConn, conn
       // eslint-disable-next-line
       const query = url.parse(request.url, true).query
-      log('query', query.remoteAddress)
+      log('server', query.remoteAddress)
       try {
         maConn = toConnection(stream, { remoteAddr: multiaddr(query.remoteAddress.toString()) })
         const peer = {
