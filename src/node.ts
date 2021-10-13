@@ -67,10 +67,11 @@ export default class Node {
     const connectonsManager = await this.initConnectionsManager(dataServer)
     const communities = new CommunitiesManager(connectonsManager)
     const peerId = await this.getPeer()
-
+    const virtPort = 443
     await communities.initStorage(
       peerId,
       onionAddress,
+      virtPort,
       this.port,
       ['/dns4/2lmfmbj4ql56d55lmv7cdrhdlhls62xa4p6lzy6kymxuzjlny3vnwyqd.onion/tcp/7788/wss/p2p/Qmak8HeMad8X1HGBmz2QmHfiidvGnhu6w6ugMKtx8TFc85'],
       this.certificates
