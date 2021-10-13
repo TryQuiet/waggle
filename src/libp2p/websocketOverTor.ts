@@ -36,13 +36,15 @@ class WebsocketsOverTor extends WebSockets {
   localAddress: string
   discovery: Discovery
   peerId: string
-  constructor({ upgrader, websocket, localAddr }) {
+  targetPort: number
+  constructor({ upgrader, websocket, localAddr, targetPort }) {
     super({ upgrader })
     this._websocketOpts = websocket
     this.localAddress = localAddr
     this.peerId = localAddr.split('/').pop()
     this._upgrader = upgrader
     this.discovery = new Discovery()
+    this.targetPort = targetPort
   }
 
   async dial(ma, options: any = {}) {
@@ -138,7 +140,7 @@ class WebsocketsOverTor extends WebSockets {
   }
 
   prepareListener = ({ handler, upgrader }) => {
-    console.log('prepateListener', )
+    console.log('prepateListener')
     const listener: any = new EventEmitter()
     const trackConn = (server, maConn) => {
       server.__connections.push(maConn)
@@ -202,7 +204,13 @@ class WebsocketsOverTor extends WebSockets {
 
     listener.listen = (ma: multiaddr) => {
       listeningMultiaddr = ma
-      return server.listen(ma.toOptions())
+
+      const listenOptions = {
+        ...ma.toOptions(),
+        port: this.targetPort
+      }
+
+      return server.listen(listenOptions)
     }
 
     listener.getAddrs = () => {
@@ -219,7 +227,7 @@ class WebsocketsOverTor extends WebSockets {
       if (listeningMultiaddr.toString().indexOf('ip4') !== -1) {
         let m = listeningMultiaddr.decapsulate('tcp')
         // eslint-disable-next-line
-        m = m.encapsulate('/tcp/' + address.port + '/wss')
+        m = m.encapsulate('/tcp/' + 443 + '/wss')
         if (listeningMultiaddr.getPeerId()) {
           m = m.encapsulate('/p2p/' + ipfsId)
         }
