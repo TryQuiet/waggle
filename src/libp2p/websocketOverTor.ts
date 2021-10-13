@@ -48,10 +48,6 @@ class WebsocketsOverTor extends WebSockets {
   }
 
   async dial(ma, options: any = {}) {
-    if (ma.toString().split('/')[4] !== '443') {
-      return
-    }
-
     let conn
     let socket
     let maConn
@@ -226,8 +222,7 @@ class WebsocketsOverTor extends WebSockets {
       // we need to capture from the passed multiaddr
       if (listeningMultiaddr.toString().indexOf('ip4') !== -1) {
         let m = listeningMultiaddr.decapsulate('tcp')
-        // eslint-disable-next-line
-        m = m.encapsulate('/tcp/' + 443 + '/wss')
+        m = m.encapsulate('/tcp/443/wss')
         if (listeningMultiaddr.getPeerId()) {
           m = m.encapsulate('/p2p/' + ipfsId)
         }
