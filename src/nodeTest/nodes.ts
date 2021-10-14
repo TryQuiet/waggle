@@ -85,7 +85,7 @@ export class NodeWithoutTor extends LocalNode {
     this.localAddress = await communities.initStorage(
       peerId,
       '0.0.0.0',
-      virtPort,
+      this.port,
       this.port,
       bootstrapAddressArrayWs,
       certs
