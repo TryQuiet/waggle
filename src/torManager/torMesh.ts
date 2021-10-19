@@ -17,16 +17,15 @@ const log = logger('torMesh')
 const amount = 10
 const timeout = 130_000
 
-const torServices = new Map<string, { tor: Tor; httpTunnelPort: number }>()
+const torServices = new Map<string, { tor: Tor, httpTunnelPort: number }>()
 const hiddenServices = new Map<string, string>()
 
 const spawnMesh = async () => {
-
   for (let i = 0; i < amount; i++) {
-    let tmpDir = createTmpDir()
+    const tmpDir = createTmpDir()
     console.log(tmpDir)
     log(`spawning tor number ${i}`)
-    let tmpAppDataPath = tmpZbayDirPath(tmpDir.name)
+    const tmpAppDataPath = tmpZbayDirPath(tmpDir.name)
 
     const ports = await getPorts()
 
@@ -38,22 +37,22 @@ const spawnMesh = async () => {
 }
 
 const killMesh = async () => {
-
   for (const data of torServices.values()) {
-
     await data.tor.kill()
   }
 }
 
 let finishedRequests = 0
 
-const createServer = async (port, serverAddress) => {
+const createServer = async (port, serverAddress: string) => {
   const app: express.Application = express()
   app.use(express.json())
+  // eslint-disable-next-line
   app.post('/test', async (req, res) => {
+    // eslint-disable-next-line
     console.timeEnd(`${req.body.serviceAddress} - ${serverAddress}`)
     res.send({ success: 'success' })
-    log(`${Math.floor(100*(finishedRequests/(amount*(amount-1))))}% connected`)
+    log(`${Math.floor(100 * (finishedRequests / (amount * (amount - 1))))}% connected`)
     finishedRequests++
   })
   app.listen(port, () => {
@@ -62,29 +61,29 @@ const createServer = async (port, serverAddress) => {
 }
 
 const createAgent = async (httpTunnelPort) => {
-    return new HttpsProxyAgent({ port: httpTunnelPort, host: 'localhost' })
-  }
+  return new HttpsProxyAgent({ port: httpTunnelPort, host: 'localhost' })
+}
 
 const sendRequest = async (
-    serviceAddress: string,
-    httpTunnelPort: number,
-    ownHs: string,
-    retryCount: number = 1
-  ): Promise<Response> => {
-      const agent = await createAgent(httpTunnelPort)
-    const options = {
-      method: 'POST',
-      body: JSON.stringify({serviceAddress: ownHs}),
-      headers: { 'Content-Type': 'application/json' },
-      agent
-    }
-    try {
-      return await fetchRetry('http://' + serviceAddress + '.onion/test', options, retryCount)
-    } catch (e) {
-      console.log('ERROR', e)
-      throw e
-    }
+  serviceAddress: string,
+  httpTunnelPort: number,
+  ownHs: string,
+  retryCount: number = 1
+): Promise<Response> => {
+  const agent = await createAgent(httpTunnelPort)
+  const options = {
+    method: 'POST',
+    body: JSON.stringify({ serviceAddress: ownHs }),
+    headers: { 'Content-Type': 'application/json' },
+    agent
   }
+  try {
+    return await fetchRetry('http://' + serviceAddress + '.onion/test', options, retryCount)
+  } catch (e) {
+    console.log('ERROR', e)
+    throw e
+  }
+}
 
 const createHiddenServices = async () => {
   log('createHiddenServices')
@@ -115,13 +114,14 @@ const sendRequests = async () => {
       const hs = hiddenServices.get(key1)
       console.log(`sendRequest ${hs} - ${value2}`)
       console.time(`${hs} - ${value2}`)
+      // eslint-disable-next-line
       sendRequest(value2, value1.httpTunnelPort, hs)
     }
   }
 }
 
 const waitForRequests = async () => {
-  return new Promise((resolve, reject) => {
+  return await new Promise((resolve, reject) => {
     setTimeout(() => {
       reject(new Error('rejected because of timeout'))
     }, timeout)
@@ -129,7 +129,7 @@ const waitForRequests = async () => {
       if (finishedRequests === amount * (amount - 1)) {
         resolve('finisehd')
       }
-    },1000)
+    }, 1000)
   })
 }
 
@@ -144,12 +144,12 @@ const main = async () => {
   } catch (e) {
     log.error(e)
   }
-    log('after all connections')
+  log('after all connections')
   await destroyHiddenServices()
   log('destroyed hidden services')
   await killMesh()
   log('after killing mesh')
   process.exit(1)
 }
-
+// eslint-disable-next-line
 main()
