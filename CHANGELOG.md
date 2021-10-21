@@ -5,6 +5,13 @@
 ### Added
 
 * Retry connecting to registrar few times on fail
+* Tor mesh test
+
+## [4.3.3]
+
+### Added
+
+* Security for not using the tor
 
 ## [4.2.3]
 
