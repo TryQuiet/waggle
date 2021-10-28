@@ -87,7 +87,7 @@ export const connections = (io, ioProxy: IOProxy) => {
       log(`Saving owner certificate (${peerId}), community: ${communityId}`)
       await ioProxy.saveOwnerCertificate(communityId, peerId, certificate, dataFromPerms)
     })
-    socket.on(EventTypesServer.CREATE_COMMUNITY, async (payload, certs: CertsData) => {
+    socket.on(EventTypesServer.CREATE_COMMUNITY, async (payload: {id: string, rootCertString: string, rootCertKey: string}, certs: CertsData) => {
       log(`Creating community ${payload.id}`)
       await ioProxy.createCommunity(payload.id, certs, payload.rootCertString, payload.rootCertKey)
     })

@@ -26,9 +26,9 @@ export default class IOProxy {
     try {
       return this.communities.getStorage(peerId)
     } catch (e) {
-      emitServerError(this.io, {type: 'general', 'message': 'Community does not exist'})
+      emitServerError(this.io, { type: 'general', message: 'Community does not exist' })
       throw e
-    } 
+    }
   }
 
   public async closeAll(): Promise<void> {
@@ -182,13 +182,12 @@ export default class IOProxy {
     this.io.emit(EventTypesResponse.NEW_COMMUNITY, { id: communityId, payload: communityData })
   }
 
-
   public async launchCommunity(communityId: string, peerId: PeerId.JSONPeerId, hiddenService: { address: string, privateKey: string }, bootstrapMultiaddress: string[], certs: CertsData) {
     try {
       await this.communities.launch(peerId, hiddenService.privateKey, bootstrapMultiaddress, certs, communityId)
     } catch (e) {
-      log(`Couldn't launch community for peer ${peerId.id}. Error: ${e}`)
-      emitServerError(this.io, {type: EventTypesResponse.COMMUNITY, message: 'Could not launch community', communityId})
+      log(`Couldn't launch community for peer ${peerId.id}. Error:`, e)
+      emitServerError(this.io, { type: EventTypesResponse.COMMUNITY, message: 'Could not launch community', communityId })
       return
     }
     this.io.emit(EventTypesResponse.COMMUNITY, { id: communityId })
