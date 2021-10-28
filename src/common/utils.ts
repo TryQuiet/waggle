@@ -65,14 +65,14 @@ export const torBinForPlatform = (basePath?: string): string => {
 }
 
 export const torDirForPlatform = (basePath?: string): string => {
-  let path
+  let torPath
   if (!basePath) {
     basePath = process.cwd()
-    path = path.join(basePath, 'tor', process.platform)
+    torPath = path.join(basePath, 'tor', process.platform)
   } else {
-    path.join(basePath, 'tor')
+    torPath = path.join(basePath, 'tor')
   }
-  return path
+  return torPath
 }
 
 export const fetchRetry = async (address: string, options: any, retryCount: number): Promise<Response> => {
