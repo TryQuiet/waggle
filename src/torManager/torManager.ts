@@ -243,7 +243,7 @@ export class Tor {
 
   public kill = async (): Promise<void> =>
     await new Promise((resolve, reject) => {
-      log(`Killing tor...`)
+      log('Killing tor...')
       if (this.process === null) {
         reject(new Error('TOR: Process is not initalized.'))
       }
