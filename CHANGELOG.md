@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+* Old tor process is now shut down on windows.
+
 ## [4.3.7]
 
 * Expose ioproxy api through connections manager to be able to close all services directly
