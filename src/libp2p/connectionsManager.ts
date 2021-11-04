@@ -15,7 +15,7 @@ import IOProxy from '../socket/IOProxy'
 import initListeners from '../socket/listeners'
 import { Storage } from '../storage'
 import { Tor } from '../torManager'
-import { fetchRetry, getPorts, torBinForPlatform, torDirForPlatform } from '../common/utils'
+import { createLibp2pAddress, createLibp2pListenAddress, fetchRetry, getPorts, torBinForPlatform, torDirForPlatform } from '../common/utils'
 import CustomLibp2p, { Libp2pType } from './customLibp2p'
 import WebsocketsOverTor from './websocketOverTor'
 const log = logger('conn')
@@ -78,11 +78,11 @@ export class ConnectionsManager {
   }
 
   public readonly createLibp2pAddress = (address: string, port: number, peerId: string): string => {
-    return `/dns4/${address}/tcp/${port}/${this.options.wsType}/p2p/${peerId}`
+    return createLibp2pAddress(address, port, peerId, this.options.wsType)
   }
 
   public readonly createLibp2pListenAddress = (address: string, port: number): string => {
-    return `/dns4/${address}/tcp/${port}/${this.options.wsType}`
+    return createLibp2pListenAddress(address, port, this.options.wsType)
   }
 
   public initListeners = () => {
@@ -122,7 +122,6 @@ export class ConnectionsManager {
 
   public spawnTor = async () => {
     const basePath = this.options.env.resourcesPath || ''
-
     this.tor = new Tor({
       torPath: torBinForPlatform(basePath),
       appDataPath: this.zbayDir,
