@@ -145,7 +145,7 @@ describe('Connections manager', () => {
   it.each([
     ['ws'],
     ['wss']
-  ])('creates libp2p address with proper ws type (%s)', async (wsType: "ws" | "wss") => {
+  ])('creates libp2p address with proper ws type (%s)', async (wsType: 'ws' | 'wss') => {
     const address = '0.0.0.0'
     const port = 1234
     const peerId = await PeerId.create()
@@ -171,7 +171,7 @@ describe('Connections manager', () => {
   it.each([
     ['ws'],
     ['wss']
-  ])('creates libp2p listen address with proper ws type (%s)', async (wsType: "ws" | "wss") => {
+  ])('creates libp2p listen address with proper ws type (%s)', async (wsType: 'ws' | 'wss') => {
     const address = '0.0.0.0'
     const port = 1234
     const ports = await utils.getPorts()
