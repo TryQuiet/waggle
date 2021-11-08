@@ -95,7 +95,11 @@ export class Storage {
   private async __stopOrbitDb() {
     if (this.orbitdb) {
       log('Stopping OrbitDB')
-      await this.orbitdb.stop()
+      try {
+        await this.orbitdb.stop()
+      } catch (err) {
+        log.error(`Following error occured during closing orbitdb database: ${err as string}`)
+      }
     }
   }
 
