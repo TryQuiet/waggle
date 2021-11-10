@@ -27,7 +27,7 @@ export class DataServer {
         methods: ['GET', 'POST']
       }
     }
-    return {}
+    return false
   }
 
   private readonly initSocket = (): void => {
