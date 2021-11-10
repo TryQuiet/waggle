@@ -23,8 +23,8 @@ export class DataServer {
     if (process.env.NODE_ENV === 'development' && process.env.E2E_TEST === 'true') {
       log('Development/test env. Getting cors')
       return {
-        origin: "*",
-        methods: ["GET", "POST"]
+        origin: '*',
+        methods: ['GET', 'POST']
       }
     }
     return {}
