@@ -53,9 +53,6 @@ class WebsocketsOverTor extends WebSockets {
     let maConn
 
     try {
-      log(`ca ${this.certData.ca}`)
-      log(`cert ${this.certData.cert}`)
-      log(`key ${this.certData.key}`)
       socket = await this._connect(ma, {
         websocket: {
           ...this._websocketOpts,

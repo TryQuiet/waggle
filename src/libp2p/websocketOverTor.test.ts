@@ -82,11 +82,11 @@ describe('websocketOverTor', () => {
   })
 
   it.each([
-    ['string', String]
-    // ['array', Array]
+    ['string', String],
+    ['array', Array]
   ])('connects successfully with CA passed as %s', async (_name: string, caType: (ca: string) => any) => {
     const pems = await createCertificatesTestHelper(`${service1.onionAddress}`, `${service2.onionAddress}`)
-console.log('async callback')
+    // In case test fails on CI, we will be able to conduct test against failing credentials.
     console.log(`serVert ${pems.servCert}`)
     console.log(`servKey ${pems.servKey}`)
     console.log(`ca ${pems.ca}`)
@@ -163,7 +163,7 @@ console.log('async callback')
           signal: signal
         })
       } catch (e) {
-        console.log(`catched Error ${e.message}`)
+        console.log(`catched Error ${e.message as string}, retryCount is ${retryCount}`)
         if (retryCount < 2) {
           retryCount++
           await tryDial()
@@ -177,7 +177,7 @@ console.log('async callback')
     expect(onConnection.mock.calls[0][0].remoteAddr).toEqual(remoteAddress)
   })
 
-  it.skip('rejects connection if user cert is invalid', async () => {
+  it('rejects connection if user cert is invalid', async () => {
     const pems = await createCertificatesTestHelper(`${service1.onionAddress}`, `${service2.onionAddress}`)
     const anotherPems = await createCertificatesTestHelper(`${service1.onionAddress}`, `${service2.onionAddress}`)
 
@@ -246,7 +246,7 @@ console.log('async callback')
     })).rejects.toBeTruthy()
   })
 
-  it.skip('rejects connection if server cert is invalid', async () => {
+  it('rejects connection if server cert is invalid', async () => {
     const pems = await createCertificatesTestHelper(`${service1.onionAddress}`, `${service2.onionAddress}`)
     const anotherPems = await createCertificatesTestHelper(`${service1.onionAddress}`, `${service2.onionAddress}`)
 
