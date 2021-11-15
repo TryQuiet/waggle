@@ -115,6 +115,7 @@ export class Storage {
   }
 
   public async stopOrbitDb() {
+    console.log('stopping')
     await this.__stopOrbitDb()
     await this.__stopIPFS()
   }

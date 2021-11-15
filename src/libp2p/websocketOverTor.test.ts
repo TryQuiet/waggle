@@ -86,7 +86,7 @@ describe('websocketOverTor', () => {
     // ['array', Array]
   ])('connects successfully with CA passed as %s', async (_name: string, caType: (ca: string) => any) => {
     const pems = await createCertificatesTestHelper(`${service1.onionAddress}`, `${service2.onionAddress}`)
-
+console.log('async callback')
     console.log(`serVert ${pems.servCert}`)
     console.log(`servKey ${pems.servKey}`)
     console.log(`ca ${pems.ca}`)
@@ -155,14 +155,23 @@ describe('websocketOverTor', () => {
     const onConnection = jest.fn()
     listener.on('connection', onConnection)
 
-    try {
+    let retryCount = 0
 
-      await ws2.dial(multiAddress, {
-        signal: signal
-      })
-    } catch (e) {
-      console.log(`catched Error ${e}`)
+    const tryDial = async () => {
+      try {
+        await ws2.dial(multiAddress, {
+          signal: signal
+        })
+      } catch (e) {
+        console.log(`catched Error ${e.message}`)
+        if (retryCount < 2) {
+          retryCount++
+          await tryDial()
+        }
+      }
     }
+
+    await tryDial()
 
     expect(onConnection).toBeCalled()
     expect(onConnection.mock.calls[0][0].remoteAddr).toEqual(remoteAddress)
