@@ -1,5 +1,11 @@
 # Changelog
 
+## [4.3.12]
+
+### Added
+
+* Enable cors in DataServer only for development and end to end testing
+
 ## [4.3.8]
 
 ### Fixed
