@@ -1,6 +1,6 @@
 import { getCertFieldValue, parseCertificate, verifyUserCert, CertFieldsTypes } from '@zbayapp/identity'
 import IPFS from 'ipfs'
-import { Libp2p } from 'libp2p-gossipsub/src/interfaces'
+// import Libp2p from 'libp2p-gossipsub/src'
 import OrbitDB from 'orbit-db'
 import EventStore from 'orbit-db-eventstore'
 import KeyValueStore from 'orbit-db-kvstore'
@@ -119,15 +119,14 @@ export class Storage {
     await this.__stopIPFS()
   }
 
-  protected async initIPFS(libp2p: Libp2p, peerID: PeerId): Promise<IPFS.IPFS> {
-    return await IPFS.create({ // error here 'permission denied 0.0.0.0:443'
+  protected async initIPFS(libp2p, peerID: PeerId): Promise<IPFS.IPFS> { // TODO: import Libp2p type
+    return IPFS.create({ // error here 'permission denied 0.0.0.0:443'
       libp2p: () => libp2p,
       preload: { enabled: false },
       repo: this.ipfsRepoPath,
       EXPERIMENTAL: {
         ipnsPubsub: true
       },
-      // @ts-expect-error - IPFS does not have privateKey in its Options type
       privateKey: peerID.toJSON().privKey
     })
   }
