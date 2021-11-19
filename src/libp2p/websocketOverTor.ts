@@ -14,6 +14,7 @@ import debug from 'debug'
 import PeerId from 'peer-id'
 import https from 'https'
 import { dumpPEM } from './utils'
+import pDefer from 'p-defer'
 
 const log: any = debug('libp2p:websockets:listener:waggle')
 log.error = debug('libp2p:websockets:listener:waggle:error')
@@ -101,11 +102,29 @@ class WebsocketsOverTor extends WebSockets {
     }
     const cOpts = ma.toOptions()
     log('connect %s:%s', cOpts.host, cOpts.port)
+
+    const errorPromise = pDefer()
+    const errfn = (err) => {
+      const msg = `connection error: ${err.message}`
+      log.error(msg)
+
+      errorPromise.reject(err)
+    }
+
     const myUri = `${toUri(ma) as string}/?remoteAddress=${encodeURIComponent(this.localAddress)}`
 
     const rawSocket = connect(myUri, Object.assign({ binary: true }, options))
+
+    if (rawSocket.socket.on) {
+      rawSocket.socket.on('error', errfn)
+    } else {
+      rawSocket.socket.onerror = errfn
+    }
+
+
     if (!options.signal) {
-      await rawSocket.connected()
+      await Promise.race([rawSocket.connected(), errorPromise.promise])
+      // await rawSocket.connected()
 
       log(`${this.localAddress} connected %s`, ma)
       return rawSocket
@@ -117,7 +136,11 @@ class WebsocketsOverTor extends WebSockets {
     const abort = new Promise((resolve, reject) => {
       onAbort = () => {
         reject(new AbortError())
-        rawSocket.close()
+        // FIXME: https://github.com/libp2p/js-libp2p-websockets/issues/121
+        setTimeout(() => {
+          rawSocket.close()
+        })
+        // rawSocket.close()
       }
 
       // Already aborted?
@@ -126,7 +149,7 @@ class WebsocketsOverTor extends WebSockets {
     })
 
     try {
-      await Promise.race([abort, rawSocket.connected()])
+      await Promise.race([abort, errorPromise.promise, rawSocket.connected()])
     } finally {
       options.signal.removeEventListener('abort', onAbort)
     }
@@ -136,6 +159,7 @@ class WebsocketsOverTor extends WebSockets {
   }
 
   prepareListener = ({ handler, upgrader }) => {
+    log('prepareListener')
     const listener: any = new EventEmitter()
     const trackConn = (server, maConn) => {
       server.__connections.push(maConn)
@@ -198,6 +222,7 @@ class WebsocketsOverTor extends WebSockets {
     }
 
     listener.listen = (ma: Multiaddr) => {
+      log('listen', ma)
       listeningMultiaddr = ma
 
       const listenOptions = {
