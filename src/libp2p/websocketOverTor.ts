@@ -105,7 +105,7 @@ class WebsocketsOverTor extends WebSockets {
 
     const errorPromise = pDefer()
     const errfn = (err) => {
-      const msg = `connection error: ${err.message}`
+      const msg = `connection error: ${err.message as string}`
       log.error(msg)
 
       errorPromise.reject(err)
@@ -120,7 +120,6 @@ class WebsocketsOverTor extends WebSockets {
     } else {
       rawSocket.socket.onerror = errfn
     }
-
 
     if (!options.signal) {
       await Promise.race([rawSocket.connected(), errorPromise.promise])

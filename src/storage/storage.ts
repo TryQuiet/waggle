@@ -1,5 +1,5 @@
 import { getCertFieldValue, parseCertificate, verifyUserCert, CertFieldsTypes } from '@zbayapp/identity'
-import {create, IPFS} from 'ipfs'
+import { create, IPFS } from 'ipfs'
 // import Libp2p from 'libp2p-gossipsub/src'
 import OrbitDB from 'orbit-db'
 import EventStore from 'orbit-db-eventstore'
@@ -120,7 +120,7 @@ export class Storage {
   }
 
   protected async initIPFS(libp2p, peerID: PeerId): Promise<IPFS> { // TODO: import Libp2p type
-    return await create({ // error here 'permission denied 0.0.0.0:443'
+    return create({ // error here 'permission denied 0.0.0.0:443'
       libp2p: () => libp2p,
       preload: { enabled: false },
       repo: this.ipfsRepoPath,
