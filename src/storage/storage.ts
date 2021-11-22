@@ -1,17 +1,17 @@
-import { getCertFieldValue, parseCertificate, verifyUserCert, CertFieldsTypes } from '@zbayapp/identity'
-import { create, IPFS } from 'ipfs'
-// import Libp2p from 'libp2p-gossipsub/src'
+import { Crypto } from '@peculiar/webcrypto'
+import { CertFieldsTypes, getCertFieldValue, parseCertificate, verifyUserCert } from '@zbayapp/identity'
+import * as IPFS from 'ipfs-core'
 import OrbitDB from 'orbit-db'
 import EventStore from 'orbit-db-eventstore'
 import KeyValueStore from 'orbit-db-kvstore'
 import path from 'path'
 import PeerId from 'peer-id'
-import { Crypto } from '@peculiar/webcrypto'
 import { CryptoEngine, setEngine } from 'pkijs'
 import {
   ChannelInfoResponse, DataFromPems, IChannelInfo,
   IMessage, IMessageThread, IPublicKey, IRepo, StorageOptions
 } from '../common/types'
+import { createPaths } from '../common/utils'
 import { Config } from '../constants'
 import logger from '../logger'
 import { EventTypesResponse } from '../socket/constantsReponse'
@@ -20,7 +20,6 @@ import { loadAllPublicChannels } from '../socket/events/channels'
 import {
   loadAllDirectMessages, loadAllMessages, message as socketMessage, sendIdsToZbay
 } from '../socket/events/messages'
-import { createPaths } from '../common/utils'
 import validate from '../validation/validators'
 const log = logger('db')
 
@@ -44,7 +43,7 @@ export class Storage {
   public zbayDir: string
   public io: any
   public peerId: PeerId
-  protected ipfs: IPFS
+  protected ipfs: IPFS.IPFS
   protected orbitdb: OrbitDB
   private channels: KeyValueStore<IChannelInfo>
   private directMessagesUsers: KeyValueStore<IPublicKey>
@@ -119,14 +118,16 @@ export class Storage {
     await this.__stopIPFS()
   }
 
-  protected async initIPFS(libp2p, peerID: PeerId): Promise<IPFS> { // TODO: import Libp2p type
-    return create({ // error here 'permission denied 0.0.0.0:443'
+  protected async initIPFS(libp2p, peerID: PeerId): Promise<IPFS.IPFS> { // TODO: import Libp2p type
+    log('Initializing IPFS')
+    return IPFS.create({ // error here 'permission denied 0.0.0.0:443'
       libp2p: () => libp2p,
       preload: { enabled: false },
       repo: this.ipfsRepoPath,
       EXPERIMENTAL: {
         ipnsPubsub: true
       },
+      // @ts-expect-error
       privateKey: peerID.toJSON().privKey
     })
   }

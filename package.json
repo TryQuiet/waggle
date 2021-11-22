@@ -11,7 +11,7 @@
     "version": "git add -A src",
     "postversion": "git push && git push --tags",
     "lint": "eslint --ext .jsx,.js,.ts,.tsx ./src/",
-    "test": "DEBUG=ipfs:*,waggle:* jest ./src/**/* --runInBand --verbose",
+    "test": "DEBUG=ipfs:*,waggle:* jest --runInBand --verbose",
     "test-ci": "jest ./src/**/* --runInBand --colors --ci --silent --verbose"
   },
   "repository": {
@@ -65,8 +65,8 @@
     "pkijs": "^2.1.96"
   },
   "dependencies": {
-    "@zbayapp/identity": "^3.3.3",
     "@chainsafe/libp2p-noise": "^4.0.0",
+    "@zbayapp/identity": "^3.3.3",
     "abortable-iterator": "^3.0.0",
     "class-validator": "^0.13.1",
     "cli-table": "^0.3.6",
@@ -100,7 +100,6 @@
     "streaming-iterables": "^5.0.2",
     "uint8arrays": "^1.1.0",
     "url": "^0.11.0",
-    "validator": "^13.6.0",
-    "wrtc": "^0.4.6"
+    "validator": "^13.6.0"
   }
 }
