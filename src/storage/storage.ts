@@ -120,7 +120,7 @@ export class Storage {
 
   protected async initIPFS(libp2p, peerID: PeerId): Promise<IPFS.IPFS> { // TODO: import Libp2p type
     log('Initializing IPFS')
-    return IPFS.create({ // error here 'permission denied 0.0.0.0:443'
+    return await IPFS.create({ // error here 'permission denied 0.0.0.0:443'
       libp2p: () => libp2p,
       preload: { enabled: false },
       repo: this.ipfsRepoPath,
