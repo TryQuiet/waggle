@@ -34,7 +34,8 @@
     ],
     "testRegex": "src/.*\\.test\\.(t|j)s$",
     "testEnvironment": "node",
-    "testTimeout": 40000
+    "testTimeout": 40000,
+    "setupFiles": ["./jestSetup.js"]
   },
   "devDependencies": {
     "@types/crypto-js": "^4.0.2",
