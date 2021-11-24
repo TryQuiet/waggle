@@ -35,7 +35,9 @@
     "testRegex": "src/.*\\.test\\.(t|j)s$",
     "testEnvironment": "node",
     "testTimeout": 40000,
-    "setupFiles": ["./jestSetup.js"]
+    "setupFiles": [
+      "./jestSetup.js"
+    ]
   },
   "devDependencies": {
     "@types/crypto-js": "^4.0.2",
@@ -81,7 +83,7 @@
     "find-free-port": "^2.0.0",
     "http-server": "^0.12.3",
     "https-proxy-agent": "^5.0.0",
-    "ipfs": "^0.59.0",
+    "ipfs": "^0.60.2",
     "ipfs-log": "5.4.1",
     "it-pipe": "^1.1.0",
     "joi": "^17.4.0",
