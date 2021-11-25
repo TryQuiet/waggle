@@ -1,23 +1,17 @@
-import * as os from 'os'
+import { NOISE } from '@chainsafe/libp2p-noise'
 import { Crypto } from '@peculiar/webcrypto'
-import { CryptoEngine, setEngine } from 'pkijs'
+import { Agent } from 'https'
 import { HttpsProxyAgent } from 'https-proxy-agent'
+import Libp2p, { Connection } from 'libp2p'
 import Bootstrap from 'libp2p-bootstrap'
 import Gossipsub from 'libp2p-gossipsub'
-// import { Connection } from 'libp2p-gossipsub/src/interfaces'
 import KademliaDHT from 'libp2p-kad-dht'
 import Mplex from 'libp2p-mplex'
-import { NOISE } from '@chainsafe/libp2p-noise'
 import { Response } from 'node-fetch'
+import * as os from 'os'
 import PeerId from 'peer-id'
+import { CryptoEngine, setEngine } from 'pkijs'
 import { CertsData, ConnectionsManagerOptions } from '../common/types'
-import { ZBAY_DIR_PATH } from '../constants'
-import logger from '../logger'
-import IOProxy from '../socket/IOProxy'
-import initListeners from '../socket/listeners'
-import { Storage } from '../storage'
-import { Tor } from '../torManager'
-import Libp2p from 'libp2p'
 import {
   createLibp2pAddress,
   createLibp2pListenAddress,
@@ -26,9 +20,13 @@ import {
   torBinForPlatform,
   torDirForPlatform
 } from '../common/utils'
-// import CustomLibp2p, { Libp2pType } from './customLibp2p'
+import { ZBAY_DIR_PATH } from '../constants'
+import logger from '../logger'
+import IOProxy from '../socket/IOProxy'
+import initListeners from '../socket/listeners'
+import { Storage } from '../storage'
+import { Tor } from '../torManager'
 import WebsocketsOverTor from './websocketOverTor'
-import { Agent } from 'https'
 const log = logger('conn')
 
 export interface IConstructor {
@@ -195,15 +193,14 @@ export class ConnectionsManager {
       transportClass: this.libp2pTransportClass,
       targetPort
     })
-    libp2p.connectionManager.on('peer:connect', (connection) => {
-      // console.log('CONNECTION TYPE', typeof connection)
-      log(`${peerId.toB58String()} connected to ${connection.remotePeer.toB58String() as string}`)
+    libp2p.connectionManager.on('peer:connect', (connection: Connection) => {
+      log(`${peerId.toB58String()} connected to ${connection.remotePeer.toB58String()}`)
     })
     libp2p.on('peer:discovery', (peer: PeerId) => {
       log(`${peerId.toB58String()} discovered ${peer.toB58String()}`)
     })
-    libp2p.connectionManager.on('peer:disconnect', (connection) => {
-      log(`${peerId.toB58String()} disconnected from ${connection.remotePeer.toB58String() as string}`)
+    libp2p.connectionManager.on('peer:disconnect', (connection: Connection) => {
+      log(`${peerId.toB58String()} disconnected from ${connection.remotePeer.toB58String()}`)
     })
     log(`Initialized libp2p for peer ${peerId.toB58String()}`)
     return {

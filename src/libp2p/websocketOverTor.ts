@@ -1,4 +1,3 @@
-
 import withIs from 'class-is'
 import WebSockets from 'libp2p-websockets'
 import { AbortError } from 'abortable-iterator'
@@ -123,7 +122,6 @@ class WebsocketsOverTor extends WebSockets {
 
     if (!options.signal) {
       await Promise.race([rawSocket.connected(), errorPromise.promise])
-      // await rawSocket.connected()
 
       log(`${this.localAddress} connected %s`, ma)
       return rawSocket
@@ -139,7 +137,6 @@ class WebsocketsOverTor extends WebSockets {
         setTimeout(() => {
           rawSocket.close()
         })
-        // rawSocket.close()
       }
 
       // Already aborted?
@@ -221,7 +218,6 @@ class WebsocketsOverTor extends WebSockets {
     }
 
     listener.listen = (ma: Multiaddr) => {
-      log('listen', ma)
       listeningMultiaddr = ma
 
       const listenOptions = {

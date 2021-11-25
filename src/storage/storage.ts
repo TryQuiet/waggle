@@ -11,6 +11,7 @@ import {
   ChannelInfoResponse, DataFromPems, IChannelInfo,
   IMessage, IMessageThread, IPublicKey, IRepo, StorageOptions
 } from '../common/types'
+import Libp2p from 'libp2p'
 import { createPaths } from '../common/utils'
 import { Config } from '../constants'
 import logger from '../logger'
@@ -69,7 +70,7 @@ export class Storage {
     this.ipfsRepoPath = path.join(this.zbayDir, this.options.ipfsDir || Config.IPFS_REPO_PATH)
   }
 
-  public async init(libp2p: any, peerID: PeerId): Promise<void> {
+  public async init(libp2p: Libp2p, peerID: PeerId): Promise<void> {
     log('STORAGE: Entered init')
     if (this.options?.createPaths) {
       createPaths([this.ipfsRepoPath, this.orbitDbDir])
@@ -118,10 +119,10 @@ export class Storage {
     await this.__stopIPFS()
   }
 
-  protected async initIPFS(libp2p, peerID: PeerId): Promise<IPFS.IPFS> { // TODO: import Libp2p type
+  protected async initIPFS(libp2p: Libp2p, peerID: PeerId): Promise<IPFS.IPFS> { // TODO: import Libp2p type
     log('Initializing IPFS')
     return await IPFS.create({ // error here 'permission denied 0.0.0.0:443'
-      libp2p: () => libp2p,
+      libp2p: async () => libp2p,
       preload: { enabled: false },
       repo: this.ipfsRepoPath,
       EXPERIMENTAL: {
