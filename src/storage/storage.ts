@@ -127,8 +127,9 @@ export class Storage {
       EXPERIMENTAL: {
         ipnsPubsub: true
       },
-      // @ts-expect-error
-      privateKey: peerID.toJSON().privKey
+      init: {
+        privateKey: peerID.toJSON().privKey
+      }
     })
   }
 

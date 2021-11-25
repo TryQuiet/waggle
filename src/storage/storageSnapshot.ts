@@ -59,6 +59,20 @@ export class StorageTestSnapshot extends Storage {
     this.ipfs = await this.initIPFS(libp2p, peerID)
 
     this.orbitdb = await OrbitDB.createInstance(this.ipfs, { directory: this.orbitDbDir })
+
+    await this.createDbForSnapshotInfo()
+    await this.createDbForMessages()
+    log(`Initialized '${this.name}'`)
+  }
+
+  public setName(name) {
+    this.name = name
+  }
+
+  private async createDbForSnapshotInfo() {
+    if (!this.useSnapshot) {
+      return
+    }
     this.snapshotInfoDb = await this.orbitdb.log<SnapshotInfo>('092183012', {
       accessController: {
         write: ['*']
@@ -67,8 +81,6 @@ export class StorageTestSnapshot extends Storage {
 
     // eslint-disable-next-line
     this.snapshotInfoDb.events.on('replicated', async () => {
-      if (!this.useSnapshot) return
-
       // Retrieve snapshot that someone else saved to db
       if (!this.options.createSnapshot || process.env.CREATE_SNAPSHOT !== 'true') {
         log('Replicated snapshotInfoDb')
@@ -82,12 +94,6 @@ export class StorageTestSnapshot extends Storage {
     // log(`${this.name}; replication in progress:`, address, hash, entry, progress, total)
     // log('>>', entry.payload.value.snapshot)
     // })
-    await this.createDbForMessages()
-    log(`Initialized '${this.name}'`)
-  }
-
-  public setName(name) {
-    this.name = name
   }
 
   private async createDbForMessages() {
