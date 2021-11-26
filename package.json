@@ -11,7 +11,7 @@
     "version": "git add -A src",
     "postversion": "git push && git push --tags",
     "lint": "eslint --ext .jsx,.js,.ts,.tsx ./src/",
-    "test": "DEBUG=ipfs:*,waggle:* jest ./src/**/* --runInBand --verbose --testPathIgnorePatterns='.src\/(!?nodeTest*)|(.node_modules*)'",
+    "test": "DEBUG=ipfs:*,waggle:* jest ./src/**/* --runInBand --verbose --testPathIgnorePatterns='.src/(!?nodeTest*)|(.node_modules*)'",
     "test-ci": "jest ./src/**/* --runInBand --colors --ci --silent --verbose",
     "test-connect": "DEBUG=waggle:* jest ./src/nodeTest/* --verbose",
     "test-connect-ci": "jest ./src/nodeTest/* --colors --ci --silent --verbose"

@@ -78,6 +78,7 @@ export class LocalNode extends Node {
     await this.dataServer.listen()
     return this.dataServer
   }
+
   public async closeServices(): Promise<void> {
     await this.communitiesManager.closeStorages()
     await this.closeDataServer()

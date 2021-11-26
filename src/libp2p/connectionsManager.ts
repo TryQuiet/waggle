@@ -68,7 +68,7 @@ export class ConnectionsManager {
     this.StorageCls = storageClass || Storage
     this.libp2pTransportClass = options.libp2pTransportClass || WebsocketsOverTor
     this.ioProxy = new IOProxy(this)
-  
+
     process.on('unhandledRejection', error => {
       console.error(error)
       throw new Error()
@@ -196,7 +196,7 @@ export class ConnectionsManager {
     })
 
     this.libp2pInstance = libp2p
-    
+
     libp2p.connectionManager.on('peer:connect', (connection: Connection) => {
       log(`${peerId.toB58String()} connected to ${connection.remotePeer.toB58String()}`)
     })

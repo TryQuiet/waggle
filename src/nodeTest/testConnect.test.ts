@@ -8,7 +8,7 @@ import { CryptoEngine, setEngine, Time } from 'pkijs'
 import logger from '../logger'
 import { createTmpDir } from '../common/testUtils'
 import { LocalNode, NodeWithoutTor, NodeWithTor } from './nodes'
-import {sleep } from '../sleep'
+import { sleep } from '../sleep'
 const log = logger('testConnect')
 
 const webcrypto = new Crypto()
@@ -126,7 +126,7 @@ describe('Nodes connections', () => {
     for (let i = 0; i < noOfNodes; i++) {
       log(`initializing node ${i}`)
       const node = await launchNode(i, rootCa, true, multiaddressList)
-      if (i===0) {
+      if (i === 0) {
         multiaddressList.push(node.localAddress)
       }
       map.set(i, node)
@@ -209,7 +209,7 @@ describe('Nodes connections', () => {
     for (let i = 0; i < noOfNodes; i++) {
       log(`initializing node ${i}`)
       const node = await launchNode(i, rootCa, false, multiaddressList)
-      if (i ===0 ) {
+      if (i === 0) {
         multiaddressList.push(node.localAddress)
       }
       map.set(i, node)
