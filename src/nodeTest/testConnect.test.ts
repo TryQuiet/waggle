@@ -68,9 +68,9 @@ const launchNode = async (
 }
 
 describe('Nodes connections', () => {
-  test.only('5 nodes connect each other - using tor, providing bootstrap multiaddress of all nodes', async () => {
+  test('5 nodes connect each other - using tor, providing bootstrap multiaddress of all nodes', async () => {
     const timeout = 360_000
-    const noOfNodes = 5
+    const noOfNodes = 2
     const expectedConnectionsAmount = noOfNodes - 1
 
     const notBeforeDate = new Date(Date.UTC(2010, 11, 28, 10, 10, 10))
@@ -90,19 +90,20 @@ describe('Nodes connections', () => {
       map.set(i, node)
     }
 
-    for (let i = 0; i < noOfNodes; i++) {
-      log(`node ${i} waiting for ${expectedConnectionsAmount} connections`)
-      const node = map.get(i)
-      await waitForExpect(() => {
-        expect(node.connectionsManager.libp2pInstance.connections.size).toEqual(expectedConnectionsAmount)
-      }, timeout)
-      log(`node ${i} received ${expectedConnectionsAmount} connections`)
-    }
+    // for (let i = 0; i < noOfNodes; i++) {
+    //   log(`node ${i} waiting for ${expectedConnectionsAmount} connections`)
+    //   const node = map.get(i)
+    //   await waitForExpect(() => {
+    //     expect(node.connectionsManager.libp2pInstance.connections.size).toEqual(expectedConnectionsAmount)
+    //   }, timeout)
+    //   log(`node ${i} received ${expectedConnectionsAmount} connections`)
+    // }
 
     for (let i = 0; i < noOfNodes; i++) {
       log(`clsing node ${i}`)
       const node = map.get(i)
-      await node.closeServices()
+      // await node.closeServices()
+      // await sleep(20_000)
     }
 
     await sleep(40_000)
@@ -150,9 +151,9 @@ describe('Nodes connections', () => {
     await sleep(40_000)
   })
 
-  test.skip('5 nodes connect each other - no tor, providing bootstrap multiaddress of all nodes', async () => {
+  test.only('5 nodes connect each other - no tor, providing bootstrap multiaddress of all nodes', async () => {
     const timeout = 360_000
-    const noOfNodes = 2
+    const noOfNodes = 5
     const expectedConnectionsAmount = noOfNodes - 1
 
     const notBeforeDate = new Date(Date.UTC(2010, 11, 28, 10, 10, 10))
@@ -186,14 +187,16 @@ describe('Nodes connections', () => {
       log(`clsing node ${i}`)
       const node = map.get(i)
       await node.closeServices()
+
+      
     }
 
     await sleep(40_000)
   })
 
-  test.skip('5 nodes connect each other - no tor, providing only one bootstrap multiaddress', async () => {
+  test('5 nodes connect each other - no tor, providing only one bootstrap multiaddress', async () => {
     const timeout = 360_000
-    const noOfNodes = 5
+    const noOfNodes = 2
     const expectedConnectionsAmount = noOfNodes - 1
 
     const notBeforeDate = new Date(Date.UTC(2010, 11, 28, 10, 10, 10))
@@ -215,15 +218,15 @@ describe('Nodes connections', () => {
       map.set(i, node)
     }
 
-    for (let i = 0; i < noOfNodes; i++) {
-      log(`node ${i} waiting for ${expectedConnectionsAmount} connections`)
-      const node = map.get(i)
-      console.log(node.connectionsManager.libp2pInstance.connections.size, 'size')
-      await waitForExpect(() => {
-        expect(node.connectionsManager.libp2pInstance.connections.size).toEqual(expectedConnectionsAmount)
-      }, timeout)
-      log(`node ${i} received ${expectedConnectionsAmount} connections`)
-    }
+    // for (let i = 0; i < noOfNodes; i++) {
+    //   log(`node ${i} waiting for ${expectedConnectionsAmount} connections`)
+    //   const node = map.get(i)
+    //   console.log(node.connectionsManager.libp2pInstance.connections.size, 'size')
+    //   await waitForExpect(() => {
+    //     expect(node.connectionsManager.libp2pInstance.connections.size).toEqual(expectedConnectionsAmount)
+    //   }, timeout)
+    //   log(`node ${i} received ${expectedConnectionsAmount} connections`)
+    // }
 
     for (let i = 0; i < noOfNodes; i++) {
       log(`clsing node ${i}`)
