@@ -1,6 +1,6 @@
 import getPort from 'get-port'
+import Libp2p from 'libp2p'
 import { HttpsProxyAgent } from 'https-proxy-agent'
-import { Libp2p } from 'libp2p-gossipsub/src/interfaces'
 import { Response } from 'node-fetch'
 import path from 'path'
 import PeerId from 'peer-id'
