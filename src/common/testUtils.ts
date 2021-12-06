@@ -1,5 +1,6 @@
 import getPort from 'get-port'
 import { HttpsProxyAgent } from 'https-proxy-agent'
+import { Libp2p } from 'libp2p-gossipsub/src/interfaces'
 import { Response } from 'node-fetch'
 import path from 'path'
 import PeerId from 'peer-id'
@@ -7,7 +8,6 @@ import tmp from 'tmp'
 import { ConnectionsManagerOptions, DataFromPems } from '../common/types'
 import { Config } from '../constants'
 import { ConnectionsManager } from '../libp2p/connectionsManager'
-import { Libp2pType } from '../libp2p/customLibp2p'
 import { createCertificatesTestHelper } from '../libp2p/tests/client-server'
 import WebsocketsOverTor from '../libp2p/websocketOverTor'
 import logger from '../logger'
@@ -65,7 +65,7 @@ export const createMinConnectionManager = (options: ConnectionsManagerOptions): 
   })
 }
 
-export const createLibp2p = async (peerId: PeerId): Promise<Libp2pType> => {
+export const createLibp2p = async (peerId: PeerId): Promise<Libp2p> => {
   const port = await getPort()
   const virtPort = 443
   const pems = await createCertificatesTestHelper('address1.onion', 'address2.onion')
