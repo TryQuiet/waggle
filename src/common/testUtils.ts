@@ -1,4 +1,4 @@
-import fp from 'find-free-port'
+import getPort from 'get-port'
 import Libp2p from 'libp2p'
 import { HttpsProxyAgent } from 'https-proxy-agent'
 import { Response } from 'node-fetch'
@@ -66,7 +66,7 @@ export const createMinConnectionManager = (options: ConnectionsManagerOptions): 
 }
 
 export const createLibp2p = async (peerId: PeerId): Promise<Libp2p> => {
-  const [port] = await fp(1111)
+  const port = await getPort()
   const virtPort = 443
   const pems = await createCertificatesTestHelper('address1.onion', 'address2.onion')
 
