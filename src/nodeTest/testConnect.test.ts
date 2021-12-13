@@ -90,20 +90,19 @@ describe('Nodes connections', () => {
       map.set(i, node)
     }
 
-    // for (let i = 0; i < noOfNodes; i++) {
-    //   log(`node ${i} waiting for ${expectedConnectionsAmount} connections`)
-    //   const node = map.get(i)
-    //   await waitForExpect(() => {
-    //     expect(node.connectionsManager.libp2pInstance.connections.size).toEqual(expectedConnectionsAmount)
-    //   }, timeout)
-    //   log(`node ${i} received ${expectedConnectionsAmount} connections`)
-    // }
+    for (let i = 0; i < noOfNodes; i++) {
+      log(`node ${i} waiting for ${expectedConnectionsAmount} connections`)
+      const node = map.get(i)
+      await waitForExpect(() => {
+        expect(node.connectionsManager.libp2pInstance.connections.size).toEqual(expectedConnectionsAmount)
+      }, timeout)
+      log(`node ${i} received ${expectedConnectionsAmount} connections`)
+    }
 
     for (let i = 0; i < noOfNodes; i++) {
       log(`clsing node ${i}`)
       const node = map.get(i)
-      // await node.closeServices()
-      // await sleep(20_000)
+      await node.closeServices()
     }
 
     await sleep(40_000)
@@ -187,10 +186,8 @@ describe('Nodes connections', () => {
       log(`clsing node ${i}`)
       const node = map.get(i)
       await node.closeServices()
-
-      
     }
-
+    
     await sleep(40_000)
   })
 
@@ -218,15 +215,15 @@ describe('Nodes connections', () => {
       map.set(i, node)
     }
 
-    // for (let i = 0; i < noOfNodes; i++) {
-    //   log(`node ${i} waiting for ${expectedConnectionsAmount} connections`)
-    //   const node = map.get(i)
-    //   console.log(node.connectionsManager.libp2pInstance.connections.size, 'size')
-    //   await waitForExpect(() => {
-    //     expect(node.connectionsManager.libp2pInstance.connections.size).toEqual(expectedConnectionsAmount)
-    //   }, timeout)
-    //   log(`node ${i} received ${expectedConnectionsAmount} connections`)
-    // }
+    for (let i = 0; i < noOfNodes; i++) {
+      log(`node ${i} waiting for ${expectedConnectionsAmount} connections`)
+      const node = map.get(i)
+      console.log(node.connectionsManager.libp2pInstance.connections.size, 'size')
+      await waitForExpect(() => {
+        expect(node.connectionsManager.libp2pInstance.connections.size).toEqual(expectedConnectionsAmount)
+      }, timeout)
+      log(`node ${i} received ${expectedConnectionsAmount} connections`)
+    }
 
     for (let i = 0; i < noOfNodes; i++) {
       log(`clsing node ${i}`)

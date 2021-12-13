@@ -346,11 +346,9 @@ export class Storage {
         log(`Writing to public channel db ${channelAddress}`)
         socketMessage(this.io, { message: entry.payload.value, channelAddress: channelAddress, communityId: this.communityId })
       })
-
-      db.events.on('replicated', () => {
-        const ids = this.getAllEventLogEntries(db).map(msg => msg.id)
+      db.events.on('replicate.progress', (_address, _hash, entry, _progress, _total) => {
         log('Message replicated')
-        sendIdsToZbay(this.io, { ids, channelAddress, communityId: this.communityId })
+        socketMessage(this.io, { message: entry.payload.value, channelAddress: channelAddress, communityId: this.communityId })
       })
       db.events.on('ready', () => {
         const ids = this.getAllEventLogEntries(db).map(msg => msg.id)
