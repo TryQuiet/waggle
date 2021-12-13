@@ -100,7 +100,7 @@ describe('Nodes connections', () => {
     }
 
     for (let i = 0; i < noOfNodes; i++) {
-      log(`clsing node ${i}`)
+      log(`closing node ${i}`)
       const node = map.get(i)
       await node.closeServices()
     }
@@ -142,7 +142,7 @@ describe('Nodes connections', () => {
     }
 
     for (let i = 0; i < noOfNodes; i++) {
-      log(`clsing node ${i}`)
+      log(`closing node ${i}`)
       const node = map.get(i)
       await node.closeServices()
     }
@@ -183,7 +183,7 @@ describe('Nodes connections', () => {
     }
 
     for (let i = 0; i < noOfNodes; i++) {
-      log(`clsing node ${i}`)
+      log(`closing node ${i}`)
       const node = map.get(i)
       await node.closeServices()
     }
@@ -226,7 +226,7 @@ describe('Nodes connections', () => {
     }
 
     for (let i = 0; i < noOfNodes; i++) {
-      log(`clsing node ${i}`)
+      log(`closing node ${i}`)
       const node = map.get(i)
       await node.closeServices()
     }
