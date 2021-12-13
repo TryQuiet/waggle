@@ -85,7 +85,6 @@ export class LocalNode extends Node {
     if (this.tor) {
       await this.tor.kill()
     }
-    // await this.connectionsManager.libp2pInstance.stop()
   }
 }
 

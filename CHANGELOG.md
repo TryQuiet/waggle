@@ -2,15 +2,27 @@
 
 ## [Unreleased]
 
-* Upgrade: orbit-db@0.28.0, ipfs@0.60.2, libp2p@0.33.0 and their dependencies
-* Remove custom libp2p
-
-## [4.3.13]
-
 ### Added
 
 * Connections test
 * LocalNode api
+
+* Upgrade: orbit-db@0.28.0, ipfs@0.60.2, libp2p@0.33.0 and their dependencies
+* Remove custom libp2p
+
+## [4.3.15]
+
+### Added
+
+* In connectionsManager, closeAllServices method now closes socket too.
+
+## [4.3.14]
+
+### Changed
+
+* Send replicated message on 'replicate.progress event', instead of all ids on 'replicate' event
+
+## [4.3.13]
 
 ### Added
 
