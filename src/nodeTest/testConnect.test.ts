@@ -187,7 +187,7 @@ describe('Nodes connections', () => {
       const node = map.get(i)
       await node.closeServices()
     }
-    
+
     await sleep(40_000)
   })
 
