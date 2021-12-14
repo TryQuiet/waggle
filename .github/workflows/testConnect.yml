@@ -1,4 +1,4 @@
-name: Node replication test
+name: Node connections test
 
 on:
   pull_request:
@@ -22,7 +22,5 @@ jobs:
         run: npm install --global typescript
       - name: install dependencies
         run: npm ci
-      - name: run test without tor
-        run: DEBUG='waggle:dbSnap*,waggle:localTest*' ts-node src/nodeTest/testReplicate.ts --nodesCount 1 --timeThreshold 200 --entriesCount 1000 --no-useTor
-      - name: run test with tor
-        run: DEBUG='waggle:dbSnap*,waggle:localTest*' ts-node src/nodeTest/testReplicate.ts --nodesCount 1 --timeThreshold 500 --entriesCount 1000 --useTor
+      - name: run connections tests
+        run: npm run test-connect-ci
