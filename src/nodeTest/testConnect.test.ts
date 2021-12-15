@@ -150,7 +150,7 @@ describe.skip('Nodes connections', () => { // Skip until "NotStartedError: not s
     await sleep(40_000)
   })
 
-  test.only('5 nodes connect each other - no tor, providing bootstrap multiaddress of all nodes', async () => {
+  test('5 nodes connect each other - no tor, providing bootstrap multiaddress of all nodes', async () => {
     const timeout = 360_000
     const noOfNodes = 5
     const expectedConnectionsAmount = noOfNodes - 1
