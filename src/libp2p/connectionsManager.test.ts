@@ -87,7 +87,7 @@ describe('Connections manager', () => {
     await connectionsManager.tor.kill()
   })
 
-  it('tries to send certification request multiple times before giving up', async () => {
+  it('throws error when tries to send certification request to the offline registrar', async () => {
     const ports = await utils.getPorts()
     connectionsManager = new ConnectionsManager({
       agentHost: 'localhost',
@@ -102,10 +102,7 @@ describe('Connections manager', () => {
         torControlPort: ports.controlPort
       }
     })
-    const spyOnFetchRetry = jest.spyOn(utils, 'fetchRetry')
-    const retryCount = 3
-    await expect(connectionsManager.sendCertificateRegistrationRequest('http://invalid.onion', 'cert', retryCount)).rejects.toThrow()
-    expect(spyOnFetchRetry).toHaveBeenCalledTimes(retryCount)
+    await expect(connectionsManager.sendCertificateRegistrationRequest('http://x7pzadeqcxdxsfa7xtrrznpxcmf3jybju7d2fimofldwvdmjdtlfjvqd.onion', 'cert')).rejects.toThrow()
   })
 
   it('inits libp2p', async () => {
