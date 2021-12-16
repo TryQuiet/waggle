@@ -228,9 +228,9 @@ export class ConnectionsManager {
     userCsr: string,
     requestTimeout: number = 15000
   ): Promise<Response> => {
-    const controller = new AbortController();
+    const controller = new AbortController()
     const timeout = setTimeout(() => {
-      controller.abort();
+      controller.abort()
     }, requestTimeout)
     let options = {
       method: 'POST',
@@ -255,7 +255,7 @@ export class ConnectionsManager {
       log.error(e)
       throw e
     } finally {
-      clearTimeout(timeout);
+      clearTimeout(timeout)
     }
   }
 

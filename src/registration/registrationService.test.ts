@@ -23,7 +23,7 @@ async function registerUserTest(csr: string, httpTunnelPort: number, localhost: 
   if (!localhost) {
     options = Object.assign(options, { agent: new HttpsProxyAgent({ port: httpTunnelPort, host: 'localhost', timeout: 100000 }) })
     address = '4avghtoehep5ebjngfqk5b43jolkiyyedfcvvq4ouzdnughodzoglzad.onion'
-    return await fetch(`http://${address}:80/register`, options)
+    return await fetch(`http://${address}/register`, options)
   }
   return await fetch(`http://${address}:${registrarPort}/register`, options)
 }
